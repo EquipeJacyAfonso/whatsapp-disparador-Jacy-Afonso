@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Disparador WhatsApp</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0d0f12;--surface:#141720;--surface2:#1c2030;--border:#252a3a;
+    --green:#00e676;--green-dim:#00e67622;--yellow:#ffd740;--red:#ff5252;
+    --blue:#448aff;--text:#e8eaf0;--muted:#6b7280;
+    --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+  header{border-bottom:1px solid var(--border);padding:18px 32px;display:flex;align-items:center;justify-content:space-between}
+  .logo{font-family:var(--mono);font-size:15px;letter-spacing:.08em;color:var(--green)}
+  .logo span{color:var(--muted)}
+  nav{display:flex;gap:2px;padding:16px 32px 0;border-bottom:1px solid var(--border)}
+  .tab{padding:10px 20px;font-size:13px;font-family:var(--mono);background:none;border:none;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+  .tab:hover{color:var(--text)}.tab.active{color:var(--green);border-color:var(--green)}
+  .page{display:none;padding:32px;max-width:1100px}.page.active{display:block}
+  h2{font-size:18px;font-weight:500;margin-bottom:24px}
+  h3{font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:24px;margin-bottom:20px}
+  .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px}
+  .stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;font-family:var(--mono)}
+  .stat-value{font-size:32px;font-weight:300;font-family:var(--mono)}
+  .stat-value.green{color:var(--green)}.stat-value.yellow{color:var(--yellow)}.stat-value.red{color:var(--red)}.stat-value.blue{color:var(--blue)}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-family:var(--mono)}
+  input,textarea,select{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:6px;font-family:var(--mono);font-size:13px;margin-bottom:16px;transition:border-color .15s;outline:none}
+  input:focus,textarea:focus,select:focus{border-color:var(--green)}
+  textarea{min-height:110px;resize:vertical}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  button{padding:10px 20px;border:none;border-radius:6px;cursor:pointer;font-family:var(--mono);font-size:13px;font-weight:500;transition:all .15s}
+  .btn-primary{background:var(--green);color:#000}.btn-primary:hover{background:#00ff85}
+  .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{border-color:var(--green);color:var(--green)}
+  .btn-danger{background:transparent;color:var(--red);border:1px solid var(--red)}.btn-danger:hover{background:var(--red);color:#fff}
+  .btn-warning{background:transparent;color:var(--yellow);border:1px solid var(--yellow)}.btn-warning:hover{background:var(--yellow);color:#000}
+  .btn-sm{padding:6px 14px;font-size:12px}
+  .btn-group{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;padding:10px 16px;color:var(--muted);font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border)}
+  td{padding:12px 16px;border-bottom:1px solid var(--border);font-family:var(--mono)}
+  tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-family:var(--mono)}
+  .badge-green{background:var(--green-dim);color:var(--green)}.badge-yellow{background:#ffd74022;color:var(--yellow)}
+  .badge-red{background:#ff525222;color:var(--red)}.badge-blue{background:#448aff22;color:var(--blue)}.badge-gray{background:var(--surface2);color:var(--muted)}
+  .progress-bar{width:100%;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:6px}
+  .progress-fill{height:100%;background:var(--green);transition:width 1s ease;border-radius:3px}
+  .hint{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--muted);font-family:var(--mono);line-height:1.8}
+  .hint strong{color:var(--yellow)}
+  .log-box{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:16px;font-family:var(--mono);font-size:12px;color:var(--muted);max-height:180px;overflow-y:auto;line-height:1.8}
+  .log-ok{color:var(--green)}.log-err{color:var(--red)}.log-info{color:var(--blue)}
+  .empty{text-align:center;padding:48px;color:var(--muted);font-family:var(--mono);font-size:13px}
+  .chip-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .chip-info{display:flex;align-items:center;gap:14px}
+  .chip-dot{width:10px;height:10px;border-radius:50%;background:var(--muted);flex-shrink:0}
+  .chip-dot.open{background:var(--green);box-shadow:0 0 8px var(--green)}
+  .chip-dot.connecting{background:var(--yellow)}
+  .chip-dot.erro,.chip-dot.desconectado{background:var(--red)}
+  .chip-name{font-family:var(--mono);font-size:13px}
+  .chip-inst{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .drop-zone{border:2px dashed var(--border);border-radius:8px;padding:40px;text-align:center;cursor:pointer;transition:all .2s;font-family:var(--mono);font-size:13px;color:var(--muted);margin-bottom:16px}
+  .drop-zone:hover,.drop-zone.dragover{border-color:var(--green);color:var(--green);background:var(--green-dim)}
+  .drop-zone input[type=file]{display:none}
+  #toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 20px;font-family:var(--mono);font-size:13px;transform:translateY(80px);opacity:0;transition:all .3s;z-index:999}
+  #toast.show{transform:translateY(0);opacity:1}
+  #toast.ok{border-color:var(--green);color:var(--green)}
+  #toast.err{border-color:var(--red);color:var(--red)}
+  .modal-backdrop{display:none;position:fixed;inset:0;background:#00000099;z-index:100;align-items:center;justify-content:center}
+  .modal-backdrop.open{display:flex}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:28px;width:520px;max-width:90vw}
+  .modal h3{margin-bottom:20px;font-size:14px;color:var(--text);text-transform:none;letter-spacing:0}
+  .modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+  .qr-img{max-width:200px;border:4px solid #fff;border-radius:8px;display:block;margin:0 auto 12px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">WA<span>/</span>DISPARADOR</div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div id="chips-badge" style="font-family:var(--mono);font-size:12px;color:var(--muted)">— chips</div>
+    <button class="btn-secondary btn-sm" onclick="showPage('chips',this)">Chips</button>
+  </div>
+</header>
+
+<nav>
+  <button class="tab active" onclick="showPage('dashboard',this)">Dashboard</button>
+  <button class="tab" onclick="showPage('importar',this)">Importar CSV</button>
+  <button class="tab" onclick="showPage('campanhas',this)">Campanhas</button>
+  <button class="tab" onclick="showPage('contatos',this)">Contatos</button>
+  <button class="tab" onclick="showPage('chips',this)">Chips</button>
+</nav>
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <h2>Dashboard</h2>
+  <div class="stats-grid">
+    <div class="stat"><div class="stat-label">Contatos</div><div class="stat-value blue" id="s-contatos">—</div></div>
+    <div class="stat"><div class="stat-label">Na fila</div><div class="stat-value yellow" id="s-fila">—</div></div>
+    <div class="stat"><div class="stat-label">Enviados</div><div class="stat-value green" id="s-enviados">—</div></div>
+    <div class="stat"><div class="stat-label">Falhas</div><div class="stat-value red" id="s-falhas">—</div></div>
+  </div>
+  <div class="card">
+    <h3>Campanhas ativas</h3>
+    <div id="dash-campanhas"><div class="empty">Nenhuma campanha em andamento</div></div>
+  </div>
+  <div class="card"><h3>Log</h3><div class="log-box" id="log-box"><span class="log-info">» Sistema iniciado</span><br></div></div>
+</div>
+
+<!-- IMPORTAR CSV -->
+<div class="page" id="page-importar">
+  <h2>Importar Contatos via CSV</h2>
+  <div class="card">
+    <div class="hint">
+      O CSV deve ter cabeçalho na primeira linha.<br>
+      Coluna obrigatória: <strong>numero</strong> (aceita também: número, phone, telefone)<br>
+      Coluna recomendada: <strong>nome</strong> — demais colunas ficam disponíveis como <strong>{variavel}</strong> no template.<br>
+      Separador: <strong>vírgula</strong> ou <strong>ponto-e-vírgula</strong> — detectado automaticamente.
+    </div>
+    <div class="hint" style="margin-top:-8px">
+      Exemplo de CSV:<br>
+      <strong>numero;nome;cidade;produto</strong><br>
+      11999998888;Maria;São Paulo;Plano A<br>
+      21988887777;João;Rio;Plano B
+    </div>
+
+    <label>Selecionar arquivo CSV</label>
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('csv-file').click()">
+      <input type="file" id="csv-file" accept=".csv,.txt" onchange="handleFileSelect(this.files[0])">
+      <div id="drop-text">📂 Clique ou arraste o arquivo CSV aqui</div>
+    </div>
+    <div id="import-result"></div>
+  </div>
+</div>
+
+<!-- CAMPANHAS -->
+<div class="page" id="page-campanhas">
+  <h2>Campanhas</h2>
+  <div class="card">
+    <h3>Nova campanha</h3>
+    <label>Nome da campanha</label>
+    <input type="text" id="camp-nome" placeholder="Promoção Junho">
+    <label>Template da mensagem</label>
+    <div class="hint">Use <strong>{nome}</strong>, <strong>{numero}</strong> e qualquer coluna do CSV entre chaves.<br>
+    Ex: <em>Olá {nome}! Temos uma oferta especial para {cidade} 🎉</em></div>
+    <textarea id="camp-template" placeholder="Olá {nome}, temos uma novidade para você! 🎁"></textarea>
+    <button class="btn-primary" onclick="criarCampanha()">+ Criar campanha</button>
+  </div>
+  <div class="card">
+    <h3>Todas as campanhas</h3>
+    <div id="lista-campanhas"><div class="empty">Nenhuma campanha criada</div></div>
+  </div>
+</div>
+
+<!-- CONTATOS -->
+<div class="page" id="page-contatos">
+  <h2>Contatos</h2>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <input type="text" id="busca" placeholder="Buscar nome ou número..." style="margin:0;max-width:300px" oninput="buscarContatos()">
+      <button class="btn-danger btn-sm" onclick="limparContatos()">🗑 Limpar tudo</button>
+    </div>
+    <div id="tabela-contatos"><div class="empty">Nenhum contato importado</div></div>
+    <div id="paginacao" style="margin-top:16px;display:flex;gap:8px;justify-content:flex-end;align-items:center"></div>
+  </div>
+</div>
+
+<!-- CHIPS -->
+<div class="page" id="page-chips">
+  <h2>Chips / Instâncias</h2>
+  <div class="card">
+    <h3>Adicionar chip</h3>
+    <div class="row">
+      <div><label>Nome do chip (ex: Chip 1)</label><input type="text" id="chip-nome" placeholder="Chip Principal"></div>
+      <div><label>Nome da instância (Evolution API)</label><input type="text" id="chip-inst" placeholder="instancia01"></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn-primary" onclick="adicionarChip()">+ Adicionar chip</button>
+      <button class="btn-secondary" onclick="sincronizarChips()">↻ Sincronizar status</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Chips cadastrados</h3>
+    <div id="lista-chips"><div class="empty">Nenhum chip cadastrado</div></div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR TEMPLATE -->
+<div class="modal-backdrop" id="modal-template">
+  <div class="modal">
+    <h3>Editar template da campanha</h3>
+    <input type="hidden" id="edit-camp-id">
+    <label>Template</label>
+    <textarea id="edit-template" style="min-height:140px"></textarea>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="fecharModal('modal-template')">Cancelar</button>
+      <button class="btn-primary" onclick="salvarTemplate()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL QR CODE -->
+<div class="modal-backdrop" id="modal-qr">
+  <div class="modal" style="text-align:center">
+    <h3 id="qr-titulo">QR Code</h3>
+    <div id="qr-content"><div class="empty">Carregando...</div></div>
+    <div class="modal-footer" style="justify-content:center">
+      <button class="btn-secondary" onclick="fecharModal('modal-qr')">Fechar</button>
+      <button class="btn-secondary" onclick="recarregarQR()">↻ Atualizar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = '/api';
+let contatosPage = 1, buscaTimer, qrInstanciaAtual = '';
+
+// ─── Nav ──────────────────────────────────────────────────────────────────────
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'campanhas') loadCampanhas();
+  if (name === 'contatos') loadContatos();
+  if (name === 'chips') loadChips();
+}
+
+// ─── Toast + Log ──────────────────────────────────────────────────────────────
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'show ' + type;
+  setTimeout(() => el.className = '', 3000);
+}
+function log(msg, type = 'info') {
+  const b = document.getElementById('log-box');
+  const s = document.createElement('span');
+  s.className = 'log-' + type;
+  s.textContent = `» [${new Date().toLocaleTimeString()}] ${msg}`;
+  b.appendChild(s); b.appendChild(document.createElement('br'));
+  b.scrollTop = b.scrollHeight;
+}
+
+// ─── Modal ────────────────────────────────────────────────────────────────────
+function abrirModal(id) { document.getElementById(id).classList.add('open'); }
+function fecharModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-backdrop').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+
+// ─── Dashboard ────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const [cR, fR, campR] = await Promise.all([
+      fetch(`${API}/contatos?limit=1`).then(r=>r.json()),
+      fetch(`${API}/fila/status`).then(r=>r.json()),
+      fetch(`${API}/campanhas`).then(r=>r.json()),
+    ]);
+    document.getElementById('s-contatos').textContent = cR.total || 0;
+    document.getElementById('s-fila').textContent = fR.data?.waiting || 0;
+    const camps = campR.data || [];
+    document.getElementById('s-enviados').textContent = camps.reduce((s,c)=>s+(c.enviados||0),0);
+    document.getElementById('s-falhas').textContent = camps.reduce((s,c)=>s+(c.falhas||0),0);
+    const ativas = camps.filter(c => c.status === 'em_andamento');
+    const el = document.getElementById('dash-campanhas');
+    el.innerHTML = ativas.length ? ativas.map(c => {
+      const pct = c.total_contatos > 0 ? Math.round(c.enviados/c.total_contatos*100) : 0;
+      return `<div style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-family:var(--mono);font-size:13px">${c.nome}</span>
+          <span style="font-family:var(--mono);font-size:12px;color:var(--muted)">${c.enviados}/${c.total_contatos} — ${pct}%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>`;
+    }).join('') : '<div class="empty">Nenhuma campanha em andamento</div>';
+  } catch(e) { log(e.message,'err'); }
+}
+
+// ─── CSV ──────────────────────────────────────────────────────────────────────
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); handleFileSelect(e.dataTransfer.files[0]); });
+
+function handleFileSelect(file) {
+  if (!file) return;
+  document.getElementById('drop-text').textContent = `📄 ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+  uploadCSV(file);
+}
+
+async function uploadCSV(file) {
+  const el = document.getElementById('import-result');
+  el.innerHTML = '<span style="color:var(--muted);font-family:var(--mono);font-size:13px">⏳ Importando...</span>';
+  const fd = new FormData();
+  fd.append('arquivo', file);
+  try {
+    const r = await fetch(`${API}/importar/csv`, { method: 'POST', body: fd });
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error);
+    const d = data.data;
+    el.innerHTML = `<div class="hint">✅ <strong style="color:var(--green)">${d.importados}</strong> novos &nbsp;|&nbsp; 🔄 <strong style="color:var(--yellow)">${d.atualizados}</strong> atualizados &nbsp;|&nbsp; ⚠️ <strong style="color:var(--red)">${d.ignorados}</strong> ignorados &nbsp;|&nbsp; Total: <strong>${d.total}</strong></div>`;
+    toast(`${d.importados} contatos importados!`, 'ok');
+    log(`CSV importado: ${d.importados} novos, ${d.atualizados} atualizados`, 'ok');
+  } catch(e) {
+    el.innerHTML = `<div class="hint" style="border-color:var(--red);color:var(--red)">❌ ${e.message}</div>`;
+    toast(e.message, 'err');
+  }
+}
+
+// ─── Campanhas ────────────────────────────────────────────────────────────────
+const statusBadge = s => { const m={rascunho:'gray',em_andamento:'yellow',pausado:'blue',concluido:'green'}; return `<span class="badge badge-${m[s]||'gray'}">${s.replace('_',' ')}</span>`; };
+
+async function loadCampanhas() {
+  const r = await fetch(`${API}/campanhas`); const data = await r.json();
+  const el = document.getElementById('lista-campanhas');
+  const camps = data.data || [];
+  if (!camps.length) { el.innerHTML = '<div class="empty">Nenhuma campanha</div>'; return; }
+  el.innerHTML = `<table><thead><tr><th>Nome</th><th>Status</th><th>Progresso</th><th>Criado</th><th>Ações</th></tr></thead><tbody>
+  ${camps.map(c => {
+    const pct = c.total_contatos > 0 ? Math.round(c.enviados/c.total_contatos*100) : 0;
+    const editavel = c.status === 'rascunho' || c.status === 'pausado';
+    return `<tr>
+      <td>${c.nome}</td><td>${statusBadge(c.status)}</td>
+      <td style="min-width:160px">${c.enviados}/${c.total_contatos}<div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div></td>
+      <td>${new Date(c.criado_em).toLocaleDateString('pt-BR')}</td>
+      <td><div class="btn-group">
+        ${editavel ? `<button class="btn-secondary btn-sm" onclick="abrirEditorTemplate(${c.id},'${escapeJs(c.template)}')">✏ Template</button>` : ''}
+        ${(c.status==='rascunho'||c.status==='pausado') ? `<button class="btn-primary btn-sm" onclick="iniciar(${c.id})">▶</button>` : ''}
+        ${c.status==='em_andamento' ? `<button class="btn-warning btn-sm" onclick="pausar(${c.id})">⏸</button>` : ''}
+        <button class="btn-danger btn-sm" onclick="deletarCamp(${c.id})">✕</button>
+      </div></td>
+    </tr>`;
+  }).join('')}</tbody></table>`;
+}
+
+function escapeJs(s) { return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n'); }
+
+async function criarCampanha() {
+  const nome = document.getElementById('camp-nome').value.trim();
+  const template = document.getElementById('camp-template').value.trim();
+  if (!nome || !template) { toast('Preencha nome e template', 'err'); return; }
+  try {
+    const r = await fetch(`${API}/campanhas`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({nome,template}) });
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error);
+    toast(`Campanha "${nome}" criada!`, 'ok'); log(`Campanha "${nome}" criada com ${data.data.total_contatos} contatos`, 'ok');
+    document.getElementById('camp-nome').value = ''; document.getElementById('camp-template').value = '';
+    loadCampanhas();
+  } catch(e) { toast(e.message,'err'); }
+}
+
+function abrirEditorTemplate(id, template) {
+  document.getElementById('edit-camp-id').value = id;
+  document.getElementById('edit-template').value = template;
+  abrirModal('modal-template');
+}
+
+async function salvarTemplate() {
+  const id = document.getElementById('edit-camp-id').value;
+  const template = document.getElementById('edit-template').value.trim();
+  if (!template) { toast('Template vazio','err'); return; }
+  try {
+    const r = await fetch(`${API}/campanhas/${id}/template`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({template}) });
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error);
+    toast('Template atualizado!','ok'); fecharModal('modal-template'); loadCampanhas();
+  } catch(e) { toast(e.message,'err'); }
+}
+
+async function iniciar(id) {
+  try {
+    const r = await fetch(`${API}/campanhas/${id}/iniciar`, {method:'POST'});
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error);
+    toast(data.message,'ok'); log(data.message,'ok'); loadCampanhas();
+  } catch(e) { toast(e.message,'err'); }
+}
+
+async function pausar(id) {
+  await fetch(`${API}/campanhas/${id}/pausar`, {method:'POST'});
+  toast('Campanha pausada','ok'); loadCampanhas();
+}
+
+async function deletarCamp(id) {
+  if (!confirm('Remover campanha?')) return;
+  await fetch(`${API}/campanhas/${id}`, {method:'DELETE'});
+  toast('Removida','ok'); loadCampanhas();
+}
+
+// ─── Contatos ─────────────────────────────────────────────────────────────────
+function buscarContatos() { clearTimeout(buscaTimer); buscaTimer = setTimeout(()=>{contatosPage=1;loadContatos();},400); }
+
+async function loadContatos() {
+  const busca = document.getElementById('busca').value;
+  const r = await fetch(`${API}/contatos?page=${contatosPage}&limit=20${busca?'&busca='+encodeURIComponent(busca):''}`);
+  const data = await r.json();
+  const el = document.getElementById('tabela-contatos');
+  const rows = data.data || [];
+  if (!rows.length) { el.innerHTML = '<div class="empty">Nenhum contato</div>'; return; }
+  el.innerHTML = `<table><thead><tr><th>Número</th><th>Nome</th><th>Campos extras</th><th>Importado em</th></tr></thead><tbody>
+  ${rows.map(c=>`<tr><td>${c.numero}</td><td>${c.nome||'—'}</td><td style="color:var(--muted);font-size:11px">${Object.keys(c.dados||{}).filter(k=>k!=='nome').slice(0,4).join(', ')||'—'}</td><td>${new Date(c.criado_em).toLocaleDateString('pt-BR')}</td></tr>`).join('')}
+  </tbody></table>`;
+  const total = data.total || 0, pages = Math.ceil(total/20);
+  document.getElementById('paginacao').innerHTML =
+    `<span style="color:var(--muted);font-family:var(--mono);font-size:12px">${total} contatos</span>
+    ${contatosPage>1?`<button class="btn-secondary btn-sm" onclick="contatosPage--;loadContatos()">← Ant</button>`:''}
+    ${contatosPage<pages?`<button class="btn-secondary btn-sm" onclick="contatosPage++;loadContatos()">Próx →</button>`:''}`;
+}
+
+async function limparContatos() {
+  if (!confirm('Remover TODOS os contatos?')) return;
+  await fetch(`${API}/contatos`, {method:'DELETE'});
+  toast('Contatos removidos','ok'); loadContatos();
+}
+
+// ─── Chips ────────────────────────────────────────────────────────────────────
+async function loadChips() {
+  const r = await fetch(`${API}/chips`); const data = await r.json();
+  const chips = data.data || [];
+  const el = document.getElementById('lista-chips');
+  const conectados = chips.filter(c=>c.status==='open').length;
+  document.getElementById('chips-badge').textContent = `${conectados}/${chips.length} chips`;
+
+  if (!chips.length) { el.innerHTML = '<div class="empty">Nenhum chip cadastrado</div>'; return; }
+  el.innerHTML = chips.map(c => `
+    <div class="chip-card">
+      <div class="chip-info">
+        <div class="chip-dot ${c.status}"></div>
+        <div>
+          <div class="chip-name">${c.nome}</div>
+          <div class="chip-inst">${c.instancia} · ${c.status} · ${c.enviados_hoje} enviados hoje</div>
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn-secondary btn-sm" onclick="criarInstanciaChip('${c.instancia}')">+ Criar</button>
+        <button class="btn-secondary btn-sm" onclick="verQR('${c.instancia}','${c.nome}')">📷 QR</button>
+        <button class="btn-secondary btn-sm" onclick="pingChip('${c.instancia}')">↻</button>
+        <button class="btn-danger btn-sm" onclick="removerChip(${c.id})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function adicionarChip() {
+  const nome = document.getElementById('chip-nome').value.trim();
+  const instancia = document.getElementById('chip-inst').value.trim().replace(/\s/g,'');
+  if (!nome||!instancia) { toast('Preencha nome e instância','err'); return; }
+  try {
+    const r = await fetch(`${API}/chips`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nome,instancia})});
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error);
+    toast(`Chip "${nome}" adicionado!`,'ok');
+    document.getElementById('chip-nome').value=''; document.getElementById('chip-inst').value='';
+    loadChips();
+  } catch(e) { toast(e.message,'err'); }
+}
+
+async function removerChip(id) {
+  if (!confirm('Remover chip?')) return;
+  await fetch(`${API}/chips/${id}`, {method:'DELETE'});
+  toast('Chip removido','ok'); loadChips();
+}
+
+async function pingChip(instancia) {
+  try {
+    const r = await fetch(`${API}/chips/${instancia}/status`);
+    const data = await r.json();
+    toast(`${instancia}: ${data.data?.state}`,'ok'); loadChips();
+  } catch(e) { toast(e.message,'err'); }
+}
+
+async function sincronizarChips() {
+  toast('Sincronizando...','ok');
+  await fetch(`${API}/chips/sincronizar`, {method:'POST'});
+  loadChips();
+}
+
+async function criarInstanciaChip(instancia) {
+  try {
+    await fetch(`${API}/chips/${instancia}/criar`, {method:'POST'});
+    toast(`Instância ${instancia} criada! Obtenha o QR Code.`,'ok');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+async function verQR(instancia, nome) {
+  qrInstanciaAtual = instancia;
+  document.getElementById('qr-titulo').textContent = `QR Code — ${nome}`;
+  document.getElementById('qr-content').innerHTML = '<div class="empty">Carregando...</div>';
+  abrirModal('modal-qr');
+  await recarregarQR();
+}
+
+async function recarregarQR() {
+  if (!qrInstanciaAtual) return;
+  try {
+    const r = await fetch(`${API}/chips/${qrInstanciaAtual}/qrcode`);
+    const data = await r.json();
+    const qr = data.data?.qrcode?.base64 || data.data?.base64;
+    document.getElementById('qr-content').innerHTML = qr
+      ? `<img class="qr-img" src="${qr}"><p style="color:var(--muted);font-family:var(--mono);font-size:12px">Escaneie com o WhatsApp</p>`
+      : `<div class="log-box">${JSON.stringify(data.data,null,2)}</div>`;
+  } catch(e) { document.getElementById('qr-content').innerHTML = `<div style="color:var(--red);font-family:var(--mono)">${e.message}</div>`; }
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+loadDashboard();
+loadChips();
+setInterval(loadDashboard, 10000);
+setInterval(loadChips, 30000);
+</script>
+</body>
+</html>
