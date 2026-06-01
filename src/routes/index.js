@@ -105,9 +105,15 @@ router.get('/campanhas', async (req, res) => {
 
 router.post('/campanhas', async (req, res) => {
   try {
-    const { nome, template } = req.body;
+    const { nome, template, delay_min = 20, delay_max = 50 } = req.body;
     if (!nome || !template) return res.status(400).json({ ok: false, error: 'nome e template são obrigatórios' });
-    const campanha = await pool.query('INSERT INTO campanhas (nome, template) VALUES ($1, $2) RETURNING *', [nome, template]);
+    if (delay_min < 5) return res.status(400).json({ ok: false, error: 'delay_min mínimo é 5 segundos' });
+    if (delay_max <= delay_min) return res.status(400).json({ ok: false, error: 'delay_max deve ser maior que delay_min' });
+
+    const campanha = await pool.query(
+      'INSERT INTO campanhas (nome, template, delay_min, delay_max) VALUES ($1, $2, $3, $4) RETURNING *',
+      [nome, template, delay_min, delay_max]
+    );
     const campanhaId = campanha.rows[0].id;
     const contatos = await pool.query('SELECT id FROM contatos');
     if (!contatos.rows.length) return res.status(400).json({ ok: false, error: 'Nenhum contato importado ainda' });
@@ -141,6 +147,22 @@ router.patch('/campanhas/:id/template', async (req, res) => {
       await pool.query('UPDATE disparos SET mensagem = $1 WHERE id = $2', [msg, row.id]);
     }
     res.json({ ok: true, data: campanha });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// Editar delay de uma campanha (só em rascunho ou pausado)
+router.patch('/campanhas/:id/delay', async (req, res) => {
+  try {
+    const { delay_min, delay_max } = req.body;
+    if (!delay_min || !delay_max) return res.status(400).json({ ok: false, error: 'delay_min e delay_max são obrigatórios' });
+    if (delay_min < 5) return res.status(400).json({ ok: false, error: 'delay_min mínimo é 5 segundos' });
+    if (delay_max <= delay_min) return res.status(400).json({ ok: false, error: 'delay_max deve ser maior que delay_min' });
+    const result = await pool.query(
+      `UPDATE campanhas SET delay_min = $1, delay_max = $2 WHERE id = $3 AND status IN ('rascunho','pausado') RETURNING *`,
+      [delay_min, delay_max, req.params.id]
+    );
+    if (!result.rows.length) return res.status(400).json({ ok: false, error: 'Campanha não encontrada ou não editável' });
+    res.json({ ok: true, data: result.rows[0] });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 

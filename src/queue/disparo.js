@@ -4,11 +4,12 @@ const pool = require('../db');
 const { enviarMensagem, proximoChip, registrarUso } = require('../services/evolution');
 const { renderTemplate } = require('../services/csv');
 
-const DELAY_MIN = parseInt(process.env.DELAY_MIN_SEGUNDOS || '15') * 1000;
-const DELAY_MAX = parseInt(process.env.DELAY_MAX_SEGUNDOS || '45') * 1000;
+// Fallback para o .env caso a campanha não tenha delay definido
+const DELAY_MIN_PADRAO = parseInt(process.env.DELAY_MIN_SEGUNDOS || '20') * 1000;
+const DELAY_MAX_PADRAO = parseInt(process.env.DELAY_MAX_SEGUNDOS || '50') * 1000;
 
-function delayAleatorio() {
-  return Math.floor(Math.random() * (DELAY_MAX - DELAY_MIN) + DELAY_MIN);
+function delayAleatorio(minMs, maxMs) {
+  return Math.floor(Math.random() * (maxMs - minMs) + minMs);
 }
 
 const disparoQueue = new Bull('disparos', {
@@ -26,7 +27,7 @@ const disparoQueue = new Bull('disparos', {
 
 // Processa 1 mensagem por vez para controlar o ritmo
 disparoQueue.process(1, async (job) => {
-  const { disparoId, numero, mensagem, campanhaId } = job.data;
+  const { disparoId, numero, mensagem, campanhaId, delayMin, delayMax } = job.data;
 
   // Pega o próximo chip disponível (round-robin por menor uso)
   const chip = await proximoChip();
@@ -43,7 +44,8 @@ disparoQueue.process(1, async (job) => {
 
     await pool.query(`UPDATE campanhas SET enviados = enviados + 1 WHERE id = $1`, [campanhaId]);
 
-    await new Promise(r => setTimeout(r, delayAleatorio()));
+    // Delay usando os valores da campanha
+    await new Promise(r => setTimeout(r, delayAleatorio(delayMin, delayMax)));
     return { ok: true, chip: chip.instancia };
   } catch (err) {
     await pool.query(`
@@ -65,7 +67,9 @@ async function enfileirarCampanha(campanhaId) {
   const campanha = await pool.query('SELECT * FROM campanhas WHERE id = $1', [campanhaId]);
   if (!campanha.rows.length) throw new Error('Campanha não encontrada');
 
-  const template = campanha.rows[0].template;
+  const { template, delay_min, delay_max } = campanha.rows[0];
+  const delayMin = (delay_min || 20) * 1000;
+  const delayMax = (delay_max || 50) * 1000;
 
   const disparos = await pool.query(`
     SELECT d.id, c.numero, c.nome, c.dados
@@ -79,8 +83,11 @@ async function enfileirarCampanha(campanhaId) {
     const dados = { nome: row.nome, numero: row.numero, ...row.dados };
     const mensagem = renderTemplate(template, dados);
     await pool.query('UPDATE disparos SET mensagem = $1 WHERE id = $2', [mensagem, row.id]);
-    await disparoQueue.add({ disparoId: row.id, numero: row.numero, mensagem, campanhaId }, { delay });
-    delay += DELAY_MIN;
+    await disparoQueue.add(
+      { disparoId: row.id, numero: row.numero, mensagem, campanhaId, delayMin, delayMax },
+      { delay }
+    );
+    delay += delayMin;
   }
 
   await pool.query(`UPDATE campanhas SET status = 'em_andamento', iniciado_em = NOW() WHERE id = $1`, [campanhaId]);

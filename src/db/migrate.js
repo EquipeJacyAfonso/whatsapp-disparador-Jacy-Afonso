@@ -15,6 +15,8 @@ async function migrate() {
         total_contatos INTEGER DEFAULT 0,
         enviados INTEGER DEFAULT 0,
         falhas INTEGER DEFAULT 0,
+        delay_min INTEGER DEFAULT 20,
+        delay_max INTEGER DEFAULT 50,
         criado_em TIMESTAMP DEFAULT NOW(),
         iniciado_em TIMESTAMP,
         finalizado_em TIMESTAMP

@@ -149,6 +149,20 @@
     <div class="hint">Use <strong>{nome}</strong>, <strong>{numero}</strong> e qualquer coluna do CSV entre chaves.<br>
     Ex: <em>Olá {nome}! Temos uma oferta especial para {cidade} 🎉</em></div>
     <textarea id="camp-template" placeholder="Olá {nome}, temos uma novidade para você! 🎁"></textarea>
+    <div class="row">
+      <div>
+        <label>Delay mínimo entre mensagens (segundos)</label>
+        <input type="number" id="camp-delay-min" value="20" min="5" max="3600">
+      </div>
+      <div>
+        <label>Delay máximo entre mensagens (segundos)</label>
+        <input type="number" id="camp-delay-max" value="50" min="6" max="3600">
+      </div>
+    </div>
+    <div class="hint" style="margin-top:-8px">
+      ⏱ Um valor aleatório entre <strong>mínimo</strong> e <strong>máximo</strong> será usado entre cada envio.<br>
+      Recomendado: mín <strong>20s</strong> / máx <strong>50s</strong> para menor risco de bloqueio.
+    </div>
     <button class="btn-primary" onclick="criarCampanha()">+ Criar campanha</button>
   </div>
   <div class="card">
@@ -200,6 +214,29 @@
     <div class="modal-footer">
       <button class="btn-secondary" onclick="fecharModal('modal-template')">Cancelar</button>
       <button class="btn-primary" onclick="salvarTemplate()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR DELAY -->
+<div class="modal-backdrop" id="modal-delay">
+  <div class="modal">
+    <h3>Editar tempo de espera</h3>
+    <input type="hidden" id="edit-delay-camp-id">
+    <div class="row">
+      <div>
+        <label>Delay mínimo (segundos)</label>
+        <input type="number" id="edit-delay-min" min="5" max="3600">
+      </div>
+      <div>
+        <label>Delay máximo (segundos)</label>
+        <input type="number" id="edit-delay-max" min="6" max="3600">
+      </div>
+    </div>
+    <div class="hint">⏱ Valor aleatório entre mínimo e máximo entre cada mensagem enviada.</div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="fecharModal('modal-delay')">Cancelar</button>
+      <button class="btn-primary" onclick="salvarDelay()">Salvar</button>
     </div>
   </div>
 </div>
@@ -321,16 +358,18 @@ async function loadCampanhas() {
   const el = document.getElementById('lista-campanhas');
   const camps = data.data || [];
   if (!camps.length) { el.innerHTML = '<div class="empty">Nenhuma campanha</div>'; return; }
-  el.innerHTML = `<table><thead><tr><th>Nome</th><th>Status</th><th>Progresso</th><th>Criado</th><th>Ações</th></tr></thead><tbody>
+  el.innerHTML = `<table><thead><tr><th>Nome</th><th>Status</th><th>Progresso</th><th>Delay</th><th>Criado</th><th>Ações</th></tr></thead><tbody>
   ${camps.map(c => {
     const pct = c.total_contatos > 0 ? Math.round(c.enviados/c.total_contatos*100) : 0;
     const editavel = c.status === 'rascunho' || c.status === 'pausado';
     return `<tr>
       <td>${c.nome}</td><td>${statusBadge(c.status)}</td>
       <td style="min-width:160px">${c.enviados}/${c.total_contatos}<div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div></td>
+      <td style="color:var(--muted);white-space:nowrap">${c.delay_min||20}s – ${c.delay_max||50}s</td>
       <td>${new Date(c.criado_em).toLocaleDateString('pt-BR')}</td>
       <td><div class="btn-group">
         ${editavel ? `<button class="btn-secondary btn-sm" onclick="abrirEditorTemplate(${c.id},'${escapeJs(c.template)}')">✏ Template</button>` : ''}
+        ${editavel ? `<button class="btn-secondary btn-sm" onclick="abrirEditorDelay(${c.id},${c.delay_min||20},${c.delay_max||50})">⏱ Delay</button>` : ''}
         ${(c.status==='rascunho'||c.status==='pausado') ? `<button class="btn-primary btn-sm" onclick="iniciar(${c.id})">▶</button>` : ''}
         ${c.status==='em_andamento' ? `<button class="btn-warning btn-sm" onclick="pausar(${c.id})">⏸</button>` : ''}
         <button class="btn-danger btn-sm" onclick="deletarCamp(${c.id})">✕</button>
@@ -344,12 +383,16 @@ function escapeJs(s) { return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replac
 async function criarCampanha() {
   const nome = document.getElementById('camp-nome').value.trim();
   const template = document.getElementById('camp-template').value.trim();
+  const delay_min = parseInt(document.getElementById('camp-delay-min').value) || 20;
+  const delay_max = parseInt(document.getElementById('camp-delay-max').value) || 50;
   if (!nome || !template) { toast('Preencha nome e template', 'err'); return; }
+  if (delay_min < 5) { toast('Delay mínimo é 5 segundos', 'err'); return; }
+  if (delay_max <= delay_min) { toast('Delay máximo deve ser maior que o mínimo', 'err'); return; }
   try {
-    const r = await fetch(`${API}/campanhas`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({nome,template}) });
+    const r = await fetch(`${API}/campanhas`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({nome, template, delay_min, delay_max}) });
     const data = await r.json();
     if (!data.ok) throw new Error(data.error);
-    toast(`Campanha "${nome}" criada!`, 'ok'); log(`Campanha "${nome}" criada com ${data.data.total_contatos} contatos`, 'ok');
+    toast(`Campanha "${nome}" criada!`, 'ok'); log(`Campanha "${nome}" criada — delay ${delay_min}s–${delay_max}s`, 'ok');
     document.getElementById('camp-nome').value = ''; document.getElementById('camp-template').value = '';
     loadCampanhas();
   } catch(e) { toast(e.message,'err'); }
@@ -370,6 +413,28 @@ async function salvarTemplate() {
     const data = await r.json();
     if (!data.ok) throw new Error(data.error);
     toast('Template atualizado!','ok'); fecharModal('modal-template'); loadCampanhas();
+  } catch(e) { toast(e.message,'err'); }
+}
+
+function abrirEditorDelay(id, min, max) {
+  document.getElementById('edit-delay-camp-id').value = id;
+  document.getElementById('edit-delay-min').value = min;
+  document.getElementById('edit-delay-max').value = max;
+  abrirModal('modal-delay');
+}
+
+async function salvarDelay() {
+  const id = document.getElementById('edit-delay-camp-id').value;
+  const delay_min = parseInt(document.getElementById('edit-delay-min').value);
+  const delay_max = parseInt(document.getElementById('edit-delay-max').value);
+  if (delay_min < 5) { toast('Mínimo é 5 segundos','err'); return; }
+  if (delay_max <= delay_min) { toast('Máximo deve ser maior que mínimo','err'); return; }
+  try {
+    const r = await fetch(`${API}/campanhas/${id}/delay`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({delay_min, delay_max}) });
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error);
+    toast(`Delay atualizado: ${delay_min}s – ${delay_max}s`, 'ok');
+    fecharModal('modal-delay'); loadCampanhas();
   } catch(e) { toast(e.message,'err'); }
 }
 
