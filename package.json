@@ -1,12 +1,12 @@
 {
   "name": "whatsapp-disparador",
-  "version": "2.0.0",
-  "description": "Sistema de disparo WhatsApp com Evolution API",
+  "version": "5.0.0",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "setup": "node src/db/migrate.js"
+    "setup": "node src/db/migrate.js",
+    "migrate-v4": "node src/db/migrate-v4.js"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -16,7 +16,9 @@
     "axios": "^1.6.5",
     "multer": "^1.4.5-lts.1",
     "dotenv": "^16.4.1",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "node-cron": "^3.0.3",
+    "googleapis": "^144.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.3"
