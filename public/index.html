@@ -101,6 +101,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   <button class="tab" onclick="showPage('chips',this)">Chips</button>
   <button class="tab" onclick="showPage('blacklist',this)">Blacklist</button>
   <button class="tab" onclick="showPage('relatorios',this)">Relatórios</button>
+  <button class="tab" onclick="showPage('antiban',this)">🛡 Anti-ban</button>
   <button class="tab" onclick="showPage('config',this)">⚙ Configurações</button>
 </nav>
 
@@ -258,6 +259,67 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   <div id="relatorio-conteudo"></div>
 </div>
 
+<!-- ANTI-BAN -->
+<div class="page" id="page-antiban">
+  <h2>🛡 Proteção Anti-ban</h2>
+
+  <div class="card">
+    <h3>Janela de horário</h3>
+    <div class="hint">Mensagens só são enviadas dentro do horário configurado. Fora dele, os jobs ficam na fila e disparam automaticamente quando a janela abre.</div>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+      <label style="margin:0;display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="ab-horario-ativo" style="width:auto;margin:0" onchange="toggleHorario()">
+        <span style="font-family:var(--mono);font-size:12px">Ativar janela de horário</span>
+      </label>
+    </div>
+    <div id="ab-horario-campos" style="display:none">
+      <div class="row">
+        <div><label>Hora de início (0–23)</label><input type="number" id="ab-hinicio" min="0" max="23" value="8"></div>
+        <div><label>Hora de fim (0–23)</label><input type="number" id="ab-hfim" min="0" max="23" value="20"></div>
+      </div>
+      <div class="hint">Exemplo: início <strong>8</strong>, fim <strong>20</strong> → dispara das 8h às 19h59.</div>
+    </div>
+    <button class="bp" onclick="salvarAntiban('horario')">💾 Salvar janela</button>
+  </div>
+
+  <div class="card">
+    <h3>Spintax — variação automática de texto</h3>
+    <div class="hint">Use <strong>{opção1|opção2|opção3}</strong> no template para variar o texto a cada mensagem enviada.<br>
+    Suporta aninhamento: <strong>{Olá|{Oi|Ei}, tudo bem?}</strong><br><br>
+    Exemplo completo:<br>
+    <strong>{Olá|Oi|Bom dia}, {nome}! 👋</strong><br>
+    <strong>{Temos uma novidade|Preparamos algo especial} para você{!| hoje!| esta semana!}</strong></div>
+    <div class="card" style="background:var(--bg);margin-bottom:0">
+      <h3>Testar spintax</h3>
+      <textarea id="ab-spintax-teste" placeholder="{Olá|Oi|Bom dia}, {nome}! Temos {uma oferta|uma novidade|algo especial} para você." style="min-height:80px"></textarea>
+      <button class="bs" onclick="testarSpintax()">▶ Gerar 5 variações</button>
+      <div id="ab-spintax-result" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Pausa automática por falhas</h3>
+    <div class="hint">Se um chip atingir o número de falhas consecutivas configurado em 30 minutos, ele é pausado automaticamente por 30 minutos. Erros que indicam ban pausam o chip por 24h.</div>
+    <label>Falhas consecutivas para pausa automática (em 30 min)</label>
+    <input type="number" id="ab-threshold" min="1" max="20" value="3">
+    <button class="bp" onclick="salvarAntiban('threshold')">💾 Salvar</button>
+  </div>
+
+  <div class="card">
+    <h3>Intervalo entre campanhas por chip</h3>
+    <div class="hint">Tempo mínimo de descanso (em minutos) entre campanhas para o mesmo chip. <strong>0</strong> = sem intervalo.</div>
+    <label>Intervalo mínimo (minutos)</label>
+    <input type="number" id="ab-intervalo" min="0" value="0">
+    <button class="bp" onclick="salvarAntiban('intervalo')">💾 Salvar</button>
+  </div>
+
+  <div class="card">
+    <h3>Status atual de proteção</h3>
+    <div id="ab-status"><div class="empty">Carregando...</div></div>
+    <button class="bs" style="margin-top:12px" onclick="carregarStatusAntiban()">↻ Atualizar</button>
+  </div>
+</div>
+
 <!-- CONFIGURAÇÕES -->
 <div class="page" id="page-config">
   <h2>⚙ Configurações</h2>
@@ -373,6 +435,7 @@ function showPage(n,btn){
   if(n==='blacklist')loadBL();
   if(n==='relatorios')loadRelCamps();
   if(n==='config')loadConfig();
+  if(n==='antiban'){loadAntiban();}
 }
 function showSection(n,btn){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
