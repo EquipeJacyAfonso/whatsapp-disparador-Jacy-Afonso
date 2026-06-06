@@ -27,3 +27,18 @@ async function run() {
 }
 
 run();
+
+// Adiciona configs de sincronização automática
+async function addSyncConfig() {
+  const pool2 = require('./index');
+  const client = await pool2.connect();
+  try {
+    await client.query(`
+      INSERT INTO configuracoes (chave, valor, descricao) VALUES
+        ('sync_intervalo', '0',  'Intervalo de sincronização automática com Sheets (horas, 0=desativado)'),
+        ('sync_proxima',   '',   'Timestamp da próxima sincronização automática')
+      ON CONFLICT (chave) DO NOTHING;
+    `);
+    console.log('✅ Configs de sync adicionadas!');
+  } finally { client.release(); }
+}

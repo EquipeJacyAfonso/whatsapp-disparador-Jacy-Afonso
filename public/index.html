@@ -67,6 +67,18 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
 .drop:hover,.drop.dg{border-color:var(--green);color:var(--green);background:var(--gdim)}
 .drop input{display:none}
 .aq-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:3px;margin-top:7px}
+.step{border:1px solid var(--border);border-radius:6px;margin-bottom:7px;overflow:hidden}
+.step-header{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;background:var(--surface2);transition:background .15s}
+.step-header:hover{background:var(--border)}
+.step-num{width:20px;height:20px;border-radius:50%;background:var(--border);color:var(--muted);font-family:var(--mono);font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-num.done{background:var(--green);color:#000}
+.step-title{flex:1;font-family:var(--mono);font-size:11px;color:var(--text)}
+.step-arrow{font-size:9px;color:var(--muted)}
+.step-body{padding:14px;font-family:var(--mono);font-size:11px;line-height:2;border-top:1px solid var(--border)}
+.step-body p{margin-bottom:4px}
+.step-body strong{color:var(--yellow)}
+.cfg-saved{position:relative}
+.cfg-saved::after{content:'✅ Salvo';position:absolute;right:10px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:10px;color:var(--green);pointer-events:none}
 .aq-day{background:var(--surface2);border-radius:4px;padding:5px 3px;text-align:center;font-family:var(--mono);font-size:9px;color:var(--muted)}
 .aq-day span{display:block;font-size:11px;color:var(--text);margin-top:1px}
 #toast{position:fixed;bottom:22px;right:22px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 18px;font-family:var(--mono);font-size:12px;transform:translateY(70px);opacity:0;transition:all .3s;z-index:999;max-width:340px}
@@ -324,47 +336,205 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
 <div class="page" id="page-config">
   <h2>⚙ Configurações</h2>
 
-  <div class="card">
-    <h3>Evolution API</h3>
-    <div class="hint">Configurações de conexão com a Evolution API. Salvas no banco de dados.</div>
-    <label>URL da Evolution API</label>
-    <input type="text" id="cfg-evo-url" placeholder="http://localhost:8080">
-    <label>Chave de autenticação (API Key)</label>
-    <input type="password" id="cfg-evo-key" placeholder="sua_chave_aqui">
-    <button class="bp" onclick="salvarConfig('evolution')">💾 Salvar configurações da API</button>
+  <!-- Indicadores de status no topo -->
+  <div class="row3" style="margin-bottom:18px">
+    <div class="stat" id="cfg-stat-evo" style="cursor:pointer" onclick="document.getElementById('sec-evo').scrollIntoView({behavior:'smooth'})">
+      <div class="stat-l">Evolution API</div>
+      <div id="cfg-evo-badge" style="font-family:var(--mono);font-size:13px;color:var(--muted)">Verificando...</div>
+    </div>
+    <div class="stat" id="cfg-stat-sheets" style="cursor:pointer" onclick="document.getElementById('sec-sheets').scrollIntoView({behavior:'smooth'})">
+      <div class="stat-l">Google Sheets</div>
+      <div id="cfg-sheets-badge" style="font-family:var(--mono);font-size:13px;color:var(--muted)">Verificando...</div>
+    </div>
+    <div class="stat" id="cfg-stat-db">
+      <div class="stat-l">Banco de dados</div>
+      <div id="cfg-db-badge" style="font-family:var(--mono);font-size:13px;color:var(--muted)">Verificando...</div>
+    </div>
   </div>
 
-  <div class="card">
-    <h3>Delays padrão</h3>
-    <div class="hint">Usado como fallback quando uma campanha não tem delay definido.</div>
+  <!-- Evolution API -->
+  <div class="card" id="sec-evo">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="margin:0">🔌 Evolution API</h3>
+      <span id="evo-status-badge" class="badge bg-gray">não testado</span>
+    </div>
+    <div class="hint">Configurações de conexão com a Evolution API. Salvas no banco — sem editar arquivos.</div>
     <div class="row">
-      <div><label>Delay mínimo padrão (segundos)</label><input type="number" id="cfg-dmin" value="20" min="5"></div>
-      <div><label>Delay máximo padrão (segundos)</label><input type="number" id="cfg-dmax" value="50" min="6"></div>
+      <div>
+        <label>URL da Evolution API</label>
+        <input type="text" id="cfg-evo-url" placeholder="http://localhost:8080">
+      </div>
+      <div>
+        <label>Chave de autenticação (API Key)</label>
+        <input type="password" id="cfg-evo-key" placeholder="sua_chave_aqui">
+        <div style="display:flex;gap:4px;margin-top:-10px;margin-bottom:14px">
+          <button class="bs sm" onclick="toggleSenha('cfg-evo-key')">👁 Ver</button>
+        </div>
+      </div>
+    </div>
+    <div class="bg">
+      <button class="bp" onclick="salvarConfig('evolution')">💾 Salvar</button>
+      <button class="bs" onclick="testarEvolution()">🔌 Testar conexão</button>
+    </div>
+    <div id="evo-test-result" style="margin-top:12px"></div>
+  </div>
+
+  <!-- Delays -->
+  <div class="card">
+    <h3>⏱ Delays padrão</h3>
+    <div class="hint">Intervalo padrão entre mensagens. Campanhas podem ter delay próprio que substitui este.</div>
+    <div class="row">
+      <div><label>Mínimo (segundos)</label><input type="number" id="cfg-dmin" value="20" min="5"></div>
+      <div><label>Máximo (segundos)</label><input type="number" id="cfg-dmax" value="50" min="6"></div>
     </div>
     <button class="bp" onclick="salvarConfig('delays')">💾 Salvar delays</button>
   </div>
 
-  <div class="card">
-    <h3>Google Sheets</h3>
-    <div class="hint">Cole o ID da planilha e o JSON completo da Service Account para importar contatos diretamente do Sheets.<br>
-    O JSON é obtido no Google Cloud Console → Credenciais → Conta de serviço → Baixar JSON.</div>
-    <label>ID padrão da planilha</label>
-    <input type="text" id="cfg-sheet-id" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms">
-    <label>Range padrão</label>
-    <input type="text" id="cfg-sheet-range" placeholder="Sheet1!A:Z">
-    <label>JSON da Service Account (cole o conteúdo completo)</label>
-    <textarea id="cfg-sheet-creds" placeholder='{"type":"service_account","project_id":"..."}' style="min-height:120px;font-size:11px"></textarea>
+  <!-- Google Sheets -->
+  <div class="card" id="sec-sheets">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="margin:0">📊 Google Sheets</h3>
+      <span id="sheets-status-badge" class="badge bg-gray">não configurado</span>
+    </div>
+
+    <!-- Passo a passo -->
+    <div style="margin-bottom:18px">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Como configurar</div>
+      <div id="sheets-steps">
+        <div class="step" id="step-1">
+          <div class="step-header" onclick="toggleStep(1)">
+            <span class="step-num" id="snum-1">1</span>
+            <span class="step-title">Criar projeto no Google Cloud</span>
+            <span class="step-arrow">▼</span>
+          </div>
+          <div class="step-body" id="sbody-1">
+            <p>1. Acesse <a href="https://console.cloud.google.com" target="_blank" style="color:var(--blue)">console.cloud.google.com</a></p>
+            <p>2. Clique em <strong>Selecionar projeto → Novo projeto</strong></p>
+            <p>3. Dê um nome (ex: "disparador") e clique em <strong>Criar</strong></p>
+            <button class="bs sm" style="margin-top:8px" onclick="marcarStep(1)">✅ Feito</button>
+          </div>
+        </div>
+        <div class="step" id="step-2">
+          <div class="step-header" onclick="toggleStep(2)">
+            <span class="step-num" id="snum-2">2</span>
+            <span class="step-title">Ativar Google Sheets API</span>
+            <span class="step-arrow">▼</span>
+          </div>
+          <div class="step-body" id="sbody-2" style="display:none">
+            <p>1. No menu lateral, vá em <strong>APIs e serviços → Biblioteca</strong></p>
+            <p>2. Busque por <strong>Google Sheets API</strong></p>
+            <p>3. Clique em <strong>Ativar</strong></p>
+            <button class="bs sm" style="margin-top:8px" onclick="marcarStep(2)">✅ Feito</button>
+          </div>
+        </div>
+        <div class="step" id="step-3">
+          <div class="step-header" onclick="toggleStep(3)">
+            <span class="step-num" id="snum-3">3</span>
+            <span class="step-title">Criar Service Account e baixar JSON</span>
+            <span class="step-arrow">▼</span>
+          </div>
+          <div class="step-body" id="sbody-3" style="display:none">
+            <p>1. Vá em <strong>APIs e serviços → Credenciais</strong></p>
+            <p>2. Clique em <strong>Criar credenciais → Conta de serviço</strong></p>
+            <p>3. Preencha o nome e clique em <strong>Concluído</strong></p>
+            <p>4. Clique na conta criada → aba <strong>Chaves → Adicionar chave → JSON</strong></p>
+            <p>5. Um arquivo JSON será baixado — cole o conteúdo abaixo</p>
+            <button class="bs sm" style="margin-top:8px" onclick="marcarStep(3)">✅ Feito</button>
+          </div>
+        </div>
+        <div class="step" id="step-4">
+          <div class="step-header" onclick="toggleStep(4)">
+            <span class="step-num" id="snum-4">4</span>
+            <span class="step-title">Compartilhar planilha com a Service Account</span>
+            <span class="step-arrow">▼</span>
+          </div>
+          <div class="step-body" id="sbody-4" style="display:none">
+            <p>1. Abra sua planilha no Google Sheets</p>
+            <p>2. Clique em <strong>Compartilhar</strong> (botão verde, canto superior direito)</p>
+            <p>3. Cole o e-mail da service account (termina em <strong>@...iam.gserviceaccount.com</strong>)</p>
+            <p>4. Selecione permissão <strong>Visualizador</strong> e clique em <strong>Enviar</strong></p>
+            <div class="hint" style="margin-top:8px">💡 O e-mail da service account está dentro do JSON que você baixou, no campo <strong>"client_email"</strong></div>
+            <button class="bs sm" style="margin-top:8px" onclick="marcarStep(4)">✅ Feito</button>
+          </div>
+        </div>
+        <div class="step" id="step-5">
+          <div class="step-header" onclick="toggleStep(5)">
+            <span class="step-num" id="snum-5">5</span>
+            <span class="step-title">Formato da planilha</span>
+            <span class="step-arrow">▼</span>
+          </div>
+          <div class="step-body" id="sbody-5" style="display:none">
+            <p>A primeira linha deve ser o cabeçalho. A coluna <strong>numero</strong> é obrigatória:</p>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:10px;margin:8px 0;font-family:var(--mono);font-size:11px;overflow-x:auto">
+              <span style="color:var(--green)">numero</span> | nome | cidade | produto<br>
+              11999998888 | Maria | São Paulo | Plano A<br>
+              21988887777 | João | Rio | Plano B
+            </div>
+            <p>As colunas extras ficam disponíveis como <strong>{variáveis}</strong> no template da campanha.</p>
+            <button class="bs sm" style="margin-top:8px" onclick="marcarStep(5)">✅ Entendido</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Campos de configuração -->
+    <label>ID da planilha</label>
+    <div style="display:flex;gap:7px;margin-bottom:14px">
+      <input type="text" id="cfg-sheet-id" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms" style="margin:0;flex:1">
+      <button class="bs sm" onclick="extrairIdDaURL()">📋 Extrair da URL</button>
+    </div>
+    <div class="hint">O ID está na URL da planilha: docs.google.com/spreadsheets/d/<strong style="color:var(--green)">ID_AQUI</strong>/edit</div>
+
+    <label>Range (aba e colunas)</label>
+    <input type="text" id="cfg-sheet-range" placeholder="Sheet1!A:Z" value="Sheet1!A:Z">
+
+    <label>JSON da Service Account</label>
+    <div style="position:relative;margin-bottom:14px">
+      <textarea id="cfg-sheet-creds" placeholder='Cole aqui o conteúdo completo do arquivo JSON baixado do Google Cloud...' style="min-height:100px;font-size:11px;margin:0;padding-right:80px"></textarea>
+      <button class="bs sm" style="position:absolute;top:8px;right:8px" onclick="document.getElementById('creds-file').click()">📁 Arquivo</button>
+      <input type="file" id="creds-file" accept=".json" style="display:none" onchange="lerArquivoCreds(this)">
+    </div>
     <div id="creds-status" style="margin-bottom:14px"></div>
-    <button class="bp" onclick="salvarConfig('sheets')">💾 Salvar configurações do Sheets</button>
+    <div id="client-email-info" style="margin-bottom:14px"></div>
+
+    <div class="bg">
+      <button class="bp" onclick="salvarConfig('sheets')">💾 Salvar configurações</button>
+      <button class="bs" onclick="testarSheets()">📊 Testar conexão</button>
+    </div>
+    <div id="sheets-test-result" style="margin-top:12px"></div>
   </div>
 
+  <!-- Sincronização automática Sheets → Banco -->
   <div class="card">
-    <h3>Diagnóstico</h3>
-    <div class="bg">
-      <button class="bs" onclick="testarEvolution()">🔌 Testar Evolution API</button>
-      <button class="bs" onclick="testarSheets()">📊 Testar Google Sheets</button>
+    <h3>🔄 Sincronização automática Sheets → Banco</h3>
+    <div class="hint">Configure para importar contatos do Sheets automaticamente em intervalos regulares. O banco sempre reflete a planilha.</div>
+    <div class="row">
+      <div>
+        <label>Sincronizar a cada (horas, 0 = desativado)</label>
+        <input type="number" id="cfg-sync-intervalo" min="0" max="24" value="0" placeholder="0">
+      </div>
+      <div>
+        <label>Próxima sincronização</label>
+        <div id="cfg-sync-proxima" style="font-family:var(--mono);font-size:12px;color:var(--muted);padding:9px 0">—</div>
+      </div>
     </div>
-    <div id="diag-result" style="margin-top:14px"></div>
+    <div class="bg">
+      <button class="bp" onclick="salvarConfig('sync')">💾 Salvar</button>
+      <button class="bs" onclick="sincronizarAgora()">▶ Sincronizar agora</button>
+    </div>
+    <div id="sync-result" style="margin-top:12px"></div>
+  </div>
+
+  <!-- Diagnóstico geral -->
+  <div class="card">
+    <h3>🔍 Diagnóstico</h3>
+    <div class="bg" style="margin-bottom:12px">
+      <button class="bs" onclick="testarTudo()">▶ Testar tudo</button>
+      <button class="bs" onclick="testarEvolution()">🔌 Evolution API</button>
+      <button class="bs" onclick="testarSheets()">📊 Google Sheets</button>
+      <button class="bs" onclick="testarBanco()">🗄 Banco de dados</button>
+    </div>
+    <div id="diag-result"></div>
   </div>
 </div>
 
@@ -480,21 +650,38 @@ async function loadDash(){
     document.getElementById('s-falh').textContent=camps.reduce((s,c)=>s+(c.falhas||0),0);
 
     const ativas=camps.filter(c=>c.status==='em_andamento');
+    const concluidas=camps.filter(c=>c.status==='concluido').slice(0,3);
     const dc=document.getElementById('dash-camps');
-    dc.innerHTML=ativas.length?ativas.map(c=>{
-      const pct=c.total_contatos>0?Math.round(c.enviados/c.total_contatos*100):0;
-      return `<div style="margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-          <span style="font-family:var(--mono);font-size:12px">${c.nome}</span>
-          <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${c.enviados}/${c.total_contatos} — ${pct}%</span>
-        </div>
-        <div class="bar"><div class="bar-f" style="width:${pct}%"></div></div>
-      </div>`;
-    }).join(''):'<div class="empty">Nenhuma campanha em andamento</div>';
+    let htmlCamps='';
+    if(ativas.length){
+      htmlCamps+=ativas.map(c=>{
+        const pct=c.total_contatos>0?Math.round(c.enviados/c.total_contatos*100):0;
+        return `<div style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+            <span style="font-family:var(--mono);font-size:12px">${c.nome} <span class="badge bg-y">em andamento</span></span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${c.enviados}/${c.total_contatos} — ${pct}%</span>
+          </div>
+          <div class="bar"><div class="bar-f" style="width:${pct}%"></div></div>
+        </div>`;
+      }).join('');
+    }
+    if(concluidas.length){
+      htmlCamps+=concluidas.map(c=>{
+        const taxa=c.total_contatos>0?Math.round(c.enviados/c.total_contatos*100):0;
+        return `<div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-family:var(--mono);font-size:12px;color:var(--muted)">${c.nome} <span class="badge bg-g">concluída</span></span>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${c.enviados} enviados · ${taxa}% taxa</span>
+        </div>`;
+      }).join('');
+    }
+    dc.innerHTML=htmlCamps||'<div class="empty">Nenhuma campanha em andamento</div>';
 
     const chips=chR.data||[];
     const con=chips.filter(c=>c.status==='open').length;
-    document.getElementById('chips-badge').textContent=`${con}/${chips.length} chips`;
+    const banidos=chips.filter(c=>c.status==='banido').length;
+    let badgeText=`${con}/${chips.length} chips`;
+    if(banidos>0)badgeText+=` · ⚠ ${banidos} banido(s)`;
+    document.getElementById('chips-badge').textContent=badgeText;
     document.getElementById('dash-chips').innerHTML=chips.length?chips.map(c=>{
       const pct=c.limite_diario>0?Math.round(c.enviados_hoje/c.limite_diario*100):0;
       const cor=pct>=90?'r':pct>=70?'y':'';
@@ -656,6 +843,14 @@ async function iniciar(id){
   }catch(e){toast(e.message,'err');log(e.message,'err');}
 }
 async function pausar(id){await fetch(`${API}/campanhas/${id}/pausar`,{method:'POST'});toast('Pausado');loadCamps();}
+async function retomar(){
+  try{
+    const r=await fetch(`${API}/campanhas/retomar`,{method:'POST'});
+    const data=await r.json();
+    if(!data.ok)throw new Error(data.error);
+    toast('▶ Fila retomada');log('Fila retomada','ok');loadCamps();
+  }catch(e){toast(e.message,'err');log(e.message,'err');}
+}
 async function delCamp(id){if(!confirm('Remover campanha?'))return;await fetch(`${API}/campanhas/${id}`,{method:'DELETE'});toast('Removida');loadCamps();}
 
 // ─── Contatos ────────────────────────────────────────────
@@ -866,18 +1061,90 @@ async function loadConfig(){
     document.getElementById('cfg-dmax').value=c.delay_max||50;
     document.getElementById('cfg-sheet-id').value=c.sheets_id||'';
     document.getElementById('cfg-sheet-range').value=c.sheets_range||'Sheet1!A:Z';
-    // Credenciais — só mostra se estão configuradas
+    document.getElementById('cfg-sync-intervalo').value=c.sync_intervalo||0;
+
+    // Status credenciais
     const cs=document.getElementById('creds-status');
+    const ce=document.getElementById('client-email-info');
     if(c.sheets_credentials==='__configurado__'){
-      cs.innerHTML='<div class="hint" style="border-color:var(--green);color:var(--green)">✅ Credenciais configuradas</div>';
+      cs.innerHTML='<div class="hint" style="border-color:var(--green);color:var(--green)">✅ Credenciais salvas no banco</div>';
+      ce.innerHTML='';
     } else {
-      cs.innerHTML='<div class="hint warn">⚠ Credenciais não configuradas</div>';
+      cs.innerHTML='<div class="hint warn">⚠ Credenciais não configuradas — cole o JSON abaixo</div>';
+      ce.innerHTML='';
     }
-    // Mostra status na header
-    const cfgOk=c.evolution_url&&c.evolution_key;
-    document.getElementById('cfg-status').textContent=cfgOk?'API configurada':'⚠ Configure a API';
-    document.getElementById('cfg-status').style.color=cfgOk?'var(--green)':'var(--yellow)';
+
+    // Próxima sincronização
+    if(c.sync_proxima){
+      const d=new Date(c.sync_proxima);
+      document.getElementById('cfg-sync-proxima').textContent=d.toLocaleString('pt-BR');
+    }
+
+    // Status badges no topo
+    const evoOk=c.evolution_url&&c.evolution_key;
+    const sheetsOk=c.sheets_credentials==='__configurado__';
+    document.getElementById('cfg-evo-badge').textContent=evoOk?'✅ Configurada':'⚠ Não configurada';
+    document.getElementById('cfg-evo-badge').style.color=evoOk?'var(--green)':'var(--yellow)';
+    document.getElementById('cfg-sheets-badge').textContent=sheetsOk?'✅ Configurado':'⚠ Não configurado';
+    document.getElementById('cfg-sheets-badge').style.color=sheetsOk?'var(--green)':'var(--yellow)';
+    document.getElementById('cfg-db-badge').textContent='✅ Conectado';
+    document.getElementById('cfg-db-badge').style.color='var(--green)';
+
+    // Header status
+    document.getElementById('cfg-status').textContent=evoOk?'API configurada':'⚠ Configure a API';
+    document.getElementById('cfg-status').style.color=evoOk?'var(--green)':'var(--yellow)';
   }catch(e){console.error(e);}
+}
+
+// Step-by-step para Sheets
+function toggleStep(n){
+  const body=document.getElementById('sbody-'+n);
+  body.style.display=body.style.display==='none'?'block':'none';
+}
+function marcarStep(n){
+  document.getElementById('snum-'+n).classList.add('done');
+  document.getElementById('sbody-'+n).style.display='none';
+  // Abre o próximo
+  const prox=document.getElementById('sbody-'+(n+1));
+  if(prox)prox.style.display='block';
+}
+
+function toggleSenha(id){
+  const el=document.getElementById(id);
+  el.type=el.type==='password'?'text':'password';
+}
+
+function extrairIdDaURL(){
+  const url=prompt('Cole a URL completa da planilha:');
+  if(!url)return;
+  const match=url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if(match){
+    document.getElementById('cfg-sheet-id').value=match[1];
+    toast('ID extraído com sucesso!');
+  } else {
+    toast('URL inválida — não foi possível extrair o ID','err');
+  }
+}
+
+function lerArquivoCreds(input){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const json=JSON.parse(e.target.result);
+      document.getElementById('cfg-sheet-creds').value=e.target.result;
+      // Mostra o client_email para confirmar
+      if(json.client_email){
+        document.getElementById('client-email-info').innerHTML=
+          `<div class="hint" style="border-color:var(--blue)">📧 Service Account: <strong style="color:var(--blue)">${json.client_email}</strong><br>Compartilhe a planilha com este e-mail (permissão Visualizador).</div>`;
+      }
+      document.getElementById('creds-status').innerHTML=
+        '<div class="hint" style="border-color:var(--green);color:var(--green)">✅ Arquivo JSON carregado — clique em Salvar para confirmar</div>';
+      toast('JSON carregado! Salve para confirmar.');
+    }catch(ex){toast('Arquivo JSON inválido','err');}
+  };
+  reader.readAsText(file);
 }
 
 async function salvarConfig(tipo){
