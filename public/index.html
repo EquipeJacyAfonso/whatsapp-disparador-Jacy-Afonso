@@ -114,6 +114,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   <button class="tab" onclick="showPage('blacklist',this)">Blacklist</button>
   <button class="tab" onclick="showPage('relatorios',this)">Relatórios</button>
   <button class="tab" onclick="showPage('antiban',this)">🛡 Anti-ban</button>
+  <button class="tab" onclick="showPage('logs',this)">📋 Logs</button>
   <button class="tab" onclick="showPage('config',this)">⚙ Configurações</button>
 </nav>
 
@@ -332,6 +333,24 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
+<!-- LOGS -->
+<div class="page" id="page-logs">
+  <h2>📋 Logs do sistema</h2>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div class="bg">
+        <button class="bs sm" id="log-fil-todos" onclick="filtrarLogs('')" style="border-color:var(--green);color:var(--green)">Todos</button>
+        <button class="bs sm" onclick="filtrarLogs('erro')">❌ Erros</button>
+        <button class="bs sm" onclick="filtrarLogs('alerta')">⚠ Alertas</button>
+        <button class="bs sm" onclick="filtrarLogs('info')">ℹ Info</button>
+      </div>
+      <button class="bs sm" onclick="loadLogs()">↻ Atualizar</button>
+    </div>
+    <div id="tab-logs"><div class="empty">Carregando...</div></div>
+    <div id="pag-logs" style="margin-top:14px;display:flex;gap:7px;justify-content:flex-end;align-items:center"></div>
+  </div>
+</div>
+
 <!-- CONFIGURAÇÕES -->
 <div class="page" id="page-config">
   <h2>⚙ Configurações</h2>
@@ -525,6 +544,22 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
     <div id="sync-result" style="margin-top:12px"></div>
   </div>
 
+  <!-- Webhook -->
+  <div class="card" id="sec-webhook">
+    <h3>🔔 Webhook (notificações em tempo real)</h3>
+    <div class="hint">O webhook permite que a Evolution API notifique o sistema instantaneamente quando um chip conecta ou desconecta, sem precisar de polling. Recomendado para uso em produção.</div>
+    <label>URL do webhook (endereço público deste servidor)</label>
+    <div style="display:flex;gap:7px;margin-bottom:14px">
+      <input type="text" id="cfg-webhook-url" placeholder="http://seu-servidor:3000/api/webhook/evolution" style="margin:0;flex:1">
+      <button class="bs sm" onclick="preencherWebhookLocal()">🏠 Local</button>
+    </div>
+    <div class="hint warn">⚠ Para uso local, o webhook só funciona se a Evolution API estiver na mesma máquina. Para acesso externo, use um serviço como ngrok ou hospede em um servidor público.</div>
+    <div class="bg">
+      <button class="bp" onclick="registrarWebhook()">🔔 Registrar webhook em todos os chips</button>
+    </div>
+    <div id="webhook-result" style="margin-top:12px"></div>
+  </div>
+
   <!-- Diagnóstico geral -->
   <div class="card">
     <h3>🔍 Diagnóstico</h3>
@@ -606,6 +641,7 @@ function showPage(n,btn){
   if(n==='relatorios')loadRelCamps();
   if(n==='config')loadConfig();
   if(n==='antiban'){loadAntiban();}
+  if(n==='logs'){loadLogs();}
 }
 function showSection(n,btn){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
@@ -779,6 +815,8 @@ async function loadCamps(){
         ${ed?`<button class="bp sm" onclick="iniciar(${c.id})">▶</button>`:''}
         ${c.status==='em_andamento'?`<button class="bw sm" onclick="pausar(${c.id})">⏸</button>`:''}
         <button class="bs sm" onclick="verRel(${c.id})">📊</button>
+        <button class="bs sm" onclick="exportarCSV(${c.id},'${esc(c.nome)}')">⬇ CSV</button>
+        ${c.status==='rascunho'||c.status==='pausado'?`<button class="bs sm" onclick="removerDupls(${c.id})">🔁 Dupls</button>`:''}
         <button class="bd sm" onclick="delCamp(${c.id})">✕</button>
       </div></td></tr>`;
   }).join('')}</tbody></table>`;
@@ -1022,7 +1060,13 @@ async function carregarRelatorio(){
 
     el.innerHTML=`
       <div class="card">
-        <h3>${campanha.nome}</h3>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <h3 style="margin:0">${campanha.nome}</h3>
+          <div class="bg">
+            <button class="bs sm" onclick="exportarCSV(${campanha.id},'${campanha.nome.replace(/'/g,\'\'')}')">⬇ Exportar CSV</button>
+            ${(campanha.status==='rascunho'||campanha.status==='pausado')?`<button class="bs sm" onclick="removerDupls(${campanha.id})">🔁 Remover duplicatas</button>`:''}
+          </div>
+        </div>
         <div class="grid4">
           <div class="stat"><div class="stat-l">Total</div><div class="stat-v b">${campanha.total_contatos}</div></div>
           <div class="stat"><div class="stat-l">Enviados</div><div class="stat-v g">${campanha.enviados}</div></div>

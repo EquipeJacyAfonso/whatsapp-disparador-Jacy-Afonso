@@ -292,12 +292,215 @@ router.post('/fila/limpar', async (req, res) => {
   catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
+// ─── Webhook Evolution API ────────────────────────────────────────────────────
+// Recebe notificações em tempo real da Evolution API sobre conexão/desconexão
+// Configure na Evolution API: POST http://seu-servidor:3000/api/webhook/evolution
+
+router.post('/webhook/evolution', async (req, res) => {
+  try {
+    const { event, instance, data } = req.body;
+    if (!event || !instance) return res.json({ ok: true }); // ignora payloads inválidos
+
+    console.log(`[WEBHOOK] Evento: ${event} — instância: ${instance}`);
+
+    // Mapeia eventos da Evolution API para status interno
+    const mapaStatus = {
+      'connection.update': async () => {
+        const state = data?.state || data?.status || 'desconhecido';
+        await pool.query(`UPDATE chips SET status=$1, ultimo_ping=NOW() WHERE instancia=$2`, [state, instance]);
+
+        await pool.query(`INSERT INTO logs (nivel, mensagem, dados) VALUES ($1,$2,$3)`,
+          ['info', `Webhook: chip ${instance} → ${state}`, JSON.stringify({ instance, state })]);
+
+        // Se chip reconectou e a fila estava pausada por falta de chips, retoma
+        if (state === 'open') {
+          const { disparoQueue } = require('../queue/disparo');
+          const pausado = await disparoQueue.isPaused();
+          if (pausado) {
+            const waiting = await disparoQueue.getWaitingCount();
+            if (waiting > 0) {
+              await disparoQueue.resume();
+              await pool.query(`INSERT INTO logs (nivel, mensagem) VALUES ('info', $1)`,
+                [`Webhook: fila retomada automaticamente após reconexão de ${instance}`]);
+              console.log(`[WEBHOOK] ✅ Fila retomada após reconexão de ${instance}`);
+            }
+          }
+        }
+
+        // Se desconectou durante disparo ativo, pausa a fila
+        if (['close', 'connecting', 'disconnected'].includes(state)) {
+          const { disparoQueue } = require('../queue/disparo');
+          const active = await disparoQueue.getActiveCount();
+          const waiting = await disparoQueue.getWaitingCount();
+          if ((active > 0 || waiting > 0) && !(await disparoQueue.isPaused())) {
+            // Verifica se ainda tem outro chip conectado
+            const outrosConectados = await pool.query(
+              `SELECT COUNT(*) FROM chips WHERE status='open' AND instancia!=$1`, [instance]
+            );
+            if (parseInt(outrosConectados.rows[0].count) === 0) {
+              await disparoQueue.pause();
+              console.warn(`[WEBHOOK] ⚠ Chip ${instance} desconectou. Fila pausada.`);
+            }
+          }
+        }
+      },
+
+      'qrcode.updated': async () => {
+        await pool.query(`UPDATE chips SET status='qr_code', ultimo_ping=NOW() WHERE instancia=$1`, [instance]);
+      },
+
+      'messages.upsert': async () => {
+        // Futuro: processar respostas / opt-outs automáticos
+      },
+    };
+
+    const handler = mapaStatus[event];
+    if (handler) await handler();
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[WEBHOOK] Erro:', err.message);
+    res.json({ ok: true }); // sempre retorna 200 para a Evolution não tentar de novo
+  }
+});
+
+// Rota para registrar o webhook na Evolution API automaticamente
+router.post('/webhook/registrar', async (req, res) => {
+  try {
+    const { cfgGet } = require('../services/config');
+    const axios = require('axios');
+    const baseUrl = await cfgGet('evolution_url', process.env.EVOLUTION_API_URL);
+    const apiKey  = await cfgGet('evolution_key', process.env.EVOLUTION_API_KEY);
+    const { webhookUrl } = req.body;
+    if (!webhookUrl) return res.status(400).json({ ok: false, error: 'webhookUrl obrigatório' });
+
+    const chips = await listarChips();
+    const resultados = [];
+
+    for (const chip of chips) {
+      try {
+        await axios.post(`${baseUrl}/webhook/set/${chip.instancia}`, {
+          webhook: {
+            enabled: true,
+            url: webhookUrl,
+            events: ['CONNECTION_UPDATE', 'QRCODE_UPDATED', 'MESSAGES_UPSERT'],
+          }
+        }, { headers: { apikey: apiKey } });
+        resultados.push({ instancia: chip.instancia, ok: true });
+      } catch(e) {
+        resultados.push({ instancia: chip.instancia, ok: false, erro: e.message });
+      }
+    }
+
+    res.json({ ok: true, data: resultados });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// ─── Exportar relatório CSV ───────────────────────────────────────────────────
+
+router.get('/campanhas/:id/exportar', async (req, res) => {
+  try {
+    const campanha = await pool.query('SELECT * FROM campanhas WHERE id=$1', [req.params.id]);
+    if (!campanha.rows.length) return res.status(404).json({ ok: false, error: 'Não encontrada' });
+
+    const disparos = await pool.query(`
+      SELECT
+        c.numero, c.nome,
+        d.status, d.mensagem, d.tentativas, d.erro,
+        d.enviado_em,
+        ch.nome AS chip_nome
+      FROM disparos d
+      JOIN contatos c ON c.id = d.contato_id
+      LEFT JOIN chips ch ON ch.id = d.chip_id
+      WHERE d.campanha_id = $1
+      ORDER BY d.id
+    `, [req.params.id]);
+
+    // Gera CSV
+    const cabecalho = ['numero','nome','status','chip','tentativas','enviado_em','erro','mensagem'];
+    const linhas = disparos.rows.map(r => [
+      r.numero,
+      (r.nome || '').replace(/,/g, ';'),
+      r.status,
+      (r.chip_nome || ''),
+      r.tentativas,
+      r.enviado_em ? new Date(r.enviado_em).toLocaleString('pt-BR') : '',
+      (r.erro || '').replace(/,/g, ';').replace(/\n/g, ' '),
+      (r.mensagem || '').replace(/,/g, ';').replace(/\n/g, ' ').substring(0, 100),
+    ].join(','));
+
+    const csv = [cabecalho.join(','), ...linhas].join('\n');
+    const nomeArquivo = `campanha-${req.params.id}-${Date.now()}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${nomeArquivo}"`);
+    res.send('\uFEFF' + csv); // BOM para Excel reconhecer UTF-8
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// ─── Controle de duplicatas por campanha ─────────────────────────────────────
+// Verifica quais números já receberam em campanhas anteriores
+
+router.get('/campanhas/:id/duplicatas', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT c.numero, c.nome, COUNT(DISTINCT d2.campanha_id) as recebeu_em_campanhas
+      FROM disparos d1
+      JOIN contatos c ON c.id = d1.contato_id
+      JOIN disparos d2 ON d2.contato_id = d1.contato_id
+        AND d2.campanha_id != d1.campanha_id
+        AND d2.status = 'enviado'
+      WHERE d1.campanha_id = $1
+      GROUP BY c.numero, c.nome
+      ORDER BY recebeu_em_campanhas DESC
+      LIMIT 100
+    `, [req.params.id]);
+    res.json({ ok: true, data: result.rows, total: result.rows.length });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// Remove duplicatas de uma campanha (contatos que já receberam em outras campanhas)
+router.post('/campanhas/:id/remover-duplicatas', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      UPDATE disparos SET status='bloqueado', erro='Duplicata — já recebeu em campanha anterior'
+      WHERE campanha_id = $1
+        AND status = 'pendente'
+        AND contato_id IN (
+          SELECT DISTINCT d2.contato_id
+          FROM disparos d2
+          WHERE d2.campanha_id != $1
+            AND d2.status = 'enviado'
+        )
+      RETURNING id
+    `, [req.params.id]);
+
+    // Atualiza total de contatos restantes
+    const pendentes = await pool.query(
+      `SELECT COUNT(*) FROM disparos WHERE campanha_id=$1 AND status='pendente'`, [req.params.id]
+    );
+    await pool.query(
+      `UPDATE campanhas SET total_contatos=$1 WHERE id=$2`,
+      [parseInt(pendentes.rows[0].count), req.params.id]
+    );
+
+    res.json({ ok: true, data: { removidos: result.rows.length } });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
 // ─── Logs ─────────────────────────────────────────────────────────────────────
 
 router.get('/logs', async (req, res) => {
   try {
-    const result = await pool.query(`SELECT * FROM logs ORDER BY criado_em DESC LIMIT 200`);
-    res.json({ ok: true, data: result.rows });
+    const { page = 1, limit = 50, nivel } = req.query;
+    const offset = (page - 1) * limit;
+    let where = nivel ? `WHERE nivel=$1` : '';
+    const params = nivel ? [nivel] : [];
+    const result = await pool.query(
+      `SELECT * FROM logs ${where} ORDER BY criado_em DESC LIMIT ${limit} OFFSET ${offset}`, params
+    );
+    const count = await pool.query(`SELECT COUNT(*) FROM logs ${where}`, params);
+    res.json({ ok: true, data: result.rows, total: parseInt(count.rows[0].count) });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
