@@ -143,12 +143,35 @@ async function pausarChip(id, horas = 1) {
 
 async function enviarMensagem(numero, mensagem, instancia) {
   const api = await getApi(instancia);
+  const numeroFormatado = formatarNumero(numero);
+
+  // 1. Simular Comportamento Humano ("a escrever...")
+  // Gera um tempo aleatório entre 3 e 6 segundos (3000 a 6000 milissegundos)
+  const tempoEspera = Math.floor(Math.random() * 3000) + 3000; 
+  
+  try {
+    await api.post(`/chat/sendPresence/${instancia}`, {
+      number: numeroFormatado,
+      presence: 'composing', // Pode alterar para 'recording' se for enviar áudio no futuro
+      delay: tempoEspera
+    });
+    
+    // Pausa a execução do Node.js durante esse tempo para dar a ilusão real
+    await new Promise(resolve => setTimeout(resolve, tempoEspera));
+  } catch (erroPresenca) {
+    // Se a simulação falhar (por lentidão da API, etc.), o sistema ignora o erro
+    // e continua para garantir que a mensagem é enviada de qualquer forma.
+    console.log(`[Presence] Aviso: Não foi possível simular digitação para ${numeroFormatado}`);
+  }
+
+  // 2. Enviar a mensagem real
   const r = await api.post(`/message/sendText/${instancia}`, {
-    number: formatarNumero(numero),
+    number: numeroFormatado,
     textMessage: {
       text: mensagem
     }
   });
+  
   return r.data;
 }
 
