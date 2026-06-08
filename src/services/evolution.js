@@ -162,26 +162,29 @@ async function enviarMensagem(numero, mensagem, instancia) {
   const api = await getApi(instancia);
   const numeroFormatado = formatarNumero(numero);
 
-  // 1. Simular Comportamento Humano ("a escrever...")
-  // Gera um tempo aleatório entre 3 e 6 segundos (3000 a 6000 milissegundos)
+  // 1. Verificar se o número tem WhatsApp ativo
+  const numeroValido = await verificarNumero(numero, instancia);
+  if (!numeroValido) {
+    // Se não tiver WhatsApp, lançamos um erro. 
+    // O seu sistema de fila vai capturar isto e marcar a mensagem como "Falha",
+    // protegendo a reputação do seu chip.
+    throw new Error('O número não possui WhatsApp registado.');
+  }
+
+  // 2. Simular Comportamento Humano ("a escrever...")
   const tempoEspera = Math.floor(Math.random() * 3000) + 3000; 
-  
   try {
     await api.post(`/chat/sendPresence/${instancia}`, {
       number: numeroFormatado,
-      presence: 'composing', // Pode alterar para 'recording' se for enviar áudio no futuro
+      presence: 'composing',
       delay: tempoEspera
     });
-    
-    // Pausa a execução do Node.js durante esse tempo para dar a ilusão real
     await new Promise(resolve => setTimeout(resolve, tempoEspera));
   } catch (erroPresenca) {
-    // Se a simulação falhar (por lentidão da API, etc.), o sistema ignora o erro
-    // e continua para garantir que a mensagem é enviada de qualquer forma.
     console.log(`[Presence] Aviso: Não foi possível simular digitação para ${numeroFormatado}`);
   }
 
-  // 2. Enviar a mensagem real
+  // 3. Enviar a mensagem real
   const r = await api.post(`/message/sendText/${instancia}`, {
     number: numeroFormatado,
     textMessage: {
@@ -192,9 +195,33 @@ async function enviarMensagem(numero, mensagem, instancia) {
   return r.data;
 }
 
+// ─── Verificação de Número (Check Number) ────────────────────────────────────
+
+async function verificarNumero(numero, instancia) {
+  const api = await getApi(instancia);
+  // Limpar formatações para garantir que só enviamos números
+  const numeroLimpo = String(numero).replace(/\D/g, ''); 
+  
+  try {
+    const r = await api.post(`/chat/whatsappNumbers/${instancia}`, {
+      numbers: [numeroLimpo]
+    });
+    
+    // A API devolve um array com os resultados
+    if (r.data && r.data.length > 0) {
+      return r.data[0].exists; // Retorna true (tem WhatsApp) ou false (não tem)
+    }
+    return false;
+  } catch (erro) {
+    console.error(`[CHECK NUMBER] Falha ao verificar ${numeroLimpo}:`, erro.message);
+    // Se a API falhar por algum motivo de rede, assumimos "true" para não bloquear a fila atoa
+    return true; 
+  }
+}
+
 module.exports = {
   enviarMensagem, formatarNumero, limitePorDia, AQUECIMENTO,
   listarChips, adicionarChip, removerChip, statusChip, qrcodeChip, criarInstancia,
   proximoChip, registrarUso, registrarFalha, resetarContadoresDiarios,
-  pausarChip, atualizarLimiteDiario,
+  pausarChip, atualizarLimiteDiario, verificarNumero // <-- Adicionado aqui
 };
