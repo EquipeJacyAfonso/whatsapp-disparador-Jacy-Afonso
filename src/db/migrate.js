@@ -136,7 +136,9 @@ async function migrate() {
         ('delay_max',          '50',                     'Delay máximo entre mensagens (segundos)'),
         ('sheets_id',          '',                       'ID padrão da planilha Google Sheets'),
         ('sheets_range',       'Sheet1!A:Z',             'Range padrão da planilha'),
-        ('sheets_credentials', '',                       'JSON da Service Account do Google (conteúdo completo)')
+        ('sheets_credentials', '',                       'JSON da Service Account do Google (conteúdo completo)'),
+        ('admin_numero',       '',                       'Número para receber notificações (com DDD, ex: 11999998888)'),
+        ('admin_chip_instancia', '',                     'Instância do chip usado para enviar notificações')
       ON CONFLICT (chave) DO NOTHING;
     `);
 

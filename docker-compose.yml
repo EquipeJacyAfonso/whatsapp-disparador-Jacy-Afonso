@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: disparador-app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: disparador
+      DB_USER: disparador
+      DB_PASSWORD: ${DB_PASSWORD:-disparador123}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      EVOLUTION_API_URL: http://evolution-api:8080
+      EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-minhachave123}
+      PORT: 3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./credentials:/app/credentials
+    networks:
+      - disparador-net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: disparador-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: disparador
+      POSTGRES_USER: disparador
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-disparador123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U disparador"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - disparador-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: disparador-redis
+    restart: always
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - disparador-net
+
+  evolution-api:
+    image: atendai/evolution-api:v1.8.2
+    container_name: disparador-evolution
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:-minhachave123}
+      DATABASE_ENABLED: "false"
+    volumes:
+      - evolution_instances:/evolution/instances
+    networks:
+      - disparador-net
+
+volumes:
+  postgres_data:
+  redis_data:
+  evolution_instances:
+
+networks:
+  disparador-net:
+    driver: bridge

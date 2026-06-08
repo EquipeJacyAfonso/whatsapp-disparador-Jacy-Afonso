@@ -11,6 +11,7 @@ const {
   verificarConclusaoCampanha,
   disparoQueue,
 } = require('./queue/disparo');
+const { verificarStartup } = require('./services/health');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,6 +30,9 @@ async function startup() {
   console.log('\n🚀 Servidor: http://localhost:' + PORT);
 
   // FIX 1: Limpa jobs que ficaram presos no restart anterior
+  // Verifica dependências antes de iniciar
+  await verificarStartup();
+
   console.log('[STARTUP] Verificando jobs travados...');
   await limparJobsTravados();
 

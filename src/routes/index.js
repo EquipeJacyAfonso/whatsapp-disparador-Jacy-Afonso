@@ -34,6 +34,27 @@ router.post('/config', async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
+// ─── Health ───────────────────────────────────────────────────────────────────
+
+router.get('/health', async (req, res) => {
+  try {
+    const { checkGeral } = require('../services/health');
+    const resultado = await checkGeral();
+    const status = resultado.status === 'ok' ? 200 : 503;
+    res.status(status).json({ ok: resultado.status === 'ok', data: resultado });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// ─── Notificações ─────────────────────────────────────────────────────────────
+
+router.post('/config/notificacoes/testar', async (req, res) => {
+  try {
+    const { enviarNotificacao } = require('../services/notificacoes');
+    await enviarNotificacao('✅ Teste de notificação do Disparador funcionando!');
+    res.json({ ok: true, message: 'Notificação enviada' });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
 // ─── Chips ────────────────────────────────────────────────────────────────────
 
 router.get('/chips', async (req, res) => {
