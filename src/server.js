@@ -21,53 +21,50 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/api', routes);
 
-// ─── Webhook da Evolution API (Opt-Out Automático) ─────────────────────────────
+// Importa a função de marcação de leitura (Coloque isto perto das outras importações no topo ou antes do webhook)
+const evolutionService = require('./services/evolution');
+
+// ─── Webhook da Evolution API (Opt-Out + Marcação de Leitura) ────────────────
 app.post('/webhook/evolution', async (req, res) => {
-  // Responder imediatamente com 200 OK para que a Evolution API não fique à espera
-  res.status(200).send('OK');
+  res.status(200).send('OK'); // Responde rapidamente à API
 
   try {
     const payload = req.body;
+    const instancia = payload.instance; // A API informa qual o chip que recebeu
 
-    // Verificar se é o evento de uma nova mensagem recebida
     if (payload.event === 'messages.upsert') {
       const msg = payload.data;
 
-      // Ignorar mensagens enviadas por nós próprios (fromMe)
+      // Ignora as nossas próprias mensagens
       if (msg.key.fromMe) return;
 
-      // Extrair o texto da mensagem (varia se é texto simples, resposta, etc.)
+      // [NOVO] 1. Marcação Automática de Leitura
+      if (instancia && msg.key) {
+         await evolutionService.marcarComoLida(instancia, msg.key);
+      }
+
+      // 2. Sistema de Opt-Out (Bloqueio Automático)
       const texto = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
       if (!texto) return;
 
-      // Limpar os espaços e formatar para maiúsculas
       const textoLimpo = texto.trim().toUpperCase();
-
-      // Lista de palavras que ativam o bloqueio automático
       const palavrasChave = ['SAIR', 'PARAR', 'STOP', 'CANCELAR', 'REMOVER'];
 
       if (palavrasChave.includes(textoLimpo)) {
-        // Extrair o número (removendo o sufixo do WhatsApp)
         const numeroRemetente = msg.key.remoteJid.replace('@s.whatsapp.net', '');
-
         const pool = require('./db');
 
-        // Inserir na tabela blacklist (ON CONFLICT previne falhas caso já lá esteja)
         await pool.query(
           `INSERT INTO blacklist (numero, motivo) VALUES ($1, $2) ON CONFLICT (numero) DO NOTHING`,
           [numeroRemetente, 'Opt-Out: Solicitado pelo utilizador (Webhook)']
         );
 
-        console.log(`[OPT-OUT] O número ${numeroRemetente} enviou '${textoLimpo}' e foi colocado na Blacklist.`);
+        console.log(`[OPT-OUT] O número ${numeroRemetente} enviou '${textoLimpo}' e foi bloqueado.`);
       }
     }
   } catch (erro) {
-    console.error('[OPT-OUT] Erro ao processar webhook:', erro.message);
+    console.error('[WEBHOOK] Erro ao processar:', erro.message);
   }
-});
-
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 // ─── Startup ──────────────────────────────────────────────────────────────────
