@@ -257,9 +257,78 @@ async function verificarNumero(numero, instancia) {
   }
 }
 
+// ─── Aquecimento Entre Chips (Warm-up Interno) ───────────────────────────────
+
+// 1. Função auxiliar para descobrir qual é o número de telefone do chip
+async function obterNumeroDaInstancia(instancia) {
+  try {
+    const api = await getApi(instancia);
+    const r = await api.get(`/instance/connectionState/${instancia}`);
+    // A API devolve os dados de quem está conectado. Vamos capturar o número.
+    const jid = r.data?.instance?.user?.id || r.data?.user?.id || r.data?.instance?.ownerJid;
+    if (jid) {
+      return jid.split('@')[0].split(':')[0]; // Extrai apenas os números (ex: 5511999999999)
+    }
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// 2. A função principal que faz os chips conversarem
+async function aquecerChipsInternamente() {
+  try {
+    // Procura na base de dados apenas os chips que estão online e conectados
+    const res = await pool.query(`SELECT * FROM chips WHERE status = 'open'`);
+    const chipsAtivos = res.rows;
+
+    if (chipsAtivos.length < 2) {
+      console.log('[WARM-UP] Pelo menos 2 chips online são necessários para o aquecimento.');
+      return; 
+    }
+
+    // Sorteia o chip que vai ENVIAR e o chip que vai RECEBER
+    const remetente = chipsAtivos[Math.floor(Math.random() * chipsAtivos.length)];
+    let destinatario = chipsAtivos[Math.floor(Math.random() * chipsAtivos.length)];
+
+    // Garante que o chip não vai mandar mensagem para ele mesmo
+    while (destinatario.id === remetente.id) {
+      destinatario = chipsAtivos[Math.floor(Math.random() * chipsAtivos.length)];
+    }
+
+    // Pergunta à Evolution API qual é o número de WhatsApp do destinatário
+    const numeroDestinatario = await obterNumeroDaInstancia(destinatario.instancia);
+    
+    if (!numeroDestinatario) {
+      return;
+    }
+
+    // Frases neutras com Spintax para as conversas parecerem variadas e orgânicas
+    const frasesAquecimento = [
+      "{Olá|Oi|Opa}, {tudo bem?|como vai?|tranquilo?}",
+      "{Bom dia|Boa tarde|Boa noite}, {consegue me ouvir?|está por aí?|tudo certo?}",
+      "Passando para dar um {alô|oi|bom dia}.",
+      "{Preciso de|Queria} uma {informação|ajuda}, {pode me ajudar?|tem um minuto?}",
+      "Legal, {obrigado|valeu|agradeço}!",
+      "Teste de {conexão|sistema|sinal}, {tudo ok|recebido}?"
+    ];
+    
+    // Sorteia uma das frases do array
+    const fraseSorteada = frasesAquecimento[Math.floor(Math.random() * frasesAquecimento.length)];
+    
+    console.log(`[WARM-UP] A aquecer chips: [${remetente.nome}] a enviar mensagem para [${destinatario.nome}]`);
+    
+    // Usa a nossa função principal de envio (que já inclui simulação humana e spintax!)
+    await enviarMensagem(numeroDestinatario, fraseSorteada, remetente.instancia);
+
+  } catch (erro) {
+    console.error('[WARM-UP] Erro no aquecimento interno:', erro.message);
+  }
+}
+
 module.exports = {
   enviarMensagem, formatarNumero, limitePorDia, AQUECIMENTO,
   listarChips, adicionarChip, removerChip, statusChip, qrcodeChip, criarInstancia,
   proximoChip, registrarUso, registrarFalha, resetarContadoresDiarios,
-  pausarChip, atualizarLimiteDiario, verificarNumero, marcarComoLida // <-- Adicionado aqui
+  pausarChip, atualizarLimiteDiario, verificarNumero, marcarComoLida, aquecerChipsInternamente // <-- Adicionado
 };

@@ -153,3 +153,14 @@ cron.schedule('0 3 * * 0', async () => {
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 app.listen(PORT, startup);
+
+// ─── Cron Job: Aquecimento Interno de Chips ──────────────────────────────────
+// Define o intervalo para 45 minutos (45 * 60 * 1000 milissegundos)
+const evolutionWarmup = require('./services/evolution');
+const INTERVALO_AQUECIMENTO = 45 * 60 * 1000;
+
+setInterval(() => {
+  evolutionWarmup.aquecerChipsInternamente();
+}, INTERVALO_AQUECIMENTO);
+
+console.log(`🔥 Aquecimento automático de chips ativado (intervalo: 45min)`);
