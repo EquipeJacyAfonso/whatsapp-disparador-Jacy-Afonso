@@ -21,6 +21,51 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/api', routes);
 
+// ─── Webhook da Evolution API (Opt-Out Automático) ─────────────────────────────
+app.post('/webhook/evolution', async (req, res) => {
+  // Responder imediatamente com 200 OK para que a Evolution API não fique à espera
+  res.status(200).send('OK');
+
+  try {
+    const payload = req.body;
+
+    // Verificar se é o evento de uma nova mensagem recebida
+    if (payload.event === 'messages.upsert') {
+      const msg = payload.data;
+
+      // Ignorar mensagens enviadas por nós próprios (fromMe)
+      if (msg.key.fromMe) return;
+
+      // Extrair o texto da mensagem (varia se é texto simples, resposta, etc.)
+      const texto = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+      if (!texto) return;
+
+      // Limpar os espaços e formatar para maiúsculas
+      const textoLimpo = texto.trim().toUpperCase();
+
+      // Lista de palavras que ativam o bloqueio automático
+      const palavrasChave = ['SAIR', 'PARAR', 'STOP', 'CANCELAR', 'REMOVER'];
+
+      if (palavrasChave.includes(textoLimpo)) {
+        // Extrair o número (removendo o sufixo do WhatsApp)
+        const numeroRemetente = msg.key.remoteJid.replace('@s.whatsapp.net', '');
+
+        const pool = require('./db');
+
+        // Inserir na tabela blacklist (ON CONFLICT previne falhas caso já lá esteja)
+        await pool.query(
+          `INSERT INTO blacklist (numero, motivo) VALUES ($1, $2) ON CONFLICT (numero) DO NOTHING`,
+          [numeroRemetente, 'Opt-Out: Solicitado pelo utilizador (Webhook)']
+        );
+
+        console.log(`[OPT-OUT] O número ${numeroRemetente} enviou '${textoLimpo}' e foi colocado na Blacklist.`);
+      }
+    }
+  } catch (erro) {
+    console.error('[OPT-OUT] Erro ao processar webhook:', erro.message);
+  }
+});
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });

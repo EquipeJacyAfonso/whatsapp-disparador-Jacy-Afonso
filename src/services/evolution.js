@@ -74,11 +74,28 @@ async function qrcodeChip(instancia) {
 
 async function criarInstancia(instancia) {
   const api = await getApi(instancia);
+
+  // 1. Criar a instância no WhatsApp
   const r = await api.post('/instance/create', {
     instanceName: instancia,
     qrcode: true,
     integration: 'WHATSAPP-BAILEYS',
   });
+
+  // 2. Configurar o Webhook para avisar o nosso disparador interno
+  try {
+    // "app" é o nome do contentor Node.js no Docker
+    await api.post(`/webhook/set/${instancia}`, {
+      enabled: true,
+      url: "http://app:3000/webhook/evolution",
+      webhookByEvents: false,
+      events: ["MESSAGES_UPSERT"]
+    });
+    console.log(`[OPT-OUT] Webhook de respostas ativado para o chip: ${instancia}`);
+  } catch(e) {
+    console.log(`[OPT-OUT] Erro ao ativar webhook em ${instancia}:`, e.message);
+  }
+
   return r.data;
 }
 
