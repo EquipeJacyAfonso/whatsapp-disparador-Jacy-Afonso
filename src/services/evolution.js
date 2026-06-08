@@ -146,7 +146,7 @@ async function enviarMensagem(numero, mensagem, instancia) {
   const r = await api.post(`/message/sendText/${instancia}`, {
     number: formatarNumero(numero),
     textMessage: {
-      mensagem
+      text: mensagem
     }
   });
   return r.data;
