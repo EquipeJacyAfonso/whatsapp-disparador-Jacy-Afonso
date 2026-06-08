@@ -158,16 +158,54 @@ async function pausarChip(id, horas = 1) {
   return ate;
 }
 
-async function enviarMensagem(numero, mensagem, instancia) {
+// ─── Motor Spintax ───────────────────────────────────────────────────────────
+function processarSpintax(texto) {
+  if (!texto) return '';
+  const regex = /\{([^{}]+)\}/g;
+  let resultado = texto;
+  let ocorreuSubstituicao = true;
+
+  // O ciclo 'while' permite que suporte spintax aninhado, ex: {Olá|{Oi|Ei}}
+  while (ocorreuSubstituicao) {
+    ocorreuSubstituicao = false;
+    resultado = resultado.replace(regex, (match, opcoesStr) => {
+      ocorreuSubstituicao = true;
+      const opcoes = opcoesStr.split('|');
+      return opcoes[Math.floor(Math.random() * opcoes.length)];
+    });
+  }
+  return resultado;
+}
+
+// ─── Marcação de Leitura Automática ──────────────────────────────────────────
+async function marcarComoLida(instancia, messageKey) {
+  try {
+    const api = await getApi(instancia);
+    await api.post(`/chat/markMessageAsRead/${instancia}`, {
+      readMessages: [
+        {
+          remoteJid: messageKey.remoteJid,
+          fromMe: messageKey.fromMe,
+          id: messageKey.id
+        }
+      ]
+    });
+    console.log(`[MARK READ] Mensagem de ${messageKey.remoteJid} marcada como lida!`);
+  } catch (erro) {
+    console.error(`[MARK READ] Erro ao marcar lida na instância ${instancia}:`, erro.message);
+  }
+}
+
+async function enviarMensagem(numero, mensagemOriginal, instancia) {
   const api = await getApi(instancia);
   const numeroFormatado = formatarNumero(numero);
+
+  // Aplica a variação do Spintax na mensagem antes de enviar
+  const mensagemFinal = processarSpintax(mensagemOriginal);
 
   // 1. Verificar se o número tem WhatsApp ativo
   const numeroValido = await verificarNumero(numero, instancia);
   if (!numeroValido) {
-    // Se não tiver WhatsApp, lançamos um erro. 
-    // O seu sistema de fila vai capturar isto e marcar a mensagem como "Falha",
-    // protegendo a reputação do seu chip.
     throw new Error('O número não possui WhatsApp registado.');
   }
 
@@ -181,14 +219,14 @@ async function enviarMensagem(numero, mensagem, instancia) {
     });
     await new Promise(resolve => setTimeout(resolve, tempoEspera));
   } catch (erroPresenca) {
-    console.log(`[Presence] Aviso: Não foi possível simular digitação para ${numeroFormatado}`);
+    console.log(`[Presence] Aviso: Não simulou digitação para ${numeroFormatado}`);
   }
 
-  // 3. Enviar a mensagem real
+  // 3. Enviar a mensagem real (agora usando a variável mensagemFinal)
   const r = await api.post(`/message/sendText/${instancia}`, {
     number: numeroFormatado,
     textMessage: {
-      text: mensagem
+      text: mensagemFinal // <--- Texto processado pelo Spintax
     }
   });
   
@@ -223,5 +261,5 @@ module.exports = {
   enviarMensagem, formatarNumero, limitePorDia, AQUECIMENTO,
   listarChips, adicionarChip, removerChip, statusChip, qrcodeChip, criarInstancia,
   proximoChip, registrarUso, registrarFalha, resetarContadoresDiarios,
-  pausarChip, atualizarLimiteDiario, verificarNumero // <-- Adicionado aqui
+  pausarChip, atualizarLimiteDiario, verificarNumero, marcarComoLida // <-- Adicionado aqui
 };
