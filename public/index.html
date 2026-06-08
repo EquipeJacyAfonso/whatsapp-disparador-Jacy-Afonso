@@ -1198,7 +1198,7 @@ async function carregarRelatorio(){
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
           <h3 style="margin:0">${campanha.nome}</h3>
           <div class="bg">
-            <button class="bs sm" onclick="exportarCSV(${campanha.id},'${campanha.nome.replace(/'/g,\'\'')}')">⬇ Exportar CSV</button>
+            <button class="bs sm" onclick="exportarCSV(${campanha.id},'${campanha.nome.replace(/'/g, '')}')">⬇ Exportar CSV</button>
             ${(campanha.status==='rascunho'||campanha.status==='pausado')?`<button class="bs sm" onclick="removerDupls(${campanha.id})">🔁 Remover duplicatas</button>`:''}
           </div>
         </div>
