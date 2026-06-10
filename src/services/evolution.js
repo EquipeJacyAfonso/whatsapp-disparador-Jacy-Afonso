@@ -26,9 +26,25 @@ function formatarNumero(numero) {
 
 // ─── Chips ────────────────────────────────────────────────────────────────────
 
-async function listarChips() {
-  const result = await pool.query('SELECT * FROM chips ORDER BY criado_em ASC');
-  return result.rows;
+function formatarNumero(numero) {
+  let limpo = String(numero).replace(/\D/g, '');
+  
+  // Se o número não tiver o código do país (55), adicionamos
+  if (!limpo.startsWith('55')) {
+    limpo = `55${limpo}`;
+  }
+
+  // Regra inteligente do 9º Dígito (Apenas para Brasil)
+  // Se o número tiver exatos 12 dígitos (55 + DDD + 8 dígitos), falta o 9.
+  if (limpo.length === 12 && limpo.startsWith('55')) {
+    const ddd = limpo.substring(2, 4);
+    const numeroSemDDD = limpo.substring(4);
+    // Injeta o 9 logo após o DDD
+    limpo = `55${ddd}9${numeroSemDDD}`;
+    console.log(`[FORMATADOR] 9º dígito adicionado automaticamente: ${limpo}`);
+  }
+
+  return `${limpo}@s.whatsapp.net`;
 }
 
 async function adicionarChip(nome, instancia, limiteDiario = null) {
