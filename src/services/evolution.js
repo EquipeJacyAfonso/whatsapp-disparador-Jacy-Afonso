@@ -223,8 +223,6 @@ async function marcarComoLida(instancia, messageKey) {
 // ─── Envio de Mensagem Principal (COMPLETAMENTE REVISADO) ─────────────────────
 async function enviarMensagem(numero, mensagemOriginal, instancia) {
   const api = await getApi(instancia);
-
-  // 1. Número 100% puro, validado pelo Meta
   const numeroValidado = await verificarNumero(numero, instancia);
   
   if (!numeroValidado) {
@@ -232,16 +230,11 @@ async function enviarMensagem(numero, mensagemOriginal, instancia) {
   }
 
   const mensagemFinal = processarSpintax(mensagemOriginal);
-  const tempoEspera = Math.floor(Math.random() * 3000) + 3000; // Entre 3 a 6 segundos
 
-  // 2. Disparo Integrado (Deixa a Evolution gerir o atraso e o "A escrever...")
+  // Modo Bruto: Remoção do bloco 'options' para evitar crash do Baileys
   try {
     const r = await api.post(`/message/sendText/${instancia}`, {
       number: numeroValidado,
-      options: {
-        delay: tempoEspera,
-        presence: 'composing' // A própria API vai simular a digitação e aguardar
-      },
       textMessage: {
         text: mensagemFinal
       }
