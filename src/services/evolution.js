@@ -70,6 +70,22 @@ async function listarChips() {
 }
 
 async function removerChip(id) {
+  // 1. Descobre qual é a instância que está a ser apagada
+  const result = await pool.query('SELECT instancia FROM chips WHERE id = $1', [id]);
+  
+  if (result.rows.length > 0) {
+    const instanciaNome = result.rows[0].instancia;
+    try {
+      const api = await getApi(instanciaNome);
+      // 2. Obriga a Evolution API a apagar a sessão corrompida, fazer logout e apagar as chaves
+      await api.delete(`/instance/delete/${instanciaNome}`);
+      console.log(`[CHIP] Sessão ${instanciaNome} completamente destruída da Evolution API.`);
+    } catch (e) {
+      console.log(`[CHIP] Aviso ao deletar na Evolution: ${e.message}`);
+    }
+  }
+  
+  // 3. Apaga do nosso banco de dados
   await pool.query('DELETE FROM chips WHERE id = $1', [id]);
 }
 
@@ -223,6 +239,8 @@ async function marcarComoLida(instancia, messageKey) {
 // ─── Envio de Mensagem Principal (COMPLETAMENTE REVISADO) ─────────────────────
 async function enviarMensagem(numero, mensagemOriginal, instancia) {
   const api = await getApi(instancia);
+
+  // 1. Número 100% puro, validado pelo Meta
   const numeroValidado = await verificarNumero(numero, instancia);
   
   if (!numeroValidado) {
@@ -230,11 +248,18 @@ async function enviarMensagem(numero, mensagemOriginal, instancia) {
   }
 
   const mensagemFinal = processarSpintax(mensagemOriginal);
+  const tempoEspera = Math.floor(Math.random() * 3000) + 3000; // Entre 3 a 6 segundos
 
-  // Modo Bruto: Remoção do bloco 'options' para evitar crash do Baileys
+  // 2. Disparo Integrado (Deixa a Evolution gerir o atraso e o "A escrever...")
   try {
     const r = await api.post(`/message/sendText/${instancia}`, {
       number: numeroValidado,
+      options: {
+        delay: tempoEspera,
+        presence: 'composing'
+      },
+      // Em algumas versões antigas da Evolution, passar o 'textMessage' inteiro buga as chaves.
+      // Passamos diretamente a string.
       textMessage: {
         text: mensagemFinal
       }
