@@ -19,32 +19,34 @@ async function getApi(instancia) {
   });
 }
 
-function formatarNumero(numero) {
-  const limpo = String(numero).replace(/\D/g, '');
-  return (limpo.startsWith('55') ? limpo : `55${limpo}`) + '@s.whatsapp.net';
-}
-
 // ─── Chips ────────────────────────────────────────────────────────────────────
 
 function formatarNumero(numero) {
   let limpo = String(numero).replace(/\D/g, '');
-  
-  // Se o número não tiver o código do país (55), adicionamos
   if (!limpo.startsWith('55')) {
     limpo = `55${limpo}`;
   }
-
-  // Regra inteligente do 9º Dígito (Apenas para Brasil)
-  // Se o número tiver exatos 12 dígitos (55 + DDD + 8 dígitos), falta o 9.
-  if (limpo.length === 12 && limpo.startsWith('55')) {
-    const ddd = limpo.substring(2, 4);
-    const numeroSemDDD = limpo.substring(4);
-    // Injeta o 9 logo após o DDD
-    limpo = `55${ddd}9${numeroSemDDD}`;
-    console.log(`[FORMATADOR] 9º dígito adicionado automaticamente: ${limpo}`);
-  }
-
   return `${limpo}@s.whatsapp.net`;
+}
+
+async function verificarNumero(numero, instancia) {
+  const api = await getApi(instancia);
+  let numeroLimpo = String(numero).replace(/\D/g, ''); 
+  if (!numeroLimpo.startsWith('55')) numeroLimpo = `55${numeroLimpo}`;
+  
+  try {
+    const r = await api.post(`/chat/whatsappNumbers/${instancia}`, {
+      numbers: [numeroLimpo]
+    });
+    
+    // Se a Meta confirmar que existe, pegamos o formato EXATO que eles usam (com ou sem 9)
+    if (r.data && r.data.length > 0 && r.data[0].exists) {
+      return r.data[0].jid; 
+    }
+    return null; // Retorna null se não tiver WhatsApp
+  } catch (erro) {
+    return `${numeroLimpo}@s.whatsapp.net`; // Fallback caso a API engasgue
+  }
 }
 
 async function adicionarChip(nome, instancia, limiteDiario = null) {
@@ -219,39 +221,41 @@ async function marcarComoLida(instancia, messageKey) {
 
 async function enviarMensagem(numero, mensagemOriginal, instancia) {
   const api = await getApi(instancia);
-  const numeroFormatado = formatarNumero(numero);
 
-  // Aplica a variação do Spintax na mensagem antes de enviar
-  const mensagemFinal = processarSpintax(mensagemOriginal);
-
-  // 1. Verificar se o número tem WhatsApp ativo
-  const numeroValido = await verificarNumero(numero, instancia);
-  if (!numeroValido) {
+  // 1. Obtém o número oficial validado pelo próprio WhatsApp
+  const jidValidado = await verificarNumero(numero, instancia);
+  if (!jidValidado) {
     throw new Error('O número não possui WhatsApp registado.');
   }
 
-  // 2. Simular Comportamento Humano ("a escrever...")
+  const mensagemFinal = processarSpintax(mensagemOriginal);
+
+  // 2. Simular Comportamento usando o JID validado
   const tempoEspera = Math.floor(Math.random() * 3000) + 3000; 
   try {
     await api.post(`/chat/sendPresence/${instancia}`, {
-      number: numeroFormatado,
+      number: jidValidado,
       presence: 'composing',
       delay: tempoEspera
     });
     await new Promise(resolve => setTimeout(resolve, tempoEspera));
   } catch (erroPresenca) {
-    console.log(`[Presence] Aviso: Não simulou digitação para ${numeroFormatado}`);
+    console.log(`[Presence] Aviso: Não simulou digitação para ${jidValidado}`);
   }
 
-  // 3. Enviar a mensagem real (agora usando a variável mensagemFinal)
-  const r = await api.post(`/message/sendText/${instancia}`, {
-    number: numeroFormatado,
-    textMessage: {
-      text: mensagemFinal // <--- Texto processado pelo Spintax
-    }
-  });
-  
-  return r.data;
+  // 3. Enviar a mensagem real
+  try {
+    const r = await api.post(`/message/sendText/${instancia}`, {
+      number: jidValidado,
+      textMessage: {
+        text: mensagemFinal
+      }
+    });
+    return r.data;
+  } catch(err) {
+    console.error(`[ERRO NA API] Falha para ${jidValidado}:`, err.response?.data || err.message);
+    throw err;
+  }
 }
 
 // ─── Verificação de Número (Check Number) ────────────────────────────────────
