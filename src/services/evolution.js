@@ -39,13 +39,15 @@ async function verificarNumero(numero, instancia) {
       numbers: [numeroLimpo]
     });
     
-    // Se a Meta confirmar que existe, pegamos o formato EXATO que eles usam (com ou sem 9)
     if (r.data && r.data.length > 0 && r.data[0].exists) {
-      return r.data[0].jid; 
+      // Aqui está o segredo: devolve o ID oficial da Meta (ex: 5561...8@s.whatsapp.net)
+      // Se a API não devolver o JID por algum motivo, forçamos a formatação.
+      return r.data[0].jid || `${r.data[0].number}@s.whatsapp.net` || `${numeroLimpo}@s.whatsapp.net`;
     }
-    return null; // Retorna null se não tiver WhatsApp
+    return null; // Não tem WhatsApp
   } catch (erro) {
-    return `${numeroLimpo}@s.whatsapp.net`; // Fallback caso a API engasgue
+    // Se der erro de rede, tenta enviar da forma padrão
+    return `${numeroLimpo}@s.whatsapp.net`; 
   }
 }
 
@@ -224,11 +226,11 @@ async function enviarMensagem(numero, mensagemOriginal, instancia) {
 
   // 1. Obtém o número oficial validado pelo próprio WhatsApp
   const jidValidado = await verificarNumero(numero, instancia);
+  
+  // Se jidValidado for null, ele barra aqui. Se passar, será o número em texto.
   if (!jidValidado) {
     throw new Error('O número não possui WhatsApp registado.');
   }
-
-  const mensagemFinal = processarSpintax(mensagemOriginal);
 
   // 2. Simular Comportamento usando o JID validado
   const tempoEspera = Math.floor(Math.random() * 3000) + 3000; 
