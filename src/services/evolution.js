@@ -19,49 +19,6 @@ async function getApi(instancia) {
   });
 }
 
-// ─── Formatação e Verificação ────────────────────────────────────────────────
-
-function formatarNumero(numero) {
-  let limpo = String(numero).replace(/\D/g, '');
-  if (!limpo.startsWith('55')) {
-    limpo = `55${limpo}`;
-  }
-  // DEVOLVE APENAS NÚMEROS (Sem @s.whatsapp.net para evitar sufixo duplo)
-  return limpo;
-}
-
-async function verificarNumero(numero, instancia) {
-  const api = await getApi(instancia);
-  let numeroLimpo = String(numero).replace(/\D/g, ''); 
-  
-  if (!numeroLimpo.startsWith('55')) {
-    numeroLimpo = `55${numeroLimpo}`;
-  }
-  
-  // REGRA DE OURO: Forçar sempre os 13 dígitos no Brasil (Adiciona o 9)
-  if (numeroLimpo.length === 12 && numeroLimpo.startsWith('55')) {
-    const ddd = numeroLimpo.substring(2, 4);
-    const resto = numeroLimpo.substring(4);
-    numeroLimpo = `55${ddd}9${resto}`;
-    console.log(`[FORMATADOR] Ajustado para 13 dígitos: ${numeroLimpo}`);
-  }
-
-  try {
-    const r = await api.post(`/chat/whatsappNumbers/${instancia}`, {
-      numbers: [numeroLimpo]
-    });
-    
-    if (r.data && r.data.length > 0 && r.data[0].exists) {
-      // AQUI ESTÁ O SEGREDO: Ignoramos o r.data[0].jid (que vem com 12 dígitos velhos)
-      // E devolvemos o numeroLimpo que nós mesmos forçámos a ter 13 dígitos!
-      return numeroLimpo; 
-    }
-    return null; // Não tem WhatsApp
-  } catch (erro) {
-    return numeroLimpo; // Em caso de falha de rede, tenta com os 13 dígitos à mesma
-  }
-}
-
 // ─── Gestão de Chips ─────────────────────────────────────────────────────────
 
 async function adicionarChip(nome, instancia, limiteDiario = null) {
@@ -80,14 +37,12 @@ async function listarChips() {
 }
 
 async function removerChip(id) {
-  // 1. Descobre qual é a instância que está a ser apagada
   const result = await pool.query('SELECT instancia FROM chips WHERE id = $1', [id]);
   
   if (result.rows.length > 0) {
     const instanciaNome = result.rows[0].instancia;
     try {
       const api = await getApi(instanciaNome);
-      // 2. Obriga a Evolution API a apagar a sessão corrompida, fazer logout e apagar as chaves
       await api.delete(`/instance/delete/${instanciaNome}`);
       console.log(`[CHIP] Sessão ${instanciaNome} completamente destruída da Evolution API.`);
     } catch (e) {
@@ -95,7 +50,6 @@ async function removerChip(id) {
     }
   }
   
-  // 3. Apaga do nosso banco de dados
   await pool.query('DELETE FROM chips WHERE id = $1', [id]);
 }
 
@@ -126,7 +80,7 @@ async function qrcodeChip(instancia) {
     instanceName: instancia,
     qrcode: true,
     integration: 'WHATSAPP-BAILEYS',
-  }).catch(() => null); // Ignora se já existir
+  }).catch(() => null); 
 
   const qr = await api.get(`/instance/connect/${instancia}`);
   return qr.data;
@@ -246,37 +200,34 @@ async function marcarComoLida(instancia, messageKey) {
   }
 }
 
-// ─── Envio de Mensagem Principal (COMPLETAMENTE REVISADO) ─────────────────────
+// ─── Envio de Mensagem Direto (SEM VERIFICAÇÃO PRÉVIA) ───────────────────────
 async function enviarMensagem(numero, mensagemOriginal, instancia) {
   const api = await getApi(instancia);
 
-  // 1. Número 100% puro, validado pelo Meta
-  const numeroValidado = await verificarNumero(numero, instancia);
-  
-  if (!numeroValidado) {
-    throw new Error('Número inválido ou sem WhatsApp.');
+  // 1. Limpeza básica para evitar crash da API (Remove apenas traços/espaços e põe o 55)
+  let numeroLimpo = String(numero).replace(/\D/g, '');
+  if (!numeroLimpo.startsWith('55')) {
+    numeroLimpo = `55${numeroLimpo}`;
   }
 
   const mensagemFinal = processarSpintax(mensagemOriginal);
   const tempoEspera = Math.floor(Math.random() * 3000) + 3000; // Entre 3 a 6 segundos
 
-  // 2. Disparo Integrado (Deixa a Evolution gerir o atraso e o "A escrever...")
+  // 2. Disparo Integrado
   try {
     const r = await api.post(`/message/sendText/${instancia}`, {
-      number: numeroValidado,
+      number: numeroLimpo,
       options: {
         delay: tempoEspera,
         presence: 'composing'
       },
-      // Em algumas versões antigas da Evolution, passar o 'textMessage' inteiro buga as chaves.
-      // Passamos diretamente a string.
       textMessage: {
         text: mensagemFinal
       }
     });
     return r.data;
   } catch(err) {
-    console.error(`[ERRO NA API] Falha para ${numeroValidado}:`, err.message);
+    console.error(`[ERRO NA API] Falha para ${numeroLimpo}:`, err.message);
     throw err;
   }
 }
@@ -322,9 +273,10 @@ async function aquecerChipsInternamente() {
   }
 }
 
+// Exportações limpas sem as funções removidas
 module.exports = {
-  enviarMensagem, formatarNumero, limitePorDia, AQUECIMENTO,
+  enviarMensagem, limitePorDia, AQUECIMENTO,
   listarChips, adicionarChip, removerChip, statusChip, qrcodeChip, criarInstancia,
   proximoChip, registrarUso, registrarFalha, resetarContadoresDiarios,
-  pausarChip, atualizarLimiteDiario, verificarNumero, marcarComoLida, aquecerChipsInternamente
+  pausarChip, atualizarLimiteDiario, marcarComoLida, aquecerChipsInternamente
 };
