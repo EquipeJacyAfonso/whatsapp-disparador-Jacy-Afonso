@@ -19,7 +19,7 @@ async function getApi(instancia) {
   });
 }
 
-// ─── Chips ────────────────────────────────────────────────────────────────────
+// ─── Formatação e Verificação ────────────────────────────────────────────────
 
 function formatarNumero(numero) {
   let limpo = String(numero).replace(/\D/g, '');
@@ -40,8 +40,7 @@ async function verificarNumero(numero, instancia) {
     });
     
     if (r.data && r.data.length > 0 && r.data[0].exists) {
-      // Aqui está o segredo: devolve o ID oficial da Meta (ex: 5561...8@s.whatsapp.net)
-      // Se a API não devolver o JID por algum motivo, forçamos a formatação.
+      // Devolve o ID oficial da Meta (ex: 5561...8@s.whatsapp.net)
       return r.data[0].jid || `${r.data[0].number}@s.whatsapp.net` || `${numeroLimpo}@s.whatsapp.net`;
     }
     return null; // Não tem WhatsApp
@@ -50,6 +49,8 @@ async function verificarNumero(numero, instancia) {
     return `${numeroLimpo}@s.whatsapp.net`; 
   }
 }
+
+// ─── Chips ────────────────────────────────────────────────────────────────────
 
 async function adicionarChip(nome, instancia, limiteDiario = null) {
   const limite = limiteDiario || AQUECIMENTO[0];
@@ -100,16 +101,13 @@ async function qrcodeChip(instancia) {
 async function criarInstancia(instancia) {
   const api = await getApi(instancia);
 
-  // 1. Criar a instância no WhatsApp
   const r = await api.post('/instance/create', {
     instanceName: instancia,
     qrcode: true,
     integration: 'WHATSAPP-BAILEYS',
   });
 
-  // 2. Configurar o Webhook para avisar o nosso disparador interno
   try {
-    // "app" é o nome do contentor Node.js no Docker
     await api.post(`/webhook/set/${instancia}`, {
       enabled: true,
       url: "http://app:3000/webhook/evolution",
@@ -148,7 +146,6 @@ async function registrarUso(chipId) {
     UPDATE chips SET enviados_hoje = enviados_hoje + 1, total_enviados = total_enviados + 1, ultimo_uso = NOW()
     WHERE id = $1
   `, [chipId]);
-  // Histórico diário
   await pool.query(`
     INSERT INTO chip_historico (chip_id, data, enviados)
     VALUES ($1, CURRENT_DATE, 1)
@@ -190,7 +187,6 @@ function processarSpintax(texto) {
   let resultado = texto;
   let ocorreuSubstituicao = true;
 
-  // O ciclo 'while' permite que suporte spintax aninhado, ex: {Olá|{Oi|Ei}}
   while (ocorreuSubstituicao) {
     ocorreuSubstituicao = false;
     resultado = resultado.replace(regex, (match, opcoesStr) => {
@@ -221,18 +217,22 @@ async function marcarComoLida(instancia, messageKey) {
   }
 }
 
+// ─── Envio de Mensagem Principal ─────────────────────────────────────────────
 async function enviarMensagem(numero, mensagemOriginal, instancia) {
   const api = await getApi(instancia);
 
   // 1. Obtém o número oficial validado pelo próprio WhatsApp
   const jidValidado = await verificarNumero(numero, instancia);
   
-  // Se jidValidado for null, ele barra aqui. Se passar, será o número em texto.
-  if (!jidValidado) {
+  // O jidValidado não pode ser vazio e não pode ser a palavra "true"
+  if (!jidValidado || jidValidado === true) {
     throw new Error('O número não possui WhatsApp registado.');
   }
 
-  // 2. Simular Comportamento usando o JID validado
+  // 2. Processa o Spintax para gerar o texto final
+  const mensagemFinal = processarSpintax(mensagemOriginal);
+
+  // 3. Simular Comportamento usando o JID validado
   const tempoEspera = Math.floor(Math.random() * 3000) + 3000; 
   try {
     await api.post(`/chat/sendPresence/${instancia}`, {
@@ -245,12 +245,12 @@ async function enviarMensagem(numero, mensagemOriginal, instancia) {
     console.log(`[Presence] Aviso: Não simulou digitação para ${jidValidado}`);
   }
 
-  // 3. Enviar a mensagem real
+  // 4. Enviar a mensagem real
   try {
     const r = await api.post(`/message/sendText/${instancia}`, {
       number: jidValidado,
       textMessage: {
-        text: mensagemFinal
+        text: mensagemFinal // Usando a variável corretamente definida
       }
     });
     return r.data;
@@ -260,41 +260,15 @@ async function enviarMensagem(numero, mensagemOriginal, instancia) {
   }
 }
 
-// ─── Verificação de Número (Check Number) ────────────────────────────────────
-
-async function verificarNumero(numero, instancia) {
-  const api = await getApi(instancia);
-  // Limpar formatações para garantir que só enviamos números
-  const numeroLimpo = String(numero).replace(/\D/g, ''); 
-  
-  try {
-    const r = await api.post(`/chat/whatsappNumbers/${instancia}`, {
-      numbers: [numeroLimpo]
-    });
-    
-    // A API devolve um array com os resultados
-    if (r.data && r.data.length > 0) {
-      return r.data[0].exists; // Retorna true (tem WhatsApp) ou false (não tem)
-    }
-    return false;
-  } catch (erro) {
-    console.error(`[CHECK NUMBER] Falha ao verificar ${numeroLimpo}:`, erro.message);
-    // Se a API falhar por algum motivo de rede, assumimos "true" para não bloquear a fila atoa
-    return true; 
-  }
-}
-
 // ─── Aquecimento Entre Chips (Warm-up Interno) ───────────────────────────────
 
-// 1. Função auxiliar para descobrir qual é o número de telefone do chip
 async function obterNumeroDaInstancia(instancia) {
   try {
     const api = await getApi(instancia);
     const r = await api.get(`/instance/connectionState/${instancia}`);
-    // A API devolve os dados de quem está conectado. Vamos capturar o número.
     const jid = r.data?.instance?.user?.id || r.data?.user?.id || r.data?.instance?.ownerJid;
     if (jid) {
-      return jid.split('@')[0].split(':')[0]; // Extrai apenas os números (ex: 5511999999999)
+      return jid.split('@')[0].split(':')[0]; 
     }
     return null;
   } catch (e) {
@@ -302,10 +276,8 @@ async function obterNumeroDaInstancia(instancia) {
   }
 }
 
-// 2. A função principal que faz os chips conversarem
 async function aquecerChipsInternamente() {
   try {
-    // Procura na base de dados apenas os chips que estão online e conectados
     const res = await pool.query(`SELECT * FROM chips WHERE status = 'open'`);
     const chipsAtivos = res.rows;
 
@@ -314,23 +286,19 @@ async function aquecerChipsInternamente() {
       return; 
     }
 
-    // Sorteia o chip que vai ENVIAR e o chip que vai RECEBER
     const remetente = chipsAtivos[Math.floor(Math.random() * chipsAtivos.length)];
     let destinatario = chipsAtivos[Math.floor(Math.random() * chipsAtivos.length)];
 
-    // Garante que o chip não vai mandar mensagem para ele mesmo
     while (destinatario.id === remetente.id) {
       destinatario = chipsAtivos[Math.floor(Math.random() * chipsAtivos.length)];
     }
 
-    // Pergunta à Evolution API qual é o número de WhatsApp do destinatário
     const numeroDestinatario = await obterNumeroDaInstancia(destinatario.instancia);
     
     if (!numeroDestinatario) {
       return;
     }
 
-    // Frases neutras com Spintax para as conversas parecerem variadas e orgânicas
     const frasesAquecimento = [
       "{Olá|Oi|Opa}, {tudo bem?|como vai?|tranquilo?}",
       "{Bom dia|Boa tarde|Boa noite}, {consegue me ouvir?|está por aí?|tudo certo?}",
@@ -340,12 +308,10 @@ async function aquecerChipsInternamente() {
       "Teste de {conexão|sistema|sinal}, {tudo ok|recebido}?"
     ];
     
-    // Sorteia uma das frases do array
     const fraseSorteada = frasesAquecimento[Math.floor(Math.random() * frasesAquecimento.length)];
     
     console.log(`[WARM-UP] A aquecer chips: [${remetente.nome}] a enviar mensagem para [${destinatario.nome}]`);
     
-    // Usa a nossa função principal de envio (que já inclui simulação humana e spintax!)
     await enviarMensagem(numeroDestinatario, fraseSorteada, remetente.instancia);
 
   } catch (erro) {
@@ -357,5 +323,5 @@ module.exports = {
   enviarMensagem, formatarNumero, limitePorDia, AQUECIMENTO,
   listarChips, adicionarChip, removerChip, statusChip, qrcodeChip, criarInstancia,
   proximoChip, registrarUso, registrarFalha, resetarContadoresDiarios,
-  pausarChip, atualizarLimiteDiario, verificarNumero, marcarComoLida, aquecerChipsInternamente // <-- Adicionado
+  pausarChip, atualizarLimiteDiario, verificarNumero, marcarComoLida, aquecerChipsInternamente
 };
