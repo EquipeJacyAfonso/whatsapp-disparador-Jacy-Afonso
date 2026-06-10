@@ -57,6 +57,11 @@ async function adicionarChip(nome, instancia, limiteDiario = null) {
   return result.rows[0];
 }
 
+async function listarChips() {
+  const result = await pool.query('SELECT * FROM chips ORDER BY criado_em ASC');
+  return result.rows;
+}
+
 async function removerChip(id) {
   await pool.query('DELETE FROM chips WHERE id = $1', [id]);
 }
