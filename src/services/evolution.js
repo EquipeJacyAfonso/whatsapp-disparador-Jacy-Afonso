@@ -19,6 +19,37 @@ async function getApi(instancia) {
   });
 }
 
+// ─── Formatação e Verificação ────────────────────────────────────────────────
+
+function formatarNumero(numero) {
+  let limpo = String(numero).replace(/\D/g, '');
+  if (!limpo.startsWith('55')) {
+    limpo = `55${limpo}`;
+  }
+  return `${limpo}@s.whatsapp.net`;
+}
+
+async function verificarNumero(numero, instancia) {
+  const api = await getApi(instancia);
+  let numeroLimpo = String(numero).replace(/\D/g, ''); 
+  if (!numeroLimpo.startsWith('55')) numeroLimpo = `55${numeroLimpo}`;
+  
+  try {
+    const r = await api.post(`/chat/whatsappNumbers/${instancia}`, {
+      numbers: [numeroLimpo]
+    });
+    
+    if (r.data && r.data.length > 0 && r.data[0].exists) {
+      // Devolve o ID oficial da Meta, descobrindo sozinho se leva o 9 ou não
+      return r.data[0].jid || `${r.data[0].number}@s.whatsapp.net` || `${numeroLimpo}@s.whatsapp.net`;
+    }
+    return null; // Não tem WhatsApp
+  } catch (erro) {
+    // Se der erro de rede, tenta enviar da forma padrão
+    return `${numeroLimpo}@s.whatsapp.net`; 
+  }
+}
+
 // ─── Gestão de Chips ─────────────────────────────────────────────────────────
 
 async function adicionarChip(nome, instancia, limiteDiario = null) {
@@ -200,34 +231,45 @@ async function marcarComoLida(instancia, messageKey) {
   }
 }
 
-// ─── Envio de Mensagem Direto (SEM VERIFICAÇÃO PRÉVIA) ───────────────────────
+// ─── Envio de Mensagem Principal ─────────────────────────────────────────────
 async function enviarMensagem(numero, mensagemOriginal, instancia) {
   const api = await getApi(instancia);
 
-  // 1. Limpeza básica para evitar crash da API (Remove apenas traços/espaços e põe o 55)
-  let numeroLimpo = String(numero).replace(/\D/g, '');
-  if (!numeroLimpo.startsWith('55')) {
-    numeroLimpo = `55${numeroLimpo}`;
+  // 1. Obtém o número oficial validado pelo próprio WhatsApp
+  const jidValidado = await verificarNumero(numero, instancia);
+  
+  // O jidValidado não pode ser vazio e não pode ser a palavra "true"
+  if (!jidValidado || jidValidado === true) {
+    throw new Error('O número não possui WhatsApp registado.');
   }
 
+  // 2. Processa o Spintax para gerar o texto final
   const mensagemFinal = processarSpintax(mensagemOriginal);
-  const tempoEspera = Math.floor(Math.random() * 3000) + 3000; // Entre 3 a 6 segundos
 
-  // 2. Disparo Integrado
+  // 3. Simular Comportamento ("Escrevendo...") usando o JID validado
+  const tempoEspera = Math.floor(Math.random() * 3000) + 3000; 
+  try {
+    await api.post(`/chat/sendPresence/${instancia}`, {
+      number: jidValidado,
+      presence: 'composing',
+      delay: tempoEspera
+    });
+    await new Promise(resolve => setTimeout(resolve, tempoEspera));
+  } catch (erroPresenca) {
+    console.log(`[Presence] Aviso: Não simulou digitação para ${jidValidado}`);
+  }
+
+  // 4. Enviar a mensagem real
   try {
     const r = await api.post(`/message/sendText/${instancia}`, {
-      number: numeroLimpo,
-      options: {
-        delay: tempoEspera,
-        presence: 'composing'
-      },
+      number: jidValidado,
       textMessage: {
         text: mensagemFinal
       }
     });
     return r.data;
   } catch(err) {
-    console.error(`[ERRO NA API] Falha para ${numeroLimpo}:`, err.message);
+    console.error(`[ERRO NA API] Falha para ${jidValidado}:`, err.response?.data || err.message);
     throw err;
   }
 }
@@ -273,10 +315,9 @@ async function aquecerChipsInternamente() {
   }
 }
 
-// Exportações limpas sem as funções removidas
 module.exports = {
-  enviarMensagem, limitePorDia, AQUECIMENTO,
+  enviarMensagem, formatarNumero, limitePorDia, AQUECIMENTO,
   listarChips, adicionarChip, removerChip, statusChip, qrcodeChip, criarInstancia,
   proximoChip, registrarUso, registrarFalha, resetarContadoresDiarios,
-  pausarChip, atualizarLimiteDiario, marcarComoLida, aquecerChipsInternamente
+  pausarChip, atualizarLimiteDiario, verificarNumero, marcarComoLida, aquecerChipsInternamente
 };
