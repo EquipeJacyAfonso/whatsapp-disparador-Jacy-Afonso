@@ -33,22 +33,32 @@ function formatarNumero(numero) {
 async function verificarNumero(numero, instancia) {
   const api = await getApi(instancia);
   let numeroLimpo = String(numero).replace(/\D/g, ''); 
-  if (!numeroLimpo.startsWith('55')) numeroLimpo = `55${numeroLimpo}`;
   
+  if (!numeroLimpo.startsWith('55')) {
+    numeroLimpo = `55${numeroLimpo}`;
+  }
+  
+  // REGRA DE OURO: Forçar sempre os 13 dígitos no Brasil (Adiciona o 9)
+  if (numeroLimpo.length === 12 && numeroLimpo.startsWith('55')) {
+    const ddd = numeroLimpo.substring(2, 4);
+    const resto = numeroLimpo.substring(4);
+    numeroLimpo = `55${ddd}9${resto}`;
+    console.log(`[FORMATADOR] Ajustado para 13 dígitos: ${numeroLimpo}`);
+  }
+
   try {
     const r = await api.post(`/chat/whatsappNumbers/${instancia}`, {
       numbers: [numeroLimpo]
     });
     
     if (r.data && r.data.length > 0 && r.data[0].exists) {
-      // Captura o JID oficial, mas remove o sufixo para entregar limpo à API
-      let jid = r.data[0].jid || r.data[0].number || numeroLimpo;
-      return jid.replace('@s.whatsapp.net', '');
+      // AQUI ESTÁ O SEGREDO: Ignoramos o r.data[0].jid (que vem com 12 dígitos velhos)
+      // E devolvemos o numeroLimpo que nós mesmos forçámos a ter 13 dígitos!
+      return numeroLimpo; 
     }
     return null; // Não tem WhatsApp
   } catch (erro) {
-    // Se a API falhar a verificação, tenta apenas com o número limpo
-    return numeroLimpo; 
+    return numeroLimpo; // Em caso de falha de rede, tenta com os 13 dígitos à mesma
   }
 }
 
