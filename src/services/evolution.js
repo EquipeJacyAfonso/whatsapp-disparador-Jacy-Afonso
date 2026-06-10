@@ -26,7 +26,8 @@ function formatarNumero(numero) {
   if (!limpo.startsWith('55')) {
     limpo = `55${limpo}`;
   }
-  return `${limpo}@s.whatsapp.net`;
+  // DEVOLVE APENAS NÚMEROS (Sem @s.whatsapp.net para evitar sufixo duplo)
+  return limpo;
 }
 
 async function verificarNumero(numero, instancia) {
@@ -40,17 +41,18 @@ async function verificarNumero(numero, instancia) {
     });
     
     if (r.data && r.data.length > 0 && r.data[0].exists) {
-      // Devolve o ID oficial da Meta (ex: 5561...8@s.whatsapp.net)
-      return r.data[0].jid || `${r.data[0].number}@s.whatsapp.net` || `${numeroLimpo}@s.whatsapp.net`;
+      // Captura o JID oficial, mas remove o sufixo para entregar limpo à API
+      let jid = r.data[0].jid || r.data[0].number || numeroLimpo;
+      return jid.replace('@s.whatsapp.net', '');
     }
     return null; // Não tem WhatsApp
   } catch (erro) {
-    // Se der erro de rede, tenta enviar da forma padrão
-    return `${numeroLimpo}@s.whatsapp.net`; 
+    // Se a API falhar a verificação, tenta apenas com o número limpo
+    return numeroLimpo; 
   }
 }
 
-// ─── Chips ────────────────────────────────────────────────────────────────────
+// ─── Gestão de Chips ─────────────────────────────────────────────────────────
 
 async function adicionarChip(nome, instancia, limiteDiario = null) {
   const limite = limiteDiario || AQUECIMENTO[0];
@@ -94,8 +96,14 @@ async function statusChip(instancia) {
 
 async function qrcodeChip(instancia) {
   const api = await getApi(instancia);
-  const r = await api.get(`/instance/connect/${instancia}`);
-  return r.data;
+  const r = await api.post('/instance/create', {
+    instanceName: instancia,
+    qrcode: true,
+    integration: 'WHATSAPP-BAILEYS',
+  }).catch(() => null); // Ignora se já existir
+
+  const qr = await api.get(`/instance/connect/${instancia}`);
+  return qr.data;
 }
 
 async function criarInstancia(instancia) {
@@ -114,9 +122,9 @@ async function criarInstancia(instancia) {
       webhookByEvents: false,
       events: ["MESSAGES_UPSERT"]
     });
-    console.log(`[OPT-OUT] Webhook de respostas ativado para o chip: ${instancia}`);
+    console.log(`[OPT-OUT] Webhook ativado para o chip: ${instancia}`);
   } catch(e) {
-    console.log(`[OPT-OUT] Erro ao ativar webhook em ${instancia}:`, e.message);
+    console.log(`[OPT-OUT] Erro ao ativar webhook em ${instancia}`);
   }
 
   return r.data;
@@ -171,7 +179,6 @@ async function resetarContadoresDiarios() {
       WHERE id = $3
     `, [novosDias, novoLimite, chip.id]);
   }
-  console.log(`[CRON] Reset diário: ${chips.rows.length} chip(s) atualizados.`);
 }
 
 async function pausarChip(id, horas = 1) {
@@ -198,64 +205,50 @@ function processarSpintax(texto) {
   return resultado;
 }
 
-// ─── Marcação de Leitura Automática ──────────────────────────────────────────
 async function marcarComoLida(instancia, messageKey) {
   try {
     const api = await getApi(instancia);
     await api.post(`/chat/markMessageAsRead/${instancia}`, {
-      readMessages: [
-        {
-          remoteJid: messageKey.remoteJid,
-          fromMe: messageKey.fromMe,
-          id: messageKey.id
-        }
-      ]
+      readMessages: [{
+        remoteJid: messageKey.remoteJid,
+        fromMe: messageKey.fromMe,
+        id: messageKey.id
+      }]
     });
-    console.log(`[MARK READ] Mensagem de ${messageKey.remoteJid} marcada como lida!`);
   } catch (erro) {
-    console.error(`[MARK READ] Erro ao marcar lida na instância ${instancia}:`, erro.message);
+    // Silencioso
   }
 }
 
-// ─── Envio de Mensagem Principal ─────────────────────────────────────────────
+// ─── Envio de Mensagem Principal (COMPLETAMENTE REVISADO) ─────────────────────
 async function enviarMensagem(numero, mensagemOriginal, instancia) {
   const api = await getApi(instancia);
 
-  // 1. Obtém o número oficial validado pelo próprio WhatsApp
-  const jidValidado = await verificarNumero(numero, instancia);
+  // 1. Número 100% puro, validado pelo Meta
+  const numeroValidado = await verificarNumero(numero, instancia);
   
-  // O jidValidado não pode ser vazio e não pode ser a palavra "true"
-  if (!jidValidado || jidValidado === true) {
-    throw new Error('O número não possui WhatsApp registado.');
+  if (!numeroValidado) {
+    throw new Error('Número inválido ou sem WhatsApp.');
   }
 
-  // 2. Processa o Spintax para gerar o texto final
   const mensagemFinal = processarSpintax(mensagemOriginal);
+  const tempoEspera = Math.floor(Math.random() * 3000) + 3000; // Entre 3 a 6 segundos
 
-  // 3. Simular Comportamento usando o JID validado
-  const tempoEspera = Math.floor(Math.random() * 3000) + 3000; 
-  try {
-    await api.post(`/chat/sendPresence/${instancia}`, {
-      number: jidValidado,
-      presence: 'composing',
-      delay: tempoEspera
-    });
-    await new Promise(resolve => setTimeout(resolve, tempoEspera));
-  } catch (erroPresenca) {
-    console.log(`[Presence] Aviso: Não simulou digitação para ${jidValidado}`);
-  }
-
-  // 4. Enviar a mensagem real
+  // 2. Disparo Integrado (Deixa a Evolution gerir o atraso e o "A escrever...")
   try {
     const r = await api.post(`/message/sendText/${instancia}`, {
-      number: jidValidado,
+      number: numeroValidado,
+      options: {
+        delay: tempoEspera,
+        presence: 'composing' // A própria API vai simular a digitação e aguardar
+      },
       textMessage: {
-        text: mensagemFinal // Usando a variável corretamente definida
+        text: mensagemFinal
       }
     });
     return r.data;
   } catch(err) {
-    console.error(`[ERRO NA API] Falha para ${jidValidado}:`, err.response?.data || err.message);
+    console.error(`[ERRO NA API] Falha para ${numeroValidado}:`, err.message);
     throw err;
   }
 }
@@ -267,9 +260,7 @@ async function obterNumeroDaInstancia(instancia) {
     const api = await getApi(instancia);
     const r = await api.get(`/instance/connectionState/${instancia}`);
     const jid = r.data?.instance?.user?.id || r.data?.user?.id || r.data?.instance?.ownerJid;
-    if (jid) {
-      return jid.split('@')[0].split(':')[0]; 
-    }
+    if (jid) return jid.replace(/[^0-9]/g, ''); 
     return null;
   } catch (e) {
     return null;
@@ -280,42 +271,26 @@ async function aquecerChipsInternamente() {
   try {
     const res = await pool.query(`SELECT * FROM chips WHERE status = 'open'`);
     const chipsAtivos = res.rows;
-
-    if (chipsAtivos.length < 2) {
-      console.log('[WARM-UP] Pelo menos 2 chips online são necessários para o aquecimento.');
-      return; 
-    }
+    if (chipsAtivos.length < 2) return; 
 
     const remetente = chipsAtivos[Math.floor(Math.random() * chipsAtivos.length)];
     let destinatario = chipsAtivos[Math.floor(Math.random() * chipsAtivos.length)];
-
     while (destinatario.id === remetente.id) {
       destinatario = chipsAtivos[Math.floor(Math.random() * chipsAtivos.length)];
     }
 
     const numeroDestinatario = await obterNumeroDaInstancia(destinatario.instancia);
-    
-    if (!numeroDestinatario) {
-      return;
-    }
+    if (!numeroDestinatario) return;
 
     const frasesAquecimento = [
       "{Olá|Oi|Opa}, {tudo bem?|como vai?|tranquilo?}",
-      "{Bom dia|Boa tarde|Boa noite}, {consegue me ouvir?|está por aí?|tudo certo?}",
-      "Passando para dar um {alô|oi|bom dia}.",
-      "{Preciso de|Queria} uma {informação|ajuda}, {pode me ajudar?|tem um minuto?}",
-      "Legal, {obrigado|valeu|agradeço}!",
       "Teste de {conexão|sistema|sinal}, {tudo ok|recebido}?"
     ];
     
     const fraseSorteada = frasesAquecimento[Math.floor(Math.random() * frasesAquecimento.length)];
-    
-    console.log(`[WARM-UP] A aquecer chips: [${remetente.nome}] a enviar mensagem para [${destinatario.nome}]`);
-    
     await enviarMensagem(numeroDestinatario, fraseSorteada, remetente.instancia);
-
   } catch (erro) {
-    console.error('[WARM-UP] Erro no aquecimento interno:', erro.message);
+    // Erro silencioso em background
   }
 }
 
