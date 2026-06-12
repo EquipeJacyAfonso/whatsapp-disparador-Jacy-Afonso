@@ -38,8 +38,6 @@ disparoQueue.on('completed', (job, r) => console.log(`[FILA] ✅ #${job.id} via 
 disparoQueue.on('failed', (job, err) => console.error(`[FILA] ❌ #${job.id}: ${err.message}`));
 
 // ─── FIX 1: Cleanup de jobs travados no startup ───────────────────────────────
-// Jobs que estavam `active` quando o servidor morreu ficam presos.
-// No startup, movemos todos os `active` de volta para `waiting`.
 async function limparJobsTravados() {
   try {
     const ativos = await disparoQueue.getActive();
@@ -50,7 +48,6 @@ async function limparJobsTravados() {
     console.log(`[FILA] ⚠ ${ativos.length} job(s) travado(s) encontrado(s). Reprocessando...`);
     for (const job of ativos) {
       await job.moveToFailed({ message: 'Servidor reiniciado — job reprocessado' }, true);
-      // Recoloca como pendente no banco para ser reenfileirado se necessário
       if (job.data?.disparoId) {
         await pool.query(`
           UPDATE disparos SET status='pendente', erro=NULL
@@ -66,13 +63,10 @@ async function limparJobsTravados() {
 }
 
 // ─── FIX 3: Detecção de chip desconectado durante o disparo ──────────────────
-// Antes de enviar, verifica o status real do chip via Evolution API.
-// Se desconectado, pausa a fila e aguarda reconexão em vez de acumular falhas.
 async function verificarChipConectado(chip) {
   try {
     const state = await statusChip(chip.instancia);
     if (state !== 'open') {
-      // Pausa a fila inteira para não acumular mais falhas
       await disparoQueue.pause();
       await addLog('alerta',
         `Chip ${chip.instancia} desconectado (${state}). Fila pausada automaticamente.`,
@@ -83,7 +77,6 @@ async function verificarChipConectado(chip) {
     }
   } catch(e) {
     if (e.message.includes('desconectado')) throw e;
-    // Erro na própria verificação — deixa passar e tenta enviar
     console.warn(`[FILA] Aviso: não foi possível verificar status do chip ${chip.instancia}: ${e.message}`);
   }
 }
@@ -118,7 +111,6 @@ disparoQueue.process(1, async (job) => {
     if (await chipEmDescanso(chip)) {
       throw new Error(`Chip ${chip.nome} em descanso entre campanhas.`);
     }
-    // FIX 3: Verifica se o chip ainda está conectado antes de enviar
     await verificarChipConectado(chip);
     console.log(`[DISPARO] Chip: ${chip.nome} (${chip.enviados_hoje}/${chip.limite_diario})`);
   } catch (err) {
@@ -127,7 +119,7 @@ disparoQueue.process(1, async (job) => {
     throw err;
   }
 
-  // 4. Spintax
+  // 4. Spintax (Processado aqui uma única vez!)
   const mensagemFinal = processarSpintax(mensagem);
 
   // 5. Envia
@@ -140,12 +132,15 @@ disparoQueue.process(1, async (job) => {
     `, [chip.id, disparoId]);
     await pool.query(`UPDATE campanhas SET enviados=enviados+1 WHERE id=$1`, [campanhaId]);
 
-    // FIX 1: Após cada envio verifica se a campanha concluiu
     await verificarConclusaoCampanha(campanhaId);
 
     const delay = delayAleatorio(delayMin, delayMax);
     console.log(`[DISPARO] ✅ ${numero} — próxima em ${Math.round(delay/1000)}s`);
+    
+    // O Node.js dorme um pouco aqui para gerir a velocidade da Fila principal,
+    // mas já NÃO fica bloqueado pela simulação do "A escrever..." da Meta.
     await new Promise(r => setTimeout(r, delay));
+    
     return { ok: true, chip: chip.instancia };
 
   } catch (err) {
@@ -179,14 +174,11 @@ disparoQueue.on('failed', async (job, err) => {
   if (job.attemptsMade >= job.opts.attempts) {
     await pool.query(`UPDATE disparos SET status='falha', erro=$1 WHERE id=$2`, [err.message, disparoId]);
     await pool.query(`UPDATE campanhas SET falhas=falhas+1 WHERE id=$1`, [campanhaId]);
-    // Verifica conclusão mesmo após falha (pode ter sido o último disparo)
     await verificarConclusaoCampanha(campanhaId);
   }
 });
 
 // ─── FIX 1: Conclusão automática de campanhas ─────────────────────────────────
-// Chamado após cada envio (sucesso ou falha definitiva).
-// Se não houver mais disparos pendentes, marca a campanha como concluída.
 async function verificarConclusaoCampanha(campanhaId) {
   try {
     const pendentes = await pool.query(`
@@ -194,20 +186,17 @@ async function verificarConclusaoCampanha(campanhaId) {
       WHERE campanha_id=$1 AND status='pendente'
     `, [campanhaId]);
 
-    if (parseInt(pendentes.rows[0].count) > 0) return; // ainda tem pendentes
+    if (parseInt(pendentes.rows[0].count) > 0) return; 
 
-    // Verifica se tem jobs ainda na fila do Bull para esta campanha
     const waiting = await disparoQueue.getWaiting();
     const jobsDaCampanha = waiting.filter(j => j.data?.campanhaId === campanhaId);
-    if (jobsDaCampanha.length > 0) return; // ainda tem na fila
+    if (jobsDaCampanha.length > 0) return; 
 
-    // Verifica status atual da campanha
     const camp = await pool.query(
       `SELECT status FROM campanhas WHERE id=$1`, [campanhaId]
     );
     if (!camp.rows.length || camp.rows[0].status === 'concluido') return;
 
-    // Marca como concluída
     await pool.query(`
       UPDATE campanhas
       SET status='concluido', finalizado_em=NOW()
@@ -226,9 +215,7 @@ async function verificarConclusaoCampanha(campanhaId) {
   }
 }
 
-// ─── FIX 2: Monitor de chips desconectados (polling a cada 2 min) ─────────────
-// Roda em background e detecta chips que caíram sem disparar.
-// Se a fila estiver ativa e todos os chips estiverem offline, pausa automaticamente.
+// ─── FIX 2: Monitor de chips desconectados ─────────────────────────────
 let monitorInterval = null;
 
 function iniciarMonitorChips() {
@@ -237,7 +224,7 @@ function iniciarMonitorChips() {
     try {
       const filaAtiva = !(await disparoQueue.isPaused());
       const waiting = await disparoQueue.getWaitingCount();
-      if (!filaAtiva || waiting === 0) return; // nada pra monitorar
+      if (!filaAtiva || waiting === 0) return; 
 
       const chips = await pool.query(`SELECT * FROM chips WHERE status='open'`);
       if (!chips.rows.length) return;
@@ -256,7 +243,7 @@ function iniciarMonitorChips() {
     } catch(e) {
       console.error('[MONITOR] Erro:', e.message);
     }
-  }, 2 * 60 * 1000); // a cada 2 minutos
+  }, 2 * 60 * 1000); 
   console.log('[MONITOR] Monitor de chips iniciado (intervalo: 2min)');
 }
 
@@ -317,7 +304,6 @@ async function pausarCampanha(campanhaId) {
 }
 
 async function retomar() {
-  // Ao retomar, verifica se há chips conectados antes
   const chips = await pool.query(`SELECT COUNT(*) FROM chips WHERE status='open'`);
   if (parseInt(chips.rows[0].count) === 0) {
     throw new Error('Nenhum chip conectado. Conecte ao menos um chip antes de retomar.');

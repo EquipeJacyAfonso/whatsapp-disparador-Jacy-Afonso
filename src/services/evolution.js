@@ -2,6 +2,7 @@ require('dotenv').config();
 const axios = require('axios');
 const pool = require('../db');
 const config = require('./config');
+const { processarSpintax } = require('./antiban'); // Importa o Spintax daqui!
 
 const AQUECIMENTO = [20,30,40,50,60,80,100,120,150];
 
@@ -40,7 +41,7 @@ async function verificarNumero(numero, instancia) {
     });
     
     if (r.data && r.data.length > 0 && r.data[0].exists) {
-      // Devolve o ID oficial da Meta, descobrindo sozinho se leva o 9 ou não
+      // Devolve o ID oficial da Meta
       return r.data[0].jid || `${r.data[0].number}@s.whatsapp.net` || `${numeroLimpo}@s.whatsapp.net`;
     }
     return null; // Não tem WhatsApp
@@ -198,24 +199,6 @@ async function pausarChip(id, horas = 1) {
   return ate;
 }
 
-// ─── Motor Spintax ───────────────────────────────────────────────────────────
-function processarSpintax(texto) {
-  if (!texto) return '';
-  const regex = /\{([^{}]+)\}/g;
-  let resultado = texto;
-  let ocorreuSubstituicao = true;
-
-  while (ocorreuSubstituicao) {
-    ocorreuSubstituicao = false;
-    resultado = resultado.replace(regex, (match, opcoesStr) => {
-      ocorreuSubstituicao = true;
-      const opcoes = opcoesStr.split('|');
-      return opcoes[Math.floor(Math.random() * opcoes.length)];
-    });
-  }
-  return resultado;
-}
-
 async function marcarComoLida(instancia, messageKey) {
   try {
     const api = await getApi(instancia);
@@ -232,44 +215,36 @@ async function marcarComoLida(instancia, messageKey) {
 }
 
 // ─── Envio de Mensagem Principal ─────────────────────────────────────────────
-async function enviarMensagem(numero, mensagemOriginal, instancia) {
+async function enviarMensagem(numero, mensagem, instancia) {
   const api = await getApi(instancia);
 
   // 1. Obtém o número oficial validado pelo próprio WhatsApp
   const jidValidado = await verificarNumero(numero, instancia);
   
-  // O jidValidado não pode ser vazio e não pode ser a palavra "true"
   if (!jidValidado || jidValidado === true) {
     throw new Error('O número não possui WhatsApp registado.');
   }
 
-  // 2. Processa o Spintax para gerar o texto final
-  const mensagemFinal = processarSpintax(mensagemOriginal);
+  // BUG 1 FIX: Remove o '@s.whatsapp.net' e usa só o número para evitar falsos positivos na API
+  const numeroFinalParaEnvio = jidValidado.split('@')[0];
 
-  // 3. Simular Comportamento ("Escrevendo...") usando o JID validado
+  // BUG 3 FIX: O Node.js liberta a fila instantaneamente. O Delay vai para a própria Evolution API.
   const tempoEspera = Math.floor(Math.random() * 3000) + 3000; 
-  try {
-    await api.post(`/chat/sendPresence/${instancia}`, {
-      number: jidValidado,
-      presence: 'composing',
-      delay: tempoEspera
-    });
-    await new Promise(resolve => setTimeout(resolve, tempoEspera));
-  } catch (erroPresenca) {
-    console.log(`[Presence] Aviso: Não simulou digitação para ${jidValidado}`);
-  }
 
-  // 4. Enviar a mensagem real
   try {
     const r = await api.post(`/message/sendText/${instancia}`, {
-      number: jidValidado,
+      number: numeroFinalParaEnvio,
+      options: {
+        delay: tempoEspera,     // API segura a mensagem antes de enviar
+        presence: 'composing'   // API mostra o "A escrever..."
+      },
       textMessage: {
-        text: mensagemFinal
+        text: mensagem          // BUG 2 FIX: Texto limpo, o Spintax já foi processado na origem!
       }
     });
     return r.data;
   } catch(err) {
-    console.error(`[ERRO NA API] Falha para ${jidValidado}:`, err.response?.data || err.message);
+    console.error(`[ERRO NA API] Falha para ${numeroFinalParaEnvio}:`, err.response?.data || err.message);
     throw err;
   }
 }
@@ -309,7 +284,11 @@ async function aquecerChipsInternamente() {
     ];
     
     const fraseSorteada = frasesAquecimento[Math.floor(Math.random() * frasesAquecimento.length)];
-    await enviarMensagem(numeroDestinatario, fraseSorteada, remetente.instancia);
+    
+    // Processa o Spintax AQUI antes de passar para a função de envio otimizada
+    const fraseProcessada = processarSpintax(fraseSorteada);
+    
+    await enviarMensagem(numeroDestinatario, fraseProcessada, remetente.instancia);
   } catch (erro) {
     // Erro silencioso em background
   }
