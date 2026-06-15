@@ -7,51 +7,112 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0d0f12;--surface:#141720;--surface2:#1c2030;--border:#252a3a;--green:#00e676;--gdim:#00e67622;--yellow:#ffd740;--red:#ff5252;--blue:#448aff;--text:#e8eaf0;--muted:#6b7280;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif}
-*{box-sizing:border-box;margin:0;padding:0} body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
 header{border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between}
-.logo{font-family:var(--mono);font-size:14px;letter-spacing:.08em;color:var(--green)} .logo span{color:var(--muted)}
+.logo{font-family:var(--mono);font-size:14px;letter-spacing:.08em;color:var(--green)}
+.logo span{color:var(--muted)}
 nav{display:flex;gap:2px;padding:14px 28px 0;border-bottom:1px solid var(--border);overflow-x:auto}
 .tab{padding:9px 18px;font-size:12px;font-family:var(--mono);background:none;border:none;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:all .15s}
 .tab:hover{color:var(--text)}.tab.active{color:var(--green);border-color:var(--green)}
-.page{display:none;padding:28px;max-width:1100px;margin:0 auto}.page.active{display:block}
-h2{font-size:17px;font-weight:500;margin-bottom:22px} h3{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px}
+.page{display:none;padding:28px;max-width:1100px}.page.active{display:block}
+h2{font-size:17px;font-weight:500;margin-bottom:22px}
+h3{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:22px;margin-bottom:18px}
-.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
 .stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px}
 .stat-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;font-family:var(--mono)}
 .stat-v{font-size:30px;font-weight:300;font-family:var(--mono)}
 .g{color:var(--green)}.y{color:var(--yellow)}.r{color:var(--red)}.b{color:var(--blue)}
 label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;font-family:var(--mono)}
 input,textarea,select{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:9px 13px;border-radius:6px;font-family:var(--mono);font-size:12px;margin-bottom:14px;transition:border-color .15s;outline:none}
-input:focus,textarea:focus,select:focus{border-color:var(--green)} textarea{min-height:100px;resize:vertical}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:14px} .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+input:focus,textarea:focus,select:focus{border-color:var(--green)}
+textarea{min-height:100px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 button{padding:9px 18px;border:none;border-radius:6px;cursor:pointer;font-family:var(--mono);font-size:12px;font-weight:500;transition:all .15s}
-.bp{background:var(--green);color:#000}.bp:hover{background:#00ff85} .bs{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.bs:hover{border-color:var(--green);color:var(--green)}
+.bp{background:var(--green);color:#000}.bp:hover{background:#00ff85}
+.bs{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.bs:hover{border-color:var(--green);color:var(--green)}
 .bd{background:transparent;color:var(--red);border:1px solid var(--red)}.bd:hover{background:var(--red);color:#fff}
 .bw{background:transparent;color:var(--yellow);border:1px solid var(--yellow)}.bw:hover{background:var(--yellow);color:#000}
-.sm{padding:5px 12px;font-size:11px} .bg{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
-table{width:100%;border-collapse:collapse;font-size:12px} th{text-align:left;padding:9px 14px;color:var(--muted);font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border)}
-td{padding:11px 14px;border-bottom:1px solid var(--border);font-family:var(--mono)} tr:last-child td{border-bottom:none} tr:hover td{background:var(--surface2)}
+.sm{padding:5px 12px;font-size:11px}
+.bg{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:9px 14px;color:var(--muted);font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border)}
+td{padding:11px 14px;border-bottom:1px solid var(--border);font-family:var(--mono)}
+tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
 .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-family:var(--mono)}
-.bg-g{background:var(--gdim);color:var(--green)}.bg-y{background:#ffd74022;color:var(--yellow)}.bg-r{background:#ff525222;color:var(--red)}.bg-b{background:#448aff22;color:var(--blue)}.bg-gray{background:var(--surface2);color:var(--muted)}
-.bar{width:100%;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:5px} .bar-f{height:100%;background:var(--green);transition:width 1s;border-radius:3px}
+.bg-g{background:var(--gdim);color:var(--green)}.bg-y{background:#ffd74022;color:var(--yellow)}
+.bg-r{background:#ff525222;color:var(--red)}.bg-b{background:#448aff22;color:var(--blue)}.bg-gray{background:var(--surface2);color:var(--muted)}
+.bar{width:100%;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:5px}
+.bar-f{height:100%;background:var(--green);transition:width 1s;border-radius:3px}
+.bar-f.y{background:var(--yellow)}.bar-f.r{background:var(--red)}
 .hint{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:11px 14px;margin-bottom:14px;font-size:11px;color:var(--muted);font-family:var(--mono);line-height:1.8}
 .hint strong{color:var(--yellow)}.hint.warn{border-color:var(--yellow)}.hint.err{border-color:var(--red);color:var(--red)}
 .log-box{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:14px;font-family:var(--mono);font-size:11px;color:var(--muted);max-height:200px;overflow-y:auto;line-height:1.8}
+.lok{color:var(--green)}.lerr{color:var(--red)}.linf{color:var(--blue)}
 .empty{text-align:center;padding:40px;color:var(--muted);font-family:var(--mono);font-size:12px}
-.chip-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-bottom:9px} .chip-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px} .chip-info{display:flex;align-items:center;gap:12px}
-.dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex-shrink:0} .dot.open{background:var(--green);box-shadow:0 0 6px var(--green)} .dot.erro,.dot.desconectado{background:var(--red)}
-.chip-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:9px} .cstat{background:var(--surface2);border-radius:5px;padding:7px 10px}
-.drop{border:2px dashed var(--border);border-radius:8px;padding:36px;text-align:center;cursor:pointer;color:var(--muted);margin-bottom:14px} .drop:hover{border-color:var(--green);color:var(--green);background:var(--gdim)} .drop input{display:none}
-.aq-day{background:var(--surface2);border-radius:4px;padding:5px 3px;text-align:center;font-family:var(--mono);font-size:9px;color:var(--muted)} .aq-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:3px;margin-top:7px}
-#toast{position:fixed;bottom:22px;right:22px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 18px;font-family:var(--mono);font-size:12px;transform:translateY(70px);opacity:0;transition:all .3s;z-index:999;max-width:340px} #toast.show{transform:translateY(0);opacity:1} #toast.ok{border-color:var(--green);color:var(--green)} #toast.err{border-color:var(--red);color:var(--red)}
-.mb{display:none;position:fixed;inset:0;background:#00000099;z-index:100;align-items:center;justify-content:center} .mb.open{display:flex}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:26px;width:560px;max-width:93vw;max-height:90vh;overflow-y:auto} .mf{display:flex;gap:9px;justify-content:flex-end;margin-top:7px}
-.tabs-mini{display:flex;gap:2px;margin-bottom:18px} .tab-mini{padding:7px 14px;font-size:11px;font-family:var(--mono);background:var(--surface2);border:1px solid var(--border);border-radius:5px;cursor:pointer;color:var(--muted);transition:all .15s} .tab-mini.active{background:var(--gdim);border-color:var(--green);color:var(--green)} .section{display:none}.section.active{display:block}
-
-/* NOVO: Caixa de imagem bem destacada */
-.image-upload-box { display: block; width: 100%; padding: 15px; border: 2px dashed var(--green); background: var(--surface2); color: var(--text); margin-bottom: 20px; border-radius: 8px; cursor: pointer; text-align: center; font-family: var(--mono); }
-.image-upload-box:hover { background: #00e67611; }
+.chip-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-bottom:9px}
+.chip-card.psd{border-color:var(--yellow)}
+.chip-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.chip-info{display:flex;align-items:center;gap:12px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.dot.open{background:var(--green);box-shadow:0 0 6px var(--green)}.dot.connecting{background:var(--yellow)}
+.dot.erro,.dot.desconectado{background:var(--red)}
+.chip-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:9px}
+.cstat{background:var(--surface2);border-radius:5px;padding:7px 10px}
+.cstat-l{font-size:9px;color:var(--muted);font-family:var(--mono);margin-bottom:2px}
+.cstat-v{font-size:13px;font-family:var(--mono)}
+.drop{border:2px dashed var(--border);border-radius:8px;padding:36px;text-align:center;cursor:pointer;transition:all .2s;font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:14px}
+.drop:hover,.drop.dg{border-color:var(--green);color:var(--green);background:var(--gdim)}
+.drop input{display:none}
+.aq-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:3px;margin-top:7px}
+.step{border:1px solid var(--border);border-radius:6px;margin-bottom:7px;overflow:hidden}
+.step-header{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;background:var(--surface2);transition:background .15s}
+.step-header:hover{background:var(--border)}
+.step-num{width:20px;height:20px;border-radius:50%;background:var(--border);color:var(--muted);font-family:var(--mono);font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-num.done{background:var(--green);color:#000}
+.step-title{flex:1;font-family:var(--mono);font-size:11px;color:var(--text)}
+.step-arrow{font-size:9px;color:var(--muted)}
+.step-body{padding:14px;font-family:var(--mono);font-size:11px;line-height:2;border-top:1px solid var(--border)}
+.step-body p{margin-bottom:4px}
+.step-body strong{color:var(--yellow)}
+.cfg-saved{position:relative}
+.wizard-overlay{position:fixed;inset:0;background:#0d0f12f0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
+.wizard-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:600px;max-width:100%;max-height:90vh;overflow-y:auto}
+.wizard-header{padding:28px 28px 0;border-bottom:1px solid var(--border);padding-bottom:20px}
+.wizard-header h2{font-size:18px;font-weight:500;margin-bottom:6px}
+.wizard-header p{font-size:12px;color:var(--muted);font-family:var(--mono)}
+.wizard-steps{display:flex;gap:0;padding:0 28px;margin:20px 0;border-bottom:1px solid var(--border);padding-bottom:0}
+.wstep{padding:8px 14px;font-size:11px;font-family:var(--mono);color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;cursor:default}
+.wstep.active{color:var(--green);border-color:var(--green)}
+.wstep.done{color:var(--muted)}
+.wizard-body{padding:28px}
+.wizard-footer{padding:0 28px 28px;display:flex;justify-content:space-between;align-items:center}
+.health-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.health-item{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px 14px;display:flex;align-items:center;gap:10px}
+.health-dot{width:10px;height:10px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.health-dot.ok{background:var(--green);box-shadow:0 0 6px var(--green)}
+.health-dot.err{background:var(--red)}
+.health-dot.warn{background:var(--yellow)}
+.health-dot.checking{background:var(--muted);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.cfg-saved::after{content:'✅ Salvo';position:absolute;right:10px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:10px;color:var(--green);pointer-events:none}
+.aq-day{background:var(--surface2);border-radius:4px;padding:5px 3px;text-align:center;font-family:var(--mono);font-size:9px;color:var(--muted)}
+.aq-day span{display:block;font-size:11px;color:var(--text);margin-top:1px}
+#toast{position:fixed;bottom:22px;right:22px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 18px;font-family:var(--mono);font-size:12px;transform:translateY(70px);opacity:0;transition:all .3s;z-index:999;max-width:340px}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.ok{border-color:var(--green);color:var(--green)}#toast.err{border-color:var(--red);color:var(--red)}
+.mb{display:none;position:fixed;inset:0;background:#00000099;z-index:100;align-items:center;justify-content:center}
+.mb.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:26px;width:560px;max-width:93vw;max-height:90vh;overflow-y:auto}
+.modal h3{margin-bottom:18px;font-size:13px;color:var(--text);text-transform:none;letter-spacing:0}
+.mf{display:flex;gap:9px;justify-content:flex-end;margin-top:7px}
+.qr-img{max-width:190px;border:4px solid #fff;border-radius:7px;display:block;margin:0 auto 10px}
+.tabs-mini{display:flex;gap:2px;margin-bottom:18px}
+.tab-mini{padding:7px 14px;font-size:11px;font-family:var(--mono);background:var(--surface2);border:1px solid var(--border);border-radius:5px;cursor:pointer;color:var(--muted);transition:all .15s}
+.tab-mini.active{background:var(--gdim);border-color:var(--green);color:var(--green)}
+.section{display:none}.section.active{display:block}
 </style>
 </head>
 <body>
@@ -59,6 +120,7 @@ td{padding:11px 14px;border-bottom:1px solid var(--border);font-family:var(--mon
   <div class="logo">WA<span>/</span>DISPARADOR</div>
   <div style="display:flex;align-items:center;gap:10px">
     <span id="chips-badge" style="font-family:var(--mono);font-size:11px;color:var(--muted)">— chips</span>
+    <span id="cfg-status" style="font-family:var(--mono);font-size:11px;color:var(--muted)"></span>
   </div>
 </header>
 
@@ -75,6 +137,7 @@ td{padding:11px 14px;border-bottom:1px solid var(--border);font-family:var(--mon
   <button class="tab" onclick="showPage('config',this)">⚙ Configurações</button>
 </nav>
 
+<!-- DASHBOARD -->
 <div class="page active" id="page-dashboard">
   <h2>Dashboard</h2>
   <div class="grid4">
@@ -83,250 +146,1397 @@ td{padding:11px 14px;border-bottom:1px solid var(--border);font-family:var(--mon
     <div class="stat"><div class="stat-l">Enviados</div><div class="stat-v g" id="s-env">—</div></div>
     <div class="stat"><div class="stat-l">Falhas</div><div class="stat-v r" id="s-falh">—</div></div>
   </div>
-  <div class="card"><h3>Campanhas</h3><div id="dash-camps"><div class="empty">Nenhuma campanha</div></div></div>
-  <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0">Chips</h3><button class="bs sm" onclick="sincronizar()">↻ Sincronizar</button></div><div id="dash-chips"><div class="empty">Nenhum chip</div></div></div>
-  <div class="card"><h3>Logs (Tempo Real)</h3><div class="log-box" id="log-box"><span class="linf">» Sistema iniciado</span><br></div></div>
+  <div class="card">
+    <h3>Campanhas ativas</h3>
+    <div id="dash-camps"><div class="empty">Nenhuma campanha em andamento</div></div>
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h3 style="margin:0">Chips</h3>
+      <button class="bs sm" onclick="sincronizar()">↻ Sincronizar</button>
+    </div>
+    <div id="dash-chips"><div class="empty">Nenhum chip</div></div>
+  </div>
+  <div class="card"><h3>Log do sistema</h3><div class="log-box" id="log-box"><span class="linf">» Sistema iniciado</span><br></div></div>
 </div>
 
+<!-- IMPORTAR -->
 <div class="page" id="page-importar">
   <h2>Importar Contatos</h2>
-  <div class="tabs-mini"><button class="tab-mini active" onclick="showSection('sec-csv',this)">📂 CSV</button><button class="tab-mini" onclick="showSection('sec-sheets',this)">📊 Google Sheets</button></div>
+  <div class="tabs-mini">
+    <button class="tab-mini active" onclick="showSection('sec-csv',this)">📂 CSV</button>
+    <button class="tab-mini" onclick="showSection('sec-sheets',this)">📊 Google Sheets</button>
+  </div>
+
   <div class="section active" id="sec-csv">
     <div class="card">
-      <div class="hint">A coluna <strong>numero</strong> é obrigatória. Separador: vírgula ou ponto-e-vírgula.</div>
-      <div class="drop" id="drop-zone" onclick="document.getElementById('csv-file').click()"><input type="file" id="csv-file" accept=".csv,.txt" onchange="handleFile(this.files[0])"><div id="drop-text">📂 Clique ou arraste o arquivo CSV aqui</div></div>
+      <div class="hint">Coluna obrigatória: <strong>numero</strong> (aceita: número, phone, telefone)<br>
+      Coluna recomendada: <strong>nome</strong> — demais colunas viram <strong>{variáveis}</strong> no template.<br>
+      Separador: <strong>vírgula</strong> ou <strong>ponto-e-vírgula</strong> — detectado automaticamente.</div>
+      <label>Arquivo CSV</label>
+      <div class="drop" id="drop-zone" onclick="document.getElementById('csv-file').click()">
+        <input type="file" id="csv-file" accept=".csv,.txt" onchange="handleFile(this.files[0])">
+        <div id="drop-text">📂 Clique ou arraste o arquivo CSV aqui</div>
+      </div>
       <div id="import-result"></div>
     </div>
   </div>
+
   <div class="section" id="sec-sheets">
     <div class="card">
-      <label>ID da planilha (opcional)</label><input type="text" id="sheets-id" placeholder="ID aqui...">
-      <label>Range (opcional)</label><input type="text" id="sheets-range" placeholder="Sheet1!A:Z">
+      <div class="hint">As credenciais do Google devem ser configuradas na aba <strong>⚙ Configurações</strong>.<br>
+      A planilha deve ter <strong>numero</strong> na primeira linha como cabeçalho.</div>
+      <label>ID da planilha (opcional — usa o padrão das configurações)</label>
+      <input type="text" id="sheets-id" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms">
+      <label>Range (opcional)</label>
+      <input type="text" id="sheets-range" placeholder="Sheet1!A:Z">
       <button class="bp" onclick="importarSheets()">⬇ Importar do Sheets</button>
       <div id="sheets-result" style="margin-top:14px"></div>
     </div>
   </div>
 </div>
 
+<!-- CAMPANHAS -->
 <div class="page" id="page-campanhas">
-  <h2>Gestão de Campanhas</h2>
+  <h2>Campanhas</h2>
   <div class="card">
-    <h3>Criar Nova Campanha</h3>
-    <label>Nome da Campanha</label>
-    <input type="text" id="camp-nome" placeholder="Ex: Promoção de Inverno">
-    
-    <label>Texto da Mensagem (Suporta Spintax e Variáveis)</label>
-    <div class="hint">Use <strong>{nome}</strong> para puxar da lista. Use <strong>{Opção 1|Opção 2}</strong> para variar o texto.</div>
-    <textarea id="camp-tpl" placeholder="Olá {nome}, preparamos algo especial para ti!"></textarea>
-    
-    <label>Anexar Imagem (Opcional)</label>
-    <div class="hint">Se adicionar uma imagem, o texto acima será enviado como a legenda dessa foto. <strong>Máximo: 5MB (PNG/JPG).</strong></div>
-    <input type="file" id="camp-img" accept="image/png, image/jpeg" class="image-upload-box">
-    
+    <h3>Nova campanha</h3>
+    <label>Nome</label>
+    <input type="text" id="camp-nome" placeholder="Promoção Junho">
+    <label>Template da mensagem</label>
+    <div class="hint">Use <strong>{nome}</strong>, <strong>{numero}</strong> e qualquer coluna do CSV/Sheets entre chaves.</div>
+    <textarea id="camp-tpl" placeholder="Olá {nome}, temos uma oferta especial! 🎁"></textarea>
     <div class="row">
-      <div><label>Espera mínima entre envios (segundos)</label><input type="number" id="camp-dmin" value="25" min="5"></div>
-      <div><label>Espera máxima entre envios (segundos)</label><input type="number" id="camp-dmax" value="55" min="6"></div>
+      <div><label>Delay mínimo (segundos)</label><input type="number" id="camp-dmin" value="20" min="5"></div>
+      <div><label>Delay máximo (segundos)</label><input type="number" id="camp-dmax" value="50" min="6"></div>
     </div>
-    <button class="bp" onclick="criarCampanha()">+ Salvar Nova Campanha</button>
+    <button class="bp" onclick="criarCampanha()">+ Criar campanha</button>
   </div>
-  
   <div class="card">
-    <h3>Campanhas Guardadas</h3>
-    <div id="lista-camps"><div class="empty">Nenhuma campanha criada</div></div>
+    <h3>Todas as campanhas</h3>
+    <div id="lista-camps"><div class="empty">Nenhuma campanha</div></div>
   </div>
 </div>
 
+<!-- CONTATOS -->
 <div class="page" id="page-contatos">
-  <h2>Contatos e Base de Dados</h2>
+  <h2>Contatos</h2>
   <div class="card">
-    <div class="hint">O <strong>Higienizador</strong> vai ligar-se à Evolution API e remover números fixos ou que não possuem WhatsApp ativo antes do disparo. Ajuda a evitar suspensões.</div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <input type="text" id="busca" placeholder="Buscar..." style="margin:0;max-width:280px" oninput="buscar()">
-      <div class="bg">
-        <button class="bs sm" onclick="higienizarLista()" id="btn-higienizar" style="border-color:var(--green);color:var(--green)">🧹 Higienizar Lote Seguro</button>
-        <button class="bs sm" onclick="apagarInvalidos()" style="color:var(--yellow)">🗑 Apagar Inválidos</button>
-        <button class="bd sm" onclick="limparContatos()">🗑 Esvaziar Base</button>
-      </div>
+      <input type="text" id="busca" placeholder="Buscar nome ou número..." style="margin:0;max-width:280px" oninput="buscar()">
+      <button class="bd sm" onclick="limparContatos()">🗑 Limpar tudo</button>
     </div>
-    <div id="tab-contatos"><div class="empty">A carregar...</div></div>
-    <div id="pag-contatos" style="margin-top:14px;display:flex;gap:7px;justify-content:flex-end"></div>
+    <div id="tab-contatos"><div class="empty">Nenhum contato</div></div>
+    <div id="pag-contatos" style="margin-top:14px;display:flex;gap:7px;justify-content:flex-end;align-items:center"></div>
   </div>
 </div>
 
+<!-- CHIPS -->
 <div class="page" id="page-chips">
-  <h2>Gestão de Chips (WhatsApp)</h2>
+  <h2>Chips / Instâncias</h2>
   <div class="card">
-    <h3>Ligar novo número</h3>
+    <h3>Adicionar chip</h3>
     <div class="row">
-      <div><label>Nomeie o aparelho</label><input type="text" id="chip-nome" placeholder="Ex: Chip Matriz"></div>
-      <div><label>ID na API (Sem espaços)</label><input type="text" id="chip-inst" placeholder="instancia_01"></div>
+      <div><label>Nome</label><input type="text" id="chip-nome" placeholder="Chip 1"></div>
+      <div><label>Nome da instância (Evolution API)</label><input type="text" id="chip-inst" placeholder="instancia01"></div>
     </div>
     <div class="bg">
-      <button class="bp" onclick="addChip()">+ Criar Registo</button>
-      <button class="bs" onclick="sincronizar()">↻ Atualizar Todos</button>
+      <button class="bp" onclick="addChip()">+ Adicionar</button>
+      <button class="bs" onclick="sincronizar()">↻ Sincronizar</button>
+      <button class="bd sm" style="margin-left:auto" onclick="limparFila()">🗑 Limpar fila</button>
     </div>
   </div>
   <div class="card">
-    <h3>Tabela de Progressão de Aquecimento</h3>
+    <h3>Tabela de aquecimento</h3>
+    <div class="hint">Chips novos seguem esta tabela automaticamente. O limite sobe a cada dia de uso contínuo.</div>
     <div class="aq-grid" id="aq-grid"></div>
   </div>
-  <div class="card"><h3>Chips Ativos</h3><div id="lista-chips"><div class="empty">Sem dados</div></div></div>
+  <div class="card">
+    <h3>Chips cadastrados</h3>
+    <div id="lista-chips"><div class="empty">Nenhum chip</div></div>
+  </div>
 </div>
 
-<div class="page" id="page-blacklist"><h2>Blacklist</h2><div class="card"><div class="row"><div><label>Número</label><input type="text" id="bl-num"></div><div><label>Motivo</label><input type="text" id="bl-mot"></div></div><button class="bd" onclick="addBlacklist()">+ Bloquear</button></div><div class="card"><div id="tab-blacklist"></div><div id="pag-bl"></div></div></div>
-<div class="page" id="page-relatorios"><h2>Relatórios</h2><div class="card"><select id="rel-camp" onchange="carregarRelatorio()"></select></div><div id="relatorio-conteudo"></div></div>
-<div class="page" id="page-logs"><h2>Logs Completos</h2><div class="card"><div class="bg" style="margin-bottom:10px"><button class="bs sm" onclick="filtrarLogs('')">Todos</button><button class="bs sm" onclick="filtrarLogs('erro')">Erros</button><button class="bs sm" onclick="filtrarLogs('alerta')">Alertas</button></div><div id="tab-logs"></div><div id="pag-logs"></div></div></div>
-
-<div class="page" id="page-antiban">
-  <h2>🛡 Motor Anti-Ban</h2>
+<!-- BLACKLIST -->
+<div class="page" id="page-blacklist">
+  <h2>Blacklist</h2>
   <div class="card">
-    <h3>Horário Comercial</h3>
-    <label><input type="checkbox" id="ab-horario-ativo" onchange="toggleHorario()"> Ativar janela de disparo</label>
-    <div id="ab-horario-campos" style="display:none;margin-top:10px" class="row">
-      <div><label>Início (Hora)</label><input type="number" id="ab-hinicio"></div><div><label>Fim (Hora)</label><input type="number" id="ab-hfim"></div>
+    <h3>Adicionar número</h3>
+    <div class="hint">Números na blacklist nunca receberão mensagens e são removidos dos contatos automaticamente.</div>
+    <div class="row">
+      <div><label>Número (com DDD)</label><input type="text" id="bl-num" placeholder="11999998888"></div>
+      <div><label>Motivo (opcional)</label><input type="text" id="bl-mot" placeholder="Solicitou remoção"></div>
     </div>
-    <button class="bp" onclick="salvarAntiban('horario')">Salvar Horário</button>
+    <button class="bd" onclick="addBlacklist()">+ Adicionar à blacklist</button>
   </div>
   <div class="card">
-    <h3>Pausas Automáticas</h3>
-    <label>Pausar chip se der erro X vezes em 30 min:</label><input type="number" id="ab-threshold">
-    <button class="bp" onclick="salvarAntiban('threshold')">Salvar Limite</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="margin:0">Números bloqueados</h3>
+      <span id="bl-total" style="font-family:var(--mono);font-size:11px;color:var(--muted)"></span>
+    </div>
+    <div id="tab-blacklist"><div class="empty">Nenhum número bloqueado</div></div>
+    <div id="pag-bl" style="margin-top:14px;display:flex;gap:7px;justify-content:flex-end"></div>
   </div>
-  <div class="card"><h3>Estado Atual</h3><div id="ab-status"></div></div>
 </div>
 
+<!-- RELATÓRIOS -->
+<div class="page" id="page-relatorios">
+  <h2>Relatórios</h2>
+  <div class="card">
+    <h3>Selecionar campanha</h3>
+    <select id="rel-camp" onchange="carregarRelatorio()">
+      <option value="">— Selecione uma campanha —</option>
+    </select>
+  </div>
+  <div id="relatorio-conteudo"></div>
+</div>
+
+<!-- ANTI-BAN -->
+<div class="page" id="page-antiban">
+  <h2>🛡 Proteção Anti-ban</h2>
+
+  <div class="card">
+    <h3>Janela de horário</h3>
+    <div class="hint">Mensagens só são enviadas dentro do horário configurado. Fora dele, os jobs ficam na fila e disparam automaticamente quando a janela abre.</div>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+      <label style="margin:0;display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="ab-horario-ativo" style="width:auto;margin:0" onchange="toggleHorario()">
+        <span style="font-family:var(--mono);font-size:12px">Ativar janela de horário</span>
+      </label>
+    </div>
+    <div id="ab-horario-campos" style="display:none">
+      <div class="row">
+        <div><label>Hora de início (0–23)</label><input type="number" id="ab-hinicio" min="0" max="23" value="8"></div>
+        <div><label>Hora de fim (0–23)</label><input type="number" id="ab-hfim" min="0" max="23" value="20"></div>
+      </div>
+      <div class="hint">Exemplo: início <strong>8</strong>, fim <strong>20</strong> → dispara das 8h às 19h59.</div>
+    </div>
+    <button class="bp" onclick="salvarAntiban('horario')">💾 Salvar janela</button>
+  </div>
+
+  <div class="card">
+    <h3>Spintax — variação automática de texto</h3>
+    <div class="hint">Use <strong>{opção1|opção2|opção3}</strong> no template para variar o texto a cada mensagem enviada.<br>
+    Suporta aninhamento: <strong>{Olá|{Oi|Ei}, tudo bem?}</strong><br><br>
+    Exemplo completo:<br>
+    <strong>{Olá|Oi|Bom dia}, {nome}! 👋</strong><br>
+    <strong>{Temos uma novidade|Preparamos algo especial} para você{!| hoje!| esta semana!}</strong></div>
+    <div class="card" style="background:var(--bg);margin-bottom:0">
+      <h3>Testar spintax</h3>
+      <textarea id="ab-spintax-teste" placeholder="{Olá|Oi|Bom dia}, {nome}! Temos {uma oferta|uma novidade|algo especial} para você." style="min-height:80px"></textarea>
+      <button class="bs" onclick="testarSpintax()">▶ Gerar 5 variações</button>
+      <div id="ab-spintax-result" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Pausa automática por falhas</h3>
+    <div class="hint">Se um chip atingir o número de falhas consecutivas configurado em 30 minutos, ele é pausado automaticamente por 30 minutos. Erros que indicam ban pausam o chip por 24h.</div>
+    <label>Falhas consecutivas para pausa automática (em 30 min)</label>
+    <input type="number" id="ab-threshold" min="1" max="20" value="3">
+    <button class="bp" onclick="salvarAntiban('threshold')">💾 Salvar</button>
+  </div>
+
+  <div class="card">
+    <h3>Intervalo entre campanhas por chip</h3>
+    <div class="hint">Tempo mínimo de descanso (em minutos) entre campanhas para o mesmo chip. <strong>0</strong> = sem intervalo.</div>
+    <label>Intervalo mínimo (minutos)</label>
+    <input type="number" id="ab-intervalo" min="0" value="0">
+    <button class="bp" onclick="salvarAntiban('intervalo')">💾 Salvar</button>
+  </div>
+
+  <div class="card">
+    <h3>Status atual de proteção</h3>
+    <div id="ab-status"><div class="empty">Carregando...</div></div>
+    <button class="bs" style="margin-top:12px" onclick="carregarStatusAntiban()">↻ Atualizar</button>
+  </div>
+</div>
+
+<!-- LOGS -->
+<div class="page" id="page-logs">
+  <h2>📋 Logs do sistema</h2>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div class="bg">
+        <button class="bs sm" id="log-fil-todos" onclick="filtrarLogs('')" style="border-color:var(--green);color:var(--green)">Todos</button>
+        <button class="bs sm" onclick="filtrarLogs('erro')">❌ Erros</button>
+        <button class="bs sm" onclick="filtrarLogs('alerta')">⚠ Alertas</button>
+        <button class="bs sm" onclick="filtrarLogs('info')">ℹ Info</button>
+      </div>
+      <button class="bs sm" onclick="loadLogs()">↻ Atualizar</button>
+    </div>
+    <div id="tab-logs"><div class="empty">Carregando...</div></div>
+    <div id="pag-logs" style="margin-top:14px;display:flex;gap:7px;justify-content:flex-end;align-items:center"></div>
+  </div>
+</div>
+
+<!-- CONFIGURAÇÕES -->
 <div class="page" id="page-config">
-  <h2>⚙ Servidor e Conexões</h2>
+  <h2>⚙ Configurações</h2>
+
+  <!-- Indicadores de status no topo -->
+  <div class="row3" style="margin-bottom:18px">
+    <div class="stat" id="cfg-stat-evo" style="cursor:pointer" onclick="document.getElementById('sec-evo').scrollIntoView({behavior:'smooth'})">
+      <div class="stat-l">Evolution API</div>
+      <div id="cfg-evo-badge" style="font-family:var(--mono);font-size:13px;color:var(--muted)">Verificando...</div>
+    </div>
+    <div class="stat" id="cfg-stat-sheets" style="cursor:pointer" onclick="document.getElementById('sec-sheets').scrollIntoView({behavior:'smooth'})">
+      <div class="stat-l">Google Sheets</div>
+      <div id="cfg-sheets-badge" style="font-family:var(--mono);font-size:13px;color:var(--muted)">Verificando...</div>
+    </div>
+    <div class="stat" id="cfg-stat-db">
+      <div class="stat-l">Banco de dados</div>
+      <div id="cfg-db-badge" style="font-family:var(--mono);font-size:13px;color:var(--muted)">Verificando...</div>
+    </div>
+  </div>
+
+  <!-- Evolution API -->
+  <div class="card" id="sec-evo">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="margin:0">🔌 Evolution API</h3>
+      <span id="evo-status-badge" class="badge bg-gray">não testado</span>
+    </div>
+    <div class="hint">Configurações de conexão com a Evolution API. Salvas no banco — sem editar arquivos.</div>
+    <div class="row">
+      <div>
+        <label>URL da Evolution API</label>
+        <input type="text" id="cfg-evo-url" placeholder="http://localhost:8080">
+      </div>
+      <div>
+        <label>Chave de autenticação (API Key)</label>
+        <input type="password" id="cfg-evo-key" placeholder="sua_chave_aqui">
+        <div style="display:flex;gap:4px;margin-top:-10px;margin-bottom:14px">
+          <button class="bs sm" onclick="toggleSenha('cfg-evo-key')">👁 Ver</button>
+        </div>
+      </div>
+    </div>
+    <div class="bg">
+      <button class="bp" onclick="salvarConfig('evolution')">💾 Salvar</button>
+      <button class="bs" onclick="testarEvolution()">🔌 Testar conexão</button>
+    </div>
+    <div id="evo-test-result" style="margin-top:12px"></div>
+  </div>
+
+  <!-- Delays -->
   <div class="card">
-    <h3>Evolution API</h3>
-    <label>URL (Com http://)</label><input type="text" id="cfg-evo-url">
-    <label>Global API Key</label><input type="password" id="cfg-evo-key">
-    <button class="bp" onclick="salvarConfig('evolution')">Salvar Conexão</button>
+    <h3>⏱ Delays padrão</h3>
+    <div class="hint">Intervalo padrão entre mensagens. Campanhas podem ter delay próprio que substitui este.</div>
+    <div class="row">
+      <div><label>Mínimo (segundos)</label><input type="number" id="cfg-dmin" value="20" min="5"></div>
+      <div><label>Máximo (segundos)</label><input type="number" id="cfg-dmax" value="50" min="6"></div>
+    </div>
+    <button class="bp" onclick="salvarConfig('delays')">💾 Salvar delays</button>
+  </div>
+
+  <!-- Google Sheets -->
+  <div class="card" id="sec-sheets">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="margin:0">📊 Google Sheets</h3>
+      <span id="sheets-status-badge" class="badge bg-gray">não configurado</span>
+    </div>
+
+    <!-- Passo a passo -->
+    <div style="margin-bottom:18px">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Como configurar</div>
+      <div id="sheets-steps">
+        <div class="step" id="step-1">
+          <div class="step-header" onclick="toggleStep(1)">
+            <span class="step-num" id="snum-1">1</span>
+            <span class="step-title">Criar projeto no Google Cloud</span>
+            <span class="step-arrow">▼</span>
+          </div>
+          <div class="step-body" id="sbody-1">
+            <p>1. Acesse <a href="https://console.cloud.google.com" target="_blank" style="color:var(--blue)">console.cloud.google.com</a></p>
+            <p>2. Clique em <strong>Selecionar projeto → Novo projeto</strong></p>
+            <p>3. Dê um nome (ex: "disparador") e clique em <strong>Criar</strong></p>
+            <button class="bs sm" style="margin-top:8px" onclick="marcarStep(1)">✅ Feito</button>
+          </div>
+        </div>
+        <div class="step" id="step-2">
+          <div class="step-header" onclick="toggleStep(2)">
+            <span class="step-num" id="snum-2">2</span>
+            <span class="step-title">Ativar Google Sheets API</span>
+            <span class="step-arrow">▼</span>
+          </div>
+          <div class="step-body" id="sbody-2" style="display:none">
+            <p>1. No menu lateral, vá em <strong>APIs e serviços → Biblioteca</strong></p>
+            <p>2. Busque por <strong>Google Sheets API</strong></p>
+            <p>3. Clique em <strong>Ativar</strong></p>
+            <button class="bs sm" style="margin-top:8px" onclick="marcarStep(2)">✅ Feito</button>
+          </div>
+        </div>
+        <div class="step" id="step-3">
+          <div class="step-header" onclick="toggleStep(3)">
+            <span class="step-num" id="snum-3">3</span>
+            <span class="step-title">Criar Service Account e baixar JSON</span>
+            <span class="step-arrow">▼</span>
+          </div>
+          <div class="step-body" id="sbody-3" style="display:none">
+            <p>1. Vá em <strong>APIs e serviços → Credenciais</strong></p>
+            <p>2. Clique em <strong>Criar credenciais → Conta de serviço</strong></p>
+            <p>3. Preencha o nome e clique em <strong>Concluído</strong></p>
+            <p>4. Clique na conta criada → aba <strong>Chaves → Adicionar chave → JSON</strong></p>
+            <p>5. Um arquivo JSON será baixado — cole o conteúdo abaixo</p>
+            <button class="bs sm" style="margin-top:8px" onclick="marcarStep(3)">✅ Feito</button>
+          </div>
+        </div>
+        <div class="step" id="step-4">
+          <div class="step-header" onclick="toggleStep(4)">
+            <span class="step-num" id="snum-4">4</span>
+            <span class="step-title">Compartilhar planilha com a Service Account</span>
+            <span class="step-arrow">▼</span>
+          </div>
+          <div class="step-body" id="sbody-4" style="display:none">
+            <p>1. Abra sua planilha no Google Sheets</p>
+            <p>2. Clique em <strong>Compartilhar</strong> (botão verde, canto superior direito)</p>
+            <p>3. Cole o e-mail da service account (termina em <strong>@...iam.gserviceaccount.com</strong>)</p>
+            <p>4. Selecione permissão <strong>Visualizador</strong> e clique em <strong>Enviar</strong></p>
+            <div class="hint" style="margin-top:8px">💡 O e-mail da service account está dentro do JSON que você baixou, no campo <strong>"client_email"</strong></div>
+            <button class="bs sm" style="margin-top:8px" onclick="marcarStep(4)">✅ Feito</button>
+          </div>
+        </div>
+        <div class="step" id="step-5">
+          <div class="step-header" onclick="toggleStep(5)">
+            <span class="step-num" id="snum-5">5</span>
+            <span class="step-title">Formato da planilha</span>
+            <span class="step-arrow">▼</span>
+          </div>
+          <div class="step-body" id="sbody-5" style="display:none">
+            <p>A primeira linha deve ser o cabeçalho. A coluna <strong>numero</strong> é obrigatória:</p>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:10px;margin:8px 0;font-family:var(--mono);font-size:11px;overflow-x:auto">
+              <span style="color:var(--green)">numero</span> | nome | cidade | produto<br>
+              11999998888 | Maria | São Paulo | Plano A<br>
+              21988887777 | João | Rio | Plano B
+            </div>
+            <p>As colunas extras ficam disponíveis como <strong>{variáveis}</strong> no template da campanha.</p>
+            <button class="bs sm" style="margin-top:8px" onclick="marcarStep(5)">✅ Entendido</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Campos de configuração -->
+    <label>ID da planilha</label>
+    <div style="display:flex;gap:7px;margin-bottom:14px">
+      <input type="text" id="cfg-sheet-id" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms" style="margin:0;flex:1">
+      <button class="bs sm" onclick="extrairIdDaURL()">📋 Extrair da URL</button>
+    </div>
+    <div class="hint">O ID está na URL da planilha: docs.google.com/spreadsheets/d/<strong style="color:var(--green)">ID_AQUI</strong>/edit</div>
+
+    <label>Range (aba e colunas)</label>
+    <input type="text" id="cfg-sheet-range" placeholder="Sheet1!A:Z" value="Sheet1!A:Z">
+
+    <label>JSON da Service Account</label>
+    <div style="position:relative;margin-bottom:14px">
+      <textarea id="cfg-sheet-creds" placeholder='Cole aqui o conteúdo completo do arquivo JSON baixado do Google Cloud...' style="min-height:100px;font-size:11px;margin:0;padding-right:80px"></textarea>
+      <button class="bs sm" style="position:absolute;top:8px;right:8px" onclick="document.getElementById('creds-file').click()">📁 Arquivo</button>
+      <input type="file" id="creds-file" accept=".json" style="display:none" onchange="lerArquivoCreds(this)">
+    </div>
+    <div id="creds-status" style="margin-bottom:14px"></div>
+    <div id="client-email-info" style="margin-bottom:14px"></div>
+
+    <div class="bg">
+      <button class="bp" onclick="salvarConfig('sheets')">💾 Salvar configurações</button>
+      <button class="bs" onclick="testarSheets()">📊 Testar conexão</button>
+    </div>
+    <div id="sheets-test-result" style="margin-top:12px"></div>
+  </div>
+
+  <!-- Sincronização automática Sheets → Banco -->
+  <div class="card">
+    <h3>🔄 Sincronização automática Sheets → Banco</h3>
+    <div class="hint">Configure para importar contatos do Sheets automaticamente em intervalos regulares. O banco sempre reflete a planilha.</div>
+    <div class="row">
+      <div>
+        <label>Sincronizar a cada (horas, 0 = desativado)</label>
+        <input type="number" id="cfg-sync-intervalo" min="0" max="24" value="0" placeholder="0">
+      </div>
+      <div>
+        <label>Próxima sincronização</label>
+        <div id="cfg-sync-proxima" style="font-family:var(--mono);font-size:12px;color:var(--muted);padding:9px 0">—</div>
+      </div>
+    </div>
+    <div class="bg">
+      <button class="bp" onclick="salvarConfig('sync')">💾 Salvar</button>
+      <button class="bs" onclick="sincronizarAgora()">▶ Sincronizar agora</button>
+    </div>
+    <div id="sync-result" style="margin-top:12px"></div>
+  </div>
+
+  <!-- Webhook -->
+  <div class="card" id="sec-webhook">
+    <h3>🔔 Webhook (notificações em tempo real)</h3>
+    <div class="hint">O webhook permite que a Evolution API notifique o sistema instantaneamente quando um chip conecta ou desconecta, sem precisar de polling. Recomendado para uso em produção.</div>
+    <label>URL do webhook (endereço público deste servidor)</label>
+    <div style="display:flex;gap:7px;margin-bottom:14px">
+      <input type="text" id="cfg-webhook-url" placeholder="http://seu-servidor:3000/api/webhook/evolution" style="margin:0;flex:1">
+      <button class="bs sm" onclick="preencherWebhookLocal()">🏠 Local</button>
+    </div>
+    <div class="hint warn">⚠ Para uso local, o webhook só funciona se a Evolution API estiver na mesma máquina. Para acesso externo, use um serviço como ngrok ou hospede em um servidor público.</div>
+    <div class="bg">
+      <button class="bp" onclick="registrarWebhook()">🔔 Registrar webhook em todos os chips</button>
+    </div>
+    <div id="webhook-result" style="margin-top:12px"></div>
+  </div>
+
+  <!-- Notificações -->
+  <div class="card">
+    <h3>🔔 Notificações via WhatsApp</h3>
+    <div class="hint">Receba alertas quando campanhas concluírem, chips forem banidos ou desconectarem.</div>
+    <div class="row">
+      <div>
+        <label>Número para receber notificações (com DDD)</label>
+        <input type="text" id="cfg-admin-num" placeholder="11999998888">
+      </div>
+      <div>
+        <label>Instância do chip enviador</label>
+        <input type="text" id="cfg-admin-inst" placeholder="instancia01">
+      </div>
+    </div>
+    <div class="bg">
+      <button class="bp" onclick="salvarNotifConfig()">💾 Salvar</button>
+      <button class="bs" onclick="testarNotificacao()">📨 Enviar teste</button>
+    </div>
+  </div>
+
+  <!-- Diagnóstico geral -->
+  <div class="card">
+    <h3>🔍 Diagnóstico</h3>
+    <div class="bg" style="margin-bottom:12px">
+      <button class="bs" onclick="testarTudo()">▶ Testar tudo</button>
+      <button class="bs" onclick="testarEvolution()">🔌 Evolution API</button>
+      <button class="bs" onclick="testarSheets()">📊 Google Sheets</button>
+      <button class="bs" onclick="testarBanco()">🗄 Banco de dados</button>
+    </div>
+    <div id="diag-result"></div>
   </div>
 </div>
 
-<div class="mb" id="m-tpl"><div class="modal"><h3>Editar Texto</h3><input type="hidden" id="e-camp-id"><textarea id="e-tpl"></textarea><div class="mf"><button class="bs" onclick="fecharM('m-tpl')">Cancelar</button><button class="bp" onclick="salvarTpl()">Salvar</button></div></div></div>
-<div class="mb" id="m-delay"><div class="modal"><h3>Editar Delay</h3><input type="hidden" id="e-delay-id"><div class="row"><div><label>Min</label><input type="number" id="e-dmin"></div><div><label>Max</label><input type="number" id="e-dmax"></div></div><div class="mf"><button class="bs" onclick="fecharM('m-delay')">Cancelar</button><button class="bp" onclick="salvarDelay()">Salvar</button></div></div></div>
-<div class="mb" id="m-limite"><div class="modal"><h3>Forçar Limite Diário do Chip</h3><input type="hidden" id="e-lim-id"><input type="number" id="e-lim-val"><div class="mf"><button class="bs" onclick="fecharM('m-limite')">Cancelar</button><button class="bp" onclick="salvarLimite()">Salvar</button></div></div></div>
-<div class="mb" id="m-agendar"><div class="modal"><h3>Agendar Início</h3><input type="hidden" id="e-agendar-id"><input type="datetime-local" id="e-data-agendamento" style="color:var(--text);background:var(--bg)"><div class="mf"><button class="bs" onclick="fecharM('m-agendar')">Cancelar</button><button class="bp" onclick="salvarAgendamento()">Agendar</button></div></div></div>
-<div class="mb" id="m-qr"><div class="modal" style="text-align:center"><h3 id="qr-titulo">QR Code</h3><div id="qr-content"></div><div class="mf" style="justify-content:center"><button class="bs" onclick="fecharM('m-qr')">Fechar</button><button class="bs" onclick="recarregarQR()">Atualizar</button></div></div></div>
+<!-- MODAL TEMPLATE -->
+<div class="mb" id="m-tpl">
+  <div class="modal">
+    <h3>Editar template</h3>
+    <input type="hidden" id="e-camp-id">
+    <textarea id="e-tpl" style="min-height:130px"></textarea>
+    <div class="mf"><button class="bs" onclick="fecharM('m-tpl')">Cancelar</button><button class="bp" onclick="salvarTpl()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- MODAL DELAY -->
+<div class="mb" id="m-delay">
+  <div class="modal">
+    <h3>Editar delay da campanha</h3>
+    <input type="hidden" id="e-delay-id">
+    <div class="row">
+      <div><label>Mínimo (s)</label><input type="number" id="e-dmin" min="5"></div>
+      <div><label>Máximo (s)</label><input type="number" id="e-dmax" min="6"></div>
+    </div>
+    <div class="mf"><button class="bs" onclick="fecharM('m-delay')">Cancelar</button><button class="bp" onclick="salvarDelay()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- MODAL LIMITE CHIP -->
+<div class="mb" id="m-limite">
+  <div class="modal">
+    <h3>Editar limite diário</h3>
+    <input type="hidden" id="e-lim-id">
+    <label>Limite diário de mensagens</label>
+    <input type="number" id="e-lim-val" min="1" max="500">
+    <div class="hint warn">⚠ Aumentar o limite acima da tabela de aquecimento aumenta risco de banimento.</div>
+    <div class="mf"><button class="bs" onclick="fecharM('m-limite')">Cancelar</button><button class="bp" onclick="salvarLimite()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- MODAL QR -->
+<div class="mb" id="m-qr">
+  <div class="modal" style="text-align:center">
+    <h3 id="qr-titulo">QR Code</h3>
+    <div id="qr-content"><div class="empty">Carregando...</div></div>
+    <div class="mf" style="justify-content:center">
+      <button class="bs" onclick="fecharM('m-qr')">Fechar</button>
+      <button class="bs" onclick="recarregarQR()">↻ Atualizar</button>
+    </div>
+  </div>
+</div>
+
+<!-- WIZARD PRIMEIRO ACESSO -->
+<div class="wizard-overlay" id="wizard" style="display:none">
+  <div class="wizard-box">
+    <div class="wizard-header">
+      <h2>👋 Bem-vindo ao WhatsApp Disparador</h2>
+      <p>Vamos configurar tudo em 4 passos simples</p>
+    </div>
+    <div class="wizard-steps">
+      <div class="wstep active" id="ws-1">1. Verificar sistema</div>
+      <div class="wstep" id="ws-2">2. Evolution API</div>
+      <div class="wstep" id="ws-3">3. Primeiro chip</div>
+      <div class="wstep" id="ws-4">4. Pronto!</div>
+    </div>
+    <div class="wizard-body">
+
+      <!-- Passo 1: Health check -->
+      <div id="wp-1">
+        <h3 style="margin-bottom:12px">Verificando serviços</h3>
+        <div class="health-grid">
+          <div class="health-item">
+            <div class="health-dot checking" id="hd-postgres"></div>
+            <div>
+              <div style="font-family:var(--mono);font-size:12px">PostgreSQL</div>
+              <div id="hs-postgres" style="font-size:10px;color:var(--muted);font-family:var(--mono)">verificando...</div>
+            </div>
+          </div>
+          <div class="health-item">
+            <div class="health-dot checking" id="hd-redis"></div>
+            <div>
+              <div style="font-family:var(--mono);font-size:12px">Redis</div>
+              <div id="hs-redis" style="font-size:10px;color:var(--muted);font-family:var(--mono)">verificando...</div>
+            </div>
+          </div>
+          <div class="health-item">
+            <div class="health-dot checking" id="hd-evolution"></div>
+            <div>
+              <div style="font-family:var(--mono);font-size:12px">Evolution API</div>
+              <div id="hs-evolution" style="font-size:10px;color:var(--muted);font-family:var(--mono)">verificando...</div>
+            </div>
+          </div>
+          <div class="health-item">
+            <div class="health-dot checking" id="hd-chips"></div>
+            <div>
+              <div style="font-family:var(--mono);font-size:12px">Chips</div>
+              <div id="hs-chips" style="font-size:10px;color:var(--muted);font-family:var(--mono)">verificando...</div>
+            </div>
+          </div>
+        </div>
+        <div id="health-msg" style="margin-top:10px"></div>
+      </div>
+
+      <!-- Passo 2: Evolution API -->
+      <div id="wp-2" style="display:none">
+        <h3 style="margin-bottom:6px">Configurar Evolution API</h3>
+        <p style="font-size:12px;color:var(--muted);font-family:var(--mono);margin-bottom:14px">Informe a URL e a chave da sua Evolution API</p>
+        <label>URL da Evolution API</label>
+        <input type="text" id="wiz-evo-url" placeholder="http://localhost:8080" value="http://localhost:8080">
+        <label>Chave de autenticação (API Key)</label>
+        <input type="password" id="wiz-evo-key" placeholder="sua_chave_aqui">
+        <div id="wiz-evo-result" style="margin-top:4px"></div>
+      </div>
+
+      <!-- Passo 3: Primeiro chip -->
+      <div id="wp-3" style="display:none">
+        <h3 style="margin-bottom:6px">Adicionar primeiro chip</h3>
+        <p style="font-size:12px;color:var(--muted);font-family:var(--mono);margin-bottom:14px">Adicione o número de WhatsApp que fará os envios</p>
+        <label>Nome do chip</label>
+        <input type="text" id="wiz-chip-nome" placeholder="Chip Principal">
+        <label>Nome da instância (sem espaços)</label>
+        <input type="text" id="wiz-chip-inst" placeholder="instancia01">
+        <div id="wiz-chip-result" style="margin-top:4px"></div>
+        <div id="wiz-qr-area" style="text-align:center;margin-top:14px"></div>
+      </div>
+
+      <!-- Passo 4: Concluído -->
+      <div id="wp-4" style="display:none;text-align:center;padding:20px 0">
+        <div style="font-size:48px;margin-bottom:14px">🎉</div>
+        <h3 style="font-size:16px;margin-bottom:10px">Tudo configurado!</h3>
+        <p style="font-size:12px;color:var(--muted);font-family:var(--mono);line-height:1.8">
+          Próximos passos:<br>
+          1. Importe seus contatos (aba Importar)<br>
+          2. Crie uma campanha com seu template<br>
+          3. Clique em ▶ Iniciar e acompanhe no Dashboard
+        </p>
+      </div>
+    </div>
+    <div class="wizard-footer">
+      <button class="bs" id="wiz-skip" onclick="fecharWizard()">Pular configuração</button>
+      <div class="bg">
+        <button class="bs" id="wiz-back" onclick="wizardBack()" style="display:none">← Voltar</button>
+        <button class="bp" id="wiz-next" onclick="wizardNext()">Verificar →</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div id="toast"></div>
 
 <script>
-const API='/api'; let cPage=1,blPage=1,bTimer,qrInst=''; const AQ=[15,25,40,60,80,100,120,150];
+const API='/api';
+let cPage=1,blPage=1,bTimer,qrInst='';
+const AQ=[20,30,40,50,60,80,100,120,150];
 
-// GERAL
-function showPage(n,btn){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.getElementById('page-'+n).classList.add('active');if(btn)btn.classList.add('active');if(n==='dashboard')loadDash();if(n==='campanhas')loadCamps();if(n==='contatos')loadContatos();if(n==='chips'){loadChips();renderAQ();}if(n==='blacklist')loadBL();if(n==='relatorios')loadRelCamps();if(n==='config')loadConfig();if(n==='antiban')loadAntiban();if(n==='logs')loadLogs();}
-function showSection(n,btn){document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.tab-mini').forEach(t=>t.classList.remove('active'));document.getElementById(n).classList.add('active');if(btn)btn.classList.add('active');}
-function toast(m,t='ok'){const e=document.getElementById('toast');e.textContent=m;e.className='show '+t;setTimeout(()=>e.className='',4000);}
-function log(m,t='info'){const b=document.getElementById('log-box');const s=document.createElement('span');s.className='l'+t;s.textContent=`» [${new Date().toLocaleTimeString()}] ${m}`;b.appendChild(s);b.appendChild(document.createElement('br'));b.scrollTop=b.scrollHeight;}
-function abrirM(id){document.getElementById(id).classList.add('open');} function fecharM(id){document.getElementById(id).classList.remove('open');}
-function esc(s){return(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n');}
+// ─── Nav ─────────────────────────────────────────────────
+function showPage(n,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+n).classList.add('active');
+  if(btn)btn.classList.add('active');
+  if(n==='dashboard')loadDash();
+  if(n==='campanhas')loadCamps();
+  if(n==='contatos')loadContatos();
+  if(n==='chips'){loadChips();renderAQ();}
+  if(n==='blacklist')loadBL();
+  if(n==='relatorios')loadRelCamps();
+  if(n==='config')loadConfig();
+  if(n==='antiban'){loadAntiban();}
+  if(n==='logs'){loadLogs();}
+}
+function showSection(n,btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab-mini').forEach(t=>t.classList.remove('active'));
+  document.getElementById(n).classList.add('active');
+  if(btn)btn.classList.add('active');
+}
+
+// ─── Toast / Log ─────────────────────────────────────────
+function toast(msg,type='ok'){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='show '+type;
+  setTimeout(()=>el.className='',4000);
+}
+function log(msg,type='info'){
+  const b=document.getElementById('log-box');
+  const s=document.createElement('span');
+  s.className='l'+type;
+  s.textContent=`» [${new Date().toLocaleTimeString()}] ${msg}`;
+  b.appendChild(s);b.appendChild(document.createElement('br'));
+  b.scrollTop=b.scrollHeight;
+}
+
+// ─── Modal ───────────────────────────────────────────────
+function abrirM(id){document.getElementById(id).classList.add('open');}
+function fecharM(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.mb').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
 
-// DASHBOARD
-async function loadDash(){try{const[cR,fR,campR,chR]=await Promise.all([fetch(`${API}/contatos?limit=1`).then(r=>r.json()),fetch(`${API}/fila/status`).then(r=>r.json()),fetch(`${API}/campanhas`).then(r=>r.json()),fetch(`${API}/chips`).then(r=>r.json())]);document.getElementById('s-cont').textContent=cR.total||0;document.getElementById('s-fila').textContent=fR.data?.waiting||0;const camps=campR.data||[];document.getElementById('s-env').textContent=camps.reduce((s,c)=>s+(c.enviados||0),0);document.getElementById('s-falh').textContent=camps.reduce((s,c)=>s+(c.falhas||0),0);const ativas=camps.filter(c=>c.status==='em_andamento');const agendadas=camps.filter(c=>c.status==='agendado');let h='';if(ativas.length)h+=ativas.map(c=>{const p=c.total_contatos>0?Math.round(c.enviados/c.total_contatos*100):0;return `<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-family:var(--mono);font-size:12px">${c.nome} <span class="badge bg-y">em andamento</span></span><span style="font-size:11px;color:var(--muted)">${c.enviados}/${c.total_contatos} (${p}%)</span></div><div class="bar"><div class="bar-f" style="width:${p}%"></div></div></div>`}).join('');if(agendadas.length)h+=agendadas.map(c=>`<div style="margin-bottom:10px;display:flex;justify-content:space-between"><span style="font-size:12px">${c.nome} <span class="badge bg-b">agendada</span></span><span style="font-size:11px">⏳ Início: ${new Date(c.data_agendamento).toLocaleString()}</span></div>`).join('');document.getElementById('dash-camps').innerHTML=h||'<div class="empty">Nenhuma em andamento</div>';const chips=chR.data||[];document.getElementById('chips-badge').textContent=`${chips.filter(c=>c.status==='open').length}/${chips.length} chips`;document.getElementById('dash-chips').innerHTML=chips.length?chips.map(c=>{const p=c.limite_diario>0?Math.round(c.enviados_hoje/c.limite_diario*100):0;return `<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><div style="display:flex;gap:8px;align-items:center"><div class="dot ${c.status}"></div><span style="font-size:11px">${c.nome}</span></div><span style="font-size:10px">${c.enviados_hoje}/${c.limite_diario}</span></div><div class="bar"><div class="bar-f ${p>=90?'r':p>=70?'y':''}" style="width:${Math.min(p,100)}%"></div></div></div>`}).join(''):'<div class="empty">Sem chips</div>';}catch(e){}}
+// ─── Dashboard ───────────────────────────────────────────
+async function loadDash(){
+  try{
+    const [cR,fR,campR,chR]=await Promise.all([
+      fetch(`${API}/contatos?limit=1`).then(r=>r.json()),
+      fetch(`${API}/fila/status`).then(r=>r.json()),
+      fetch(`${API}/campanhas`).then(r=>r.json()),
+      fetch(`${API}/chips`).then(r=>r.json()),
+    ]);
+    document.getElementById('s-cont').textContent=cR.total||0;
+    document.getElementById('s-fila').textContent=fR.data?.waiting||0;
+    const camps=campR.data||[];
+    document.getElementById('s-env').textContent=camps.reduce((s,c)=>s+(c.enviados||0),0);
+    document.getElementById('s-falh').textContent=camps.reduce((s,c)=>s+(c.falhas||0),0);
 
-// IMPORTAR E PLANILHAS
-function handleFile(f){if(!f)return;document.getElementById('drop-text').textContent=`📄 ${f.name}`;uploadCSV(f);}
-async function uploadCSV(f){const el=document.getElementById('import-result');el.innerHTML='⏳ Importando...';const fd=new FormData();fd.append('arquivo',f);try{const r=await fetch(`${API}/importar/csv`,{method:'POST',body:fd});const d=await r.json();if(!d.ok)throw new Error(d.error);el.innerHTML=`<div class="hint">✅ ${d.data.importados} inseridos | 🔄 ${d.data.atualizados} atualizados</div>`;toast('Importado!');loadDash();}catch(e){el.innerHTML=`<div class="hint err">${e.message}</div>`;}}
-async function importarSheets(){try{toast('⏳ Lendo planilha...');const r=await fetch(`${API}/importar/sheets`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sheetId:document.getElementById('sheets-id').value,range:document.getElementById('sheets-range').value})});const d=await r.json();if(!d.ok)throw new Error(d.error);document.getElementById('sheets-result').innerHTML=`<div class="hint">✅ ${d.data.importados} lidos!</div>`;loadDash();}catch(e){toast(e.message,'err');}}
+    const ativas=camps.filter(c=>c.status==='em_andamento');
+    const concluidas=camps.filter(c=>c.status==='concluido').slice(0,3);
+    const dc=document.getElementById('dash-camps');
+    let htmlCamps='';
+    if(ativas.length){
+      htmlCamps+=ativas.map(c=>{
+        const pct=c.total_contatos>0?Math.round(c.enviados/c.total_contatos*100):0;
+        return `<div style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+            <span style="font-family:var(--mono);font-size:12px">${c.nome} <span class="badge bg-y">em andamento</span></span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${c.enviados}/${c.total_contatos} — ${pct}%</span>
+          </div>
+          <div class="bar"><div class="bar-f" style="width:${pct}%"></div></div>
+        </div>`;
+      }).join('');
+    }
+    if(concluidas.length){
+      htmlCamps+=concluidas.map(c=>{
+        const taxa=c.total_contatos>0?Math.round(c.enviados/c.total_contatos*100):0;
+        return `<div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-family:var(--mono);font-size:12px;color:var(--muted)">${c.nome} <span class="badge bg-g">concluída</span></span>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${c.enviados} enviados · ${taxa}% taxa</span>
+        </div>`;
+      }).join('');
+    }
+    dc.innerHTML=htmlCamps||'<div class="empty">Nenhuma campanha em andamento</div>';
 
-// ─── CRIAÇÃO DE CAMPANHAS E IMAGENS ───
-const sBadge=s=>{const m={rascunho:'gray',em_andamento:'y',pausado:'y',concluido:'g',agendado:'b'};return `<span class="badge bg-${m[s]||'gray'}">${s}</span>`;};
-async function loadCamps(){const r=await fetch(`${API}/campanhas`);const d=await r.json();const el=document.getElementById('lista-camps');if(!d.data.length){el.innerHTML='<div class="empty">Vazio</div>';return;}el.innerHTML=`<table><thead><tr><th>Nome</th><th>Status</th><th>Progresso</th><th>Data</th><th>Ações</th></tr></thead><tbody>${d.data.map(c=>{const p=c.total_contatos>0?Math.round(c.enviados/c.total_contatos*100):0;const ed=c.status==='rascunho'||c.status==='pausado';return `<tr><td>${c.nome} ${c.media_url?'📷':''}</td><td>${sBadge(c.status)}</td><td>${c.enviados}/${c.total_contatos}<div class="bar"><div class="bar-f" style="width:${p}%"></div></div></td><td>${c.data_agendamento?'⏳ '+new Date(c.data_agendamento).toLocaleString():'Imediato'}</td><td><div class="bg">${ed?`<button class="bs sm" onclick="abrirTpl(${c.id},'${esc(c.template)}')">✏</button><button class="bs sm" onclick="abrirDelay(${c.id},${c.delay_min||20},${c.delay_max||50})">⏱</button>`:''}${ed&&c.status!=='agendado'?`<button class="bs sm" style="color:var(--blue)" onclick="abrirAgendar(${c.id})">📅</button>`:''}${c.status==='agendado'?`<button class="bs sm" style="color:var(--red)" onclick="cancAgenda(${c.id})">🚫</button>`:''}${ed&&c.status!=='agendado'?`<button class="bp sm" onclick="iniciar(${c.id})">▶</button>`:''}${c.status==='em_andamento'?`<button class="bw sm" onclick="pausar(${c.id})">⏸</button>`:''}<button class="bs sm" onclick="verRel(${c.id})">📊</button><button class="bd sm" onclick="delCamp(${c.id})">✕</button></div></td></tr>`}).join('')}</tbody></table>`;}
+    const chips=chR.data||[];
+    const con=chips.filter(c=>c.status==='open').length;
+    const banidos=chips.filter(c=>c.status==='banido').length;
+    let badgeText=`${con}/${chips.length} chips`;
+    if(banidos>0)badgeText+=` · ⚠ ${banidos} banido(s)`;
+    document.getElementById('chips-badge').textContent=badgeText;
+    document.getElementById('dash-chips').innerHTML=chips.length?chips.map(c=>{
+      const pct=c.limite_diario>0?Math.round(c.enviados_hoje/c.limite_diario*100):0;
+      const cor=pct>=90?'r':pct>=70?'y':'';
+      const psd=c.pausado_ate&&new Date(c.pausado_ate)>new Date();
+      return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div class="dot ${c.status}" style="flex-shrink:0"></div>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+            <span style="font-family:var(--mono);font-size:11px">${c.nome}${psd?` <span style="color:var(--yellow)">(pausado)</span>`:''}</span>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${c.enviados_hoje}/${c.limite_diario}</span>
+          </div>
+          <div class="bar"><div class="bar-f ${cor}" style="width:${Math.min(pct,100)}%"></div></div>
+        </div>
+      </div>`;
+    }).join(''):'<div class="empty">Nenhum chip</div>';
+  }catch(e){log(e.message,'err');}
+}
+
+// ─── Aquecimento ─────────────────────────────────────────
+function renderAQ(){
+  document.getElementById('aq-grid').innerHTML=AQ.map((l,i)=>`
+    <div class="aq-day">Dia ${i+1}${i===AQ.length-1?'+':''}<span>${l}</span></div>`).join('');
+}
+
+// ─── CSV ─────────────────────────────────────────────────
+const dz=document.getElementById('drop-zone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dg');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('dg'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dg');handleFile(e.dataTransfer.files[0]);});
+
+function handleFile(file){
+  if(!file)return;
+  document.getElementById('drop-text').textContent=`📄 ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+  uploadCSV(file);
+}
+async function uploadCSV(file){
+  const el=document.getElementById('import-result');
+  el.innerHTML='<span style="color:var(--muted);font-family:var(--mono);font-size:12px">⏳ Importando...</span>';
+  const fd=new FormData();fd.append('arquivo',file);
+  try{
+    const r=await fetch(`${API}/importar/csv`,{method:'POST',body:fd});
+    const data=await r.json();
+    if(!data.ok)throw new Error(data.error);
+    const d=data.data;
+    el.innerHTML=`<div class="hint">✅ <strong class="g">${d.importados}</strong> novos &nbsp;|&nbsp; 🔄 <strong class="y">${d.atualizados}</strong> atualizados &nbsp;|&nbsp; ⚠️ <strong class="r">${d.ignorados}</strong> ignorados &nbsp;|&nbsp; Total: <strong>${d.total}</strong></div>`;
+    toast(`${d.importados} contatos importados!`);
+    log(`CSV: ${d.importados} novos, ${d.atualizados} atualizados`,'ok');
+  }catch(e){
+    el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;
+    toast(e.message,'err');
+  }
+}
+
+// ─── Sheets ──────────────────────────────────────────────
+async function importarSheets(){
+  const el=document.getElementById('sheets-result');
+  el.innerHTML='<span style="color:var(--muted);font-family:var(--mono);font-size:12px">⏳ Importando do Sheets...</span>';
+  const sheetId=document.getElementById('sheets-id').value.trim();
+  const range=document.getElementById('sheets-range').value.trim();
+  try{
+    const r=await fetch(`${API}/importar/sheets`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sheetId,range})});
+    const data=await r.json();
+    if(!data.ok)throw new Error(data.error);
+    const d=data.data;
+    el.innerHTML=`<div class="hint">✅ <strong class="g">${d.importados}</strong> novos &nbsp;|&nbsp; 🔄 <strong class="y">${d.atualizados}</strong> atualizados &nbsp;|&nbsp; ⚠️ <strong class="r">${d.ignorados}</strong> ignorados &nbsp;|&nbsp; Total: <strong>${d.total}</strong></div>`;
+    toast(`${d.importados} contatos importados do Sheets!`);
+    log(`Sheets: ${d.importados} novos`,'ok');
+  }catch(e){
+    el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;
+    toast(e.message,'err');
+  }
+}
+
+// ─── Campanhas ───────────────────────────────────────────
+const sBadge=s=>{const m={rascunho:'gray',em_andamento:'y',pausado:'b',concluido:'g'};return `<span class="badge bg-${m[s]||'gray'}">${s.replace('_',' ')}</span>`;};
+
+async function loadCamps(){
+  const r=await fetch(`${API}/campanhas`);const data=await r.json();
+  const el=document.getElementById('lista-camps');
+  const camps=data.data||[];
+  if(!camps.length){el.innerHTML='<div class="empty">Nenhuma campanha</div>';return;}
+  el.innerHTML=`<table><thead><tr><th>Nome</th><th>Status</th><th>Progresso</th><th>Delay</th><th>Criado</th><th>Ações</th></tr></thead><tbody>
+  ${camps.map(c=>{
+    const pct=c.total_contatos>0?Math.round(c.enviados/c.total_contatos*100):0;
+    const ed=c.status==='rascunho'||c.status==='pausado';
+    return `<tr>
+      <td>${c.nome}</td><td>${sBadge(c.status)}</td>
+      <td style="min-width:150px">${c.enviados}/${c.total_contatos}
+        <div class="bar"><div class="bar-f" style="width:${pct}%"></div></div></td>
+      <td style="color:var(--muted)">${c.delay_min||20}s–${c.delay_max||50}s</td>
+      <td>${new Date(c.criado_em).toLocaleDateString('pt-BR')}</td>
+      <td><div class="bg">
+        ${ed?`<button class="bs sm" onclick="abrirTpl(${c.id},'${esc(c.template)}')">✏</button>`:''}
+        ${ed?`<button class="bs sm" onclick="abrirDelay(${c.id},${c.delay_min||20},${c.delay_max||50})">⏱</button>`:''}
+        ${ed?`<button class="bp sm" onclick="iniciar(${c.id})">▶</button>`:''}
+        ${c.status==='em_andamento'?`<button class="bw sm" onclick="pausar(${c.id})">⏸</button>`:''}
+        <button class="bs sm" onclick="verRel(${c.id})">📊</button>
+        <button class="bs sm" onclick="exportarCSV(${c.id},'${esc(c.nome)}')">⬇ CSV</button>
+        ${c.status==='rascunho'||c.status==='pausado'?`<button class="bs sm" onclick="removerDupls(${c.id})">🔁 Dupls</button>`:''}
+        <button class="bd sm" onclick="delCamp(${c.id})">✕</button>
+      </div></td></tr>`;
+  }).join('')}</tbody></table>`;
+}
+
+function esc(s){return(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n');}
 
 async function criarCampanha(){
-  const nome=document.getElementById('camp-nome').value.trim(); const tpl=document.getElementById('camp-tpl').value.trim();
-  const dmin=parseInt(document.getElementById('camp-dmin').value)||20; const dmax=parseInt(document.getElementById('camp-dmax').value)||50;
-  const fIn=document.getElementById('camp-img');
-  if(!nome||!tpl){toast('Nome e Texto são obrigatórios','err');return;}
-  let b64=null;
-  if(fIn.files.length>0){
-    const f=fIn.files[0]; if(f.size>5*1024*1024){toast('Imagem muito pesada (máx 5MB).','err');return;}
-    toast('A converter imagem...','info');
-    b64=await new Promise((res,rej)=>{const r=new FileReader();r.readAsDataURL(f);r.onload=()=>res(r.result);r.onerror=e=>rej(e);});
-  }
+  const nome=document.getElementById('camp-nome').value.trim();
+  const template=document.getElementById('camp-tpl').value.trim();
+  const delay_min=parseInt(document.getElementById('camp-dmin').value)||20;
+  const delay_max=parseInt(document.getElementById('camp-dmax').value)||50;
+  if(!nome||!template){toast('Preencha nome e template','err');return;}
+  if(delay_min<5){toast('Delay mínimo 5s','err');return;}
+  if(delay_max<=delay_min){toast('Delay máximo deve ser maior','err');return;}
   try{
-    const r=await fetch(`${API}/campanhas`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,template:tpl,delay_min:dmin,delay_max:dmax,mediaUrl:b64})});
-    const d=await r.json();if(!d.ok)throw new Error(d.error);toast('Campanha guardada!');
-    document.getElementById('camp-nome').value='';document.getElementById('camp-tpl').value='';fIn.value='';loadCamps();
+    const r=await fetch(`${API}/campanhas`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,template,delay_min,delay_max})});
+    const data=await r.json();
+    if(!data.ok)throw new Error(data.error);
+    toast(`Campanha "${nome}" criada!`);
+    log(`Campanha "${nome}" — ${data.data.total_contatos} contatos`,'ok');
+    document.getElementById('camp-nome').value='';document.getElementById('camp-tpl').value='';
+    loadCamps();
   }catch(e){toast(e.message,'err');}
 }
 
-// Ações das Campanhas
-function abrirTpl(id,t){document.getElementById('e-camp-id').value=id;document.getElementById('e-tpl').value=t;abrirM('m-tpl');}
-async function salvarTpl(){try{await fetch(`${API}/campanhas/${document.getElementById('e-camp-id').value}/template`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({template:document.getElementById('e-tpl').value})});fecharM('m-tpl');loadCamps();}catch(e){}}
-function abrirDelay(id,mi,ma){document.getElementById('e-delay-id').value=id;document.getElementById('e-dmin').value=mi;document.getElementById('e-dmax').value=ma;abrirM('m-delay');}
-async function salvarDelay(){try{await fetch(`${API}/campanhas/${document.getElementById('e-delay-id').value}/delay`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({delay_min:document.getElementById('e-dmin').value,delay_max:document.getElementById('e-dmax').value})});fecharM('m-delay');loadCamps();}catch(e){}}
-function abrirAgendar(id){document.getElementById('e-agendar-id').value=id;document.getElementById('e-data-agendamento').value='';abrirM('m-agendar');}
-async function salvarAgendamento(){try{await fetch(`${API}/campanhas/${document.getElementById('e-agendar-id').value}/agendar`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data_agendamento:new Date(document.getElementById('e-data-agendamento').value).toISOString()})});fecharM('m-agendar');loadCamps();}catch(e){}}
-async function cancAgenda(id){await fetch(`${API}/campanhas/${id}/cancelar-agendamento`,{method:'POST'});loadCamps();}
-async function iniciar(id){try{const r=await fetch(`${API}/campanhas/${id}/iniciar`,{method:'POST'});const d=await r.json();if(!d.ok)throw new Error(d.error);toast(d.message);loadCamps();}catch(e){toast(e.message,'err');}}
-async function pausar(id){await fetch(`${API}/campanhas/${id}/pausar`,{method:'POST'});loadCamps();}
-async function delCamp(id){if(confirm('Apagar?')){await fetch(`${API}/campanhas/${id}`,{method:'DELETE'});loadCamps();}}
-
-// CONTATOS E HIGIENIZADOR INTELIGENTE (Anti-Freeze)
-function buscar(){clearTimeout(bTimer);bTimer=setTimeout(()=>{cPage=1;loadContatos();},400);}
-async function loadContatos(){const b=document.getElementById('busca').value;const r=await fetch(`${API}/contatos?page=${cPage}&limit=20${b?'&busca='+encodeURIComponent(b):''}`);const d=await r.json();const el=document.getElementById('tab-contatos');if(!d.data.length){el.innerHTML='<div class="empty">Vazio</div>';return;}el.innerHTML=`<table><thead><tr><th>Número</th><th>Nome</th><th>Status Wa.</th></tr></thead><tbody>${d.data.map(c=>`<tr><td>${c.numero}</td><td>${c.nome||'—'}</td><td>${c.whatsapp_valido===true?'<span class="badge bg-g">Válido</span>':c.whatsapp_valido===false?'<span class="badge bg-r">Inválido</span>':'<span class="badge bg-gray">Pendente</span>'}</td></tr>`).join('')}</tbody></table>`;document.getElementById('pag-contatos').innerHTML=`<span style="font-size:11px;color:var(--muted)">${d.total||0} regs</span> ${cPage>1?`<button class="bs sm" onclick="cPage--;loadContatos()">Ant</button>`:''} ${cPage<Math.ceil((d.total||0)/20)?`<button class="bs sm" onclick="cPage++;loadContatos()">Próx</button>`:''}`;}
-async function limparContatos(){if(confirm('Apagar tudo?')){await fetch(`${API}/contatos`,{method:'DELETE'});loadContatos();}}
-async function apagarInvalidos(){if(confirm('Remover quem não tem WhatsApp?')){await fetch(`${API}/contatos/invalidos`,{method:'DELETE'});loadContatos();}}
-
-let higienizando=false;
-async function higienizarLista(){
-  if(higienizando)return; higienizando=true;
-  const btn=document.getElementById('btn-higienizar'); btn.textContent='⏳ Varrendo...'; toast('Higienização segura iniciada. Lotes de 20.', 'info');
+function abrirTpl(id,tpl){document.getElementById('e-camp-id').value=id;document.getElementById('e-tpl').value=tpl;abrirM('m-tpl');}
+async function salvarTpl(){
+  const id=document.getElementById('e-camp-id').value;
+  const template=document.getElementById('e-tpl').value.trim();
+  if(!template){toast('Template vazio','err');return;}
   try{
-    while(higienizando){
-      const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 25000);
-      try {
-        const r = await fetch(`${API}/contatos/higienizar`, { method: 'POST', signal: controller.signal }); clearTimeout(timeoutId);
-        const d = await r.json(); if (!d.ok) throw new Error(d.error);
-        if (d.data.finalizado || d.data.concluidos === 0) { toast('Higienização concluída!', 'ok'); break; }
-        toast(`Testados +20. Esperando 2,5s (Anti-Ban)`, 'info');
-        await loadContatos(); await new Promise(res => setTimeout(res, 2500)); 
-      } catch (err) {
-        clearTimeout(timeoutId);
-        if (err.name === 'AbortError') throw new Error('A API demorou muito a responder. Suspenso preventivamente.');
-        throw err;
-      }
-    }
-  }catch(e){ toast(e.message, 'err'); log(e.message, 'err'); }
-  higienizando=false; btn.textContent='🧹 Higienizar Lote Seguro'; loadContatos();
+    const r=await fetch(`${API}/campanhas/${id}/template`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({template})});
+    const data=await r.json();if(!data.ok)throw new Error(data.error);
+    toast('Template atualizado!');fecharM('m-tpl');loadCamps();
+  }catch(e){toast(e.message,'err');}
 }
 
-// CHIPS
-function renderAQ(){document.getElementById('aq-grid').innerHTML=AQ.map((l,i)=>`<div class="aq-day">Dia ${i+1}${i===AQ.length-1?'+':''}<span>${l}</span></div>`).join('');}
-async function loadChips(){const r=await fetch(`${API}/chips`);const d=await r.json();const chips=d.data||[];document.getElementById('lista-chips').innerHTML=chips.length?chips.map(c=>{const p=c.limite_diario>0?Math.round(c.enviados_hoje/c.limite_diario*100):0;return `<div class="chip-card"><div class="chip-top"><div class="chip-info"><div class="dot ${c.status}"></div><div><span style="font-weight:bold">${c.nome}</span> <span style="font-size:10px;color:var(--muted)">${c.instancia}</span></div></div><div class="bg"><button class="bs sm" onclick="criarInst('${c.instancia}')">+ Iniciar</button><button class="bs sm" onclick="verQR('${c.instancia}','${c.nome}')">📷 QR</button><button class="bd sm" onclick="delChip(${c.id})">✕</button></div></div><div style="font-size:10px;color:var(--muted);display:flex;justify-content:space-between"><span>Diário: ${c.enviados_hoje}/${c.limite_diario} (${p}%)</span><span>Dia de Uso: ${c.dias_ativo+1}</span></div></div>`}).join(''):'<div class="empty">Nenhum</div>';}
-async function addChip(){try{await fetch(`${API}/chips`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:document.getElementById('chip-nome').value,instancia:document.getElementById('chip-inst').value})});loadChips();}catch(e){}}
-async function delChip(id){if(confirm('Remover?')){await fetch(`${API}/chips/${id}`,{method:'DELETE'});loadChips();}}
-async function sincronizar(){await fetch(`${API}/chips/sincronizar`,{method:'POST'});loadChips();loadDash();}
-async function criarInst(i){await fetch(`${API}/chips/${i}/criar`,{method:'POST'});toast('Solicitado');}
-async function verQR(i,n){qrInst=i;document.getElementById('qr-titulo').textContent=`QR ${n}`;abrirM('m-qr');await recarregarQR();}
-async function recarregarQR(){if(!qrInst)return;try{const r=await fetch(`${API}/chips/${qrInst}/qrcode`);const d=await r.json();const qr=d.data?.qrcode?.base64||d.data?.base64;document.getElementById('qr-content').innerHTML=qr?`<img class="qr-img" src="${qr}">`:'Aguarde ou refaça';}catch(e){}}
+function abrirDelay(id,min,max){
+  document.getElementById('e-delay-id').value=id;
+  document.getElementById('e-dmin').value=min;document.getElementById('e-dmax').value=max;
+  abrirM('m-delay');
+}
+async function salvarDelay(){
+  const id=document.getElementById('e-delay-id').value;
+  const delay_min=parseInt(document.getElementById('e-dmin').value);
+  const delay_max=parseInt(document.getElementById('e-dmax').value);
+  if(delay_min<5){toast('Mínimo 5s','err');return;}
+  if(delay_max<=delay_min){toast('Máximo deve ser maior','err');return;}
+  try{
+    const r=await fetch(`${API}/campanhas/${id}/delay`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({delay_min,delay_max})});
+    const data=await r.json();if(!data.ok)throw new Error(data.error);
+    toast(`Delay: ${delay_min}s–${delay_max}s`);fecharM('m-delay');loadCamps();
+  }catch(e){toast(e.message,'err');}
+}
 
-// BLACKLIST E RELATÓRIOS
-async function loadBL(){const r=await fetch(`${API}/blacklist?page=${blPage}&limit=20`);const d=await r.json();document.getElementById('tab-blacklist').innerHTML=d.data.length?`<table><tbody>${d.data.map(b=>`<tr><td>${b.numero}</td><td>${b.motivo||''}</td><td><button class="bd sm" onclick="delBL(${b.id})">✕</button></td></tr>`).join('')}</tbody></table>`:'';}
-async function addBlacklist(){try{await fetch(`${API}/blacklist`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({numero:document.getElementById('bl-num').value,motivo:document.getElementById('bl-mot').value})});loadBL();}catch(e){}}
-async function delBL(id){await fetch(`${API}/blacklist/${id}`,{method:'DELETE'});loadBL();}
-async function loadRelCamps(){const r=await fetch(`${API}/campanhas`);const d=await r.json();document.getElementById('rel-camp').innerHTML='<option value="">— Ver Relatório —</option>'+(d.data||[]).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');}
-async function carregarRelatorio(){const id=document.getElementById('rel-camp').value;if(!id)return;try{const r=await fetch(`${API}/campanhas/${id}/relatorio`);const d=await r.json();document.getElementById('relatorio-conteudo').innerHTML=`<div class="card"><h3>${d.data.campanha.nome}</h3><div class="grid4"><div class="stat"><div class="stat-l">Enviados</div><div class="stat-v g">${d.data.campanha.enviados}</div></div></div><button class="bs sm" onclick="window.location.href='${API}/campanhas/${id}/exportar'">Baixar Relatório (CSV)</button></div>`;}catch(e){}}
+async function iniciar(id){
+  try{
+    const r=await fetch(`${API}/campanhas/${id}/iniciar`,{method:'POST'});
+    const data=await r.json();if(!data.ok)throw new Error(data.error);
+    toast(data.message);log(data.message,'ok');loadCamps();
+  }catch(e){toast(e.message,'err');log(e.message,'err');}
+}
+async function pausar(id){await fetch(`${API}/campanhas/${id}/pausar`,{method:'POST'});toast('Pausado');loadCamps();}
+async function retomar(){
+  try{
+    const r=await fetch(`${API}/campanhas/retomar`,{method:'POST'});
+    const data=await r.json();
+    if(!data.ok)throw new Error(data.error);
+    toast('▶ Fila retomada');log('Fila retomada','ok');loadCamps();
+  }catch(e){toast(e.message,'err');log(e.message,'err');}
+}
+async function delCamp(id){if(!confirm('Remover campanha?'))return;await fetch(`${API}/campanhas/${id}`,{method:'DELETE'});toast('Removida');loadCamps();}
 
-// ANTI-BAN / CONFIGS / LOGS
-async function loadAntiban(){try{const r=await fetch(`${API}/config`);const d=await r.json();document.getElementById('ab-horario-ativo').checked=d.data.horario_ativo!=='false';document.getElementById('ab-hinicio').value=d.data.horario_inicio||8;document.getElementById('ab-hfim').value=d.data.horario_fim||20;document.getElementById('ab-threshold').value=d.data.falhas_ban_threshold||3;toggleHorario();const rs=await fetch(`${API}/antiban/status`);const ds=await rs.json();document.getElementById('ab-status').innerHTML=ds.data.janela_aberta?`<span style="color:var(--green)">✅ Janela de Envios Ativa</span>`:`<span style="color:var(--yellow)">⏳ Janela Fechada. Abre em ${ds.data.abre_em_horas}h</span>`;}catch(e){}}
-function toggleHorario(){document.getElementById('ab-horario-campos').style.display=document.getElementById('ab-horario-ativo').checked?'flex':'none';}
-async function salvarAntiban(t){let p={};if(t==='horario')p={horario_ativo:document.getElementById('ab-horario-ativo').checked?'true':'false',horario_inicio:document.getElementById('ab-hinicio').value,horario_fim:document.getElementById('ab-hfim').value};else p={falhas_ban_threshold:document.getElementById('ab-threshold').value};await fetch(`${API}/config`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});toast('Salvo!');loadAntiban();}
+// ─── Contatos ────────────────────────────────────────────
+function buscar(){clearTimeout(bTimer);bTimer=setTimeout(()=>{cPage=1;loadContatos();},400);}
+async function loadContatos(){
+  const busca=document.getElementById('busca').value;
+  const r=await fetch(`${API}/contatos?page=${cPage}&limit=20${busca?'&busca='+encodeURIComponent(busca):''}`);
+  const data=await r.json();
+  const el=document.getElementById('tab-contatos');
+  const rows=data.data||[];
+  if(!rows.length){el.innerHTML='<div class="empty">Nenhum contato</div>';return;}
+  el.innerHTML=`<table><thead><tr><th>Número</th><th>Nome</th><th>Campos extras</th><th>Importado em</th></tr></thead><tbody>
+  ${rows.map(c=>`<tr><td>${c.numero}</td><td>${c.nome||'—'}</td><td style="color:var(--muted);font-size:10px">${Object.keys(c.dados||{}).filter(k=>k!=='nome').slice(0,4).join(', ')||'—'}</td><td>${new Date(c.criado_em).toLocaleDateString('pt-BR')}</td></tr>`).join('')}</tbody></table>`;
+  const total=data.total||0,pages=Math.ceil(total/20);
+  document.getElementById('pag-contatos').innerHTML=
+    `<span style="color:var(--muted);font-family:var(--mono);font-size:11px">${total} contatos</span>
+    ${cPage>1?`<button class="bs sm" onclick="cPage--;loadContatos()">← Ant</button>`:''}
+    ${cPage<pages?`<button class="bs sm" onclick="cPage++;loadContatos()">Próx →</button>`:''}`;
+}
+async function limparContatos(){if(!confirm('Remover TODOS os contatos?'))return;await fetch(`${API}/contatos`,{method:'DELETE'});toast('Contatos removidos');loadContatos();}
 
-async function loadConfig(){try{const r=await fetch(`${API}/config`);const d=await r.json();document.getElementById('cfg-evo-url').value=d.data.evolution_url||'';document.getElementById('cfg-evo-key').value=d.data.evolution_key||'';}catch(e){}}
-async function salvarConfig(t){let p={};if(t==='evolution')p={evolution_url:document.getElementById('cfg-evo-url').value,evolution_key:document.getElementById('cfg-evo-key').value};await fetch(`${API}/config`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});toast('OK!');loadConfig();}
+// ─── Chips ───────────────────────────────────────────────
+async function loadChips(){
+  const r=await fetch(`${API}/chips`);const data=await r.json();
+  const chips=data.data||[];
+  const con=chips.filter(c=>c.status==='open').length;
+  document.getElementById('chips-badge').textContent=`${con}/${chips.length} chips`;
+  const el=document.getElementById('lista-chips');
+  if(!chips.length){el.innerHTML='<div class="empty">Nenhum chip</div>';return;}
+  el.innerHTML=chips.map(c=>{
+    const pct=c.limite_diario>0?Math.round(c.enviados_hoje/c.limite_diario*100):0;
+    const cor=pct>=90?'r':pct>=70?'y':'';
+    const psd=c.pausado_ate&&new Date(c.pausado_ate)>new Date();
+    const psdHora=psd?new Date(c.pausado_ate).toLocaleTimeString('pt-BR'):null;
+    return `<div class="chip-card ${psd?'psd':''}">
+      <div class="chip-top">
+        <div class="chip-info">
+          <div class="dot ${c.status}"></div>
+          <div>
+            <div style="font-family:var(--mono);font-size:12px;font-weight:500">${c.nome}${psd?` <span style="color:var(--yellow);font-size:10px">pausado até ${psdHora}</span>`:''}</div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">${c.instancia} · dia ${c.dias_ativo+1} de aquecimento</div>
+          </div>
+        </div>
+        <div class="bg">
+          <button class="bs sm" onclick="criarInst('${c.instancia}')">+ Criar</button>
+          <button class="bs sm" onclick="verQR('${c.instancia}','${c.nome}')">📷 QR</button>
+          <button class="bs sm" onclick="pingChip('${c.instancia}')">↻</button>
+          <button class="bs sm" onclick="abrirLim(${c.id},${c.limite_diario})">⚙ Limite</button>
+          <button class="bw sm" onclick="psdChip(${c.id})">⏸</button>
+          <button class="bd sm" onclick="delChip(${c.id})">✕</button>
+        </div>
+      </div>
+      <div style="margin-bottom:4px">
+        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:3px">
+          <span>Enviados hoje</span><span>${c.enviados_hoje}/${c.limite_diario} (${pct}%)</span>
+        </div>
+        <div class="bar"><div class="bar-f ${cor}" style="width:${Math.min(pct,100)}%"></div></div>
+      </div>
+      <div class="chip-stats">
+        <div class="cstat"><div class="cstat-l">Total enviados</div><div class="cstat-v">${c.total_enviados||0}</div></div>
+        <div class="cstat"><div class="cstat-l">Dia de aquec.</div><div class="cstat-v">${c.dias_ativo+1}</div></div>
+        <div class="cstat"><div class="cstat-l">Status</div><div class="cstat-v" style="color:${c.status==='open'?'var(--green)':c.status==='desconectado'?'var(--red)':'var(--yellow)'}">${c.status}</div></div>
+        <div class="cstat"><div class="cstat-l">Último uso</div><div class="cstat-v" style="font-size:10px">${c.ultimo_uso?new Date(c.ultimo_uso).toLocaleTimeString('pt-BR'):'—'}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
 
-let logPage=1,logFiltro='';
-async function loadLogs(){try{const r=await fetch(`${API}/logs?page=${logPage}&limit=30${logFiltro?'&nivel='+logFiltro:''}`);const d=await r.json();const el=document.getElementById('tab-logs');if(!d.data.length){el.innerHTML='Vazio';return;}el.innerHTML=`<table><tbody>${d.data.map(l=>`<tr><td style="width:120px">${new Date(l.criado_em).toLocaleTimeString('pt-BR')}</td><td><span class="badge bg-${l.nivel==='erro'?'r':l.nivel==='alerta'?'y':'gray'}">${l.nivel}</span></td><td style="color:${l.nivel==='erro'?'var(--red)':l.nivel==='alerta'?'var(--yellow)':'var(--green)'}">${l.mensagem}</td></tr>`).join('')}</tbody></table>`;document.getElementById('pag-logs').innerHTML=`<span>${d.total} regs</span>`;}catch(e){}}
-function filtrarLogs(n){logFiltro=n;logPage=1;loadLogs();}
+async function addChip(){
+  const nome=document.getElementById('chip-nome').value.trim();
+  const instancia=document.getElementById('chip-inst').value.trim().replace(/\s/g,'');
+  if(!nome||!instancia){toast('Preencha nome e instância','err');return;}
+  try{
+    const r=await fetch(`${API}/chips`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,instancia})});
+    const data=await r.json();if(!data.ok)throw new Error(data.error);
+    toast(`Chip "${nome}" adicionado! Limite inicial: ${data.data.limite_diario}/dia`);
+    document.getElementById('chip-nome').value='';document.getElementById('chip-inst').value='';
+    loadChips();
+  }catch(e){toast(e.message,'err');}
+}
+async function delChip(id){if(!confirm('Remover chip?'))return;await fetch(`${API}/chips/${id}`,{method:'DELETE'});toast('Removido');loadChips();}
+async function pingChip(inst){
+  try{const r=await fetch(`${API}/chips/${inst}/status`);const data=await r.json();toast(`${inst}: ${data.data?.state}`);loadChips();}
+  catch(e){toast(e.message,'err');}
+}
+async function sincronizar(){toast('Sincronizando...');await fetch(`${API}/chips/sincronizar`,{method:'POST'});loadChips();loadDash();}
+async function criarInst(inst){try{await fetch(`${API}/chips/${inst}/criar`,{method:'POST'});toast(`Instância criada!`);}catch(e){toast(e.message,'err');}}
+async function psdChip(id){
+  const h=prompt('Pausar por quantas horas?','1');if(!h)return;
+  try{const r=await fetch(`${API}/chips/${id}/pausar`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({horas:parseFloat(h)})});
+  const data=await r.json();if(!data.ok)throw new Error(data.error);toast(`Pausado por ${h}h`);loadChips();}catch(e){toast(e.message,'err');}
+}
+function abrirLim(id,lim){document.getElementById('e-lim-id').value=id;document.getElementById('e-lim-val').value=lim;abrirM('m-limite');}
+async function salvarLimite(){
+  const id=document.getElementById('e-lim-id').value;
+  const limite=parseInt(document.getElementById('e-lim-val').value);
+  if(!limite||limite<1){toast('Inválido','err');return;}
+  try{const r=await fetch(`${API}/chips/${id}/limite`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({limite})});
+  const data=await r.json();if(!data.ok)throw new Error(data.error);toast(`Limite: ${limite}/dia`);fecharM('m-limite');loadChips();}catch(e){toast(e.message,'err');}
+}
+async function verQR(inst,nome){
+  qrInst=inst;document.getElementById('qr-titulo').textContent=`QR Code — ${nome}`;
+  document.getElementById('qr-content').innerHTML='<div class="empty">Carregando...</div>';
+  abrirM('m-qr');await recarregarQR();
+}
+async function recarregarQR(){
+  if(!qrInst)return;
+  try{const r=await fetch(`${API}/chips/${qrInst}/qrcode`);const data=await r.json();
+  const qr=data.data?.qrcode?.base64||data.data?.base64;
+  document.getElementById('qr-content').innerHTML=qr
+    ?`<img class="qr-img" src="${qr}"><p style="color:var(--muted);font-family:var(--mono);font-size:11px;margin-top:7px">Escaneie com o WhatsApp</p>`
+    :`<div class="log-box" style="text-align:left">${JSON.stringify(data.data,null,2)}</div>`;}
+  catch(e){document.getElementById('qr-content').innerHTML=`<div style="color:var(--red);font-family:var(--mono)">${e.message}</div>`;}
+}
+async function limparFila(){if(!confirm('Limpar fila de mensagens?'))return;await fetch(`${API}/fila/limpar`,{method:'POST'});toast('Fila limpa');log('Fila limpa','info');}
 
-// INIT
-loadDash(); loadChips(); setInterval(loadDash,15000);
+// ─── Blacklist ───────────────────────────────────────────
+async function loadBL(){
+  const r=await fetch(`${API}/blacklist?page=${blPage}&limit=20`);const data=await r.json();
+  const el=document.getElementById('tab-blacklist');
+  const rows=data.data||[];
+  document.getElementById('bl-total').textContent=`${data.total||0} números`;
+  if(!rows.length){el.innerHTML='<div class="empty">Nenhum número bloqueado</div>';return;}
+  el.innerHTML=`<table><thead><tr><th>Número</th><th>Motivo</th><th>Data</th><th>Ação</th></tr></thead><tbody>
+  ${rows.map(b=>`<tr><td>${b.numero}</td><td style="color:var(--muted)">${b.motivo||'—'}</td><td>${new Date(b.criado_em).toLocaleDateString('pt-BR')}</td><td><button class="bd sm" onclick="delBL(${b.id})">✕</button></td></tr>`).join('')}</tbody></table>`;
+  const total=data.total||0,pages=Math.ceil(total/20);
+  document.getElementById('pag-bl').innerHTML=
+    `<span style="color:var(--muted);font-family:var(--mono);font-size:11px">${total} bloqueados</span>
+    ${blPage>1?`<button class="bs sm" onclick="blPage--;loadBL()">← Ant</button>`:''}
+    ${blPage<pages?`<button class="bs sm" onclick="blPage++;loadBL()">Próx →</button>`:''}`;
+}
+async function addBlacklist(){
+  const numero=document.getElementById('bl-num').value.trim();
+  const motivo=document.getElementById('bl-mot').value.trim();
+  if(!numero){toast('Informe um número','err');return;}
+  try{const r=await fetch(`${API}/blacklist`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({numero,motivo})});
+  const data=await r.json();if(!data.ok)throw new Error(data.error);
+  toast('Adicionado à blacklist');document.getElementById('bl-num').value='';document.getElementById('bl-mot').value='';
+  loadBL();}catch(e){toast(e.message,'err');}
+}
+async function delBL(id){await fetch(`${API}/blacklist/${id}`,{method:'DELETE'});toast('Removido da blacklist');loadBL();}
+
+// ─── Relatórios ──────────────────────────────────────────
+async function loadRelCamps(){
+  const r=await fetch(`${API}/campanhas`);const data=await r.json();
+  const sel=document.getElementById('rel-camp');
+  const camps=data.data||[];
+  sel.innerHTML='<option value="">— Selecione uma campanha —</option>'+
+    camps.map(c=>`<option value="${c.id}">${c.nome} (${c.status})</option>`).join('');
+}
+
+async function verRel(id){
+  showPage('relatorios',document.querySelector('.tab:nth-child(7)'));
+  await loadRelCamps();
+  document.getElementById('rel-camp').value=id;
+  await carregarRelatorio();
+}
+
+async function carregarRelatorio(){
+  const id=document.getElementById('rel-camp').value;
+  const el=document.getElementById('relatorio-conteudo');
+  if(!id){el.innerHTML='';return;}
+  try{
+    const r=await fetch(`${API}/campanhas/${id}/relatorio`);const data=await r.json();
+    if(!data.ok)throw new Error(data.error);
+    const {campanha,stats,porChip,porHora}=data.data;
+    const pct=campanha.total_contatos>0?Math.round(campanha.enviados/campanha.total_contatos*100):0;
+    const stMap={};stats.forEach(s=>stMap[s.status]=parseInt(s.count));
+
+    el.innerHTML=`
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <h3 style="margin:0">${campanha.nome}</h3>
+          <div class="bg">
+            <button class="bs sm" onclick="exportarCSV(${campanha.id},'${campanha.nome.replace(/'/g,"''")}')">⬇ Exportar CSV</button>
+            ${(campanha.status==='rascunho'||campanha.status==='pausado')?`<button class="bs sm" onclick="removerDupls(${campanha.id})">🔁 Remover duplicatas</button>`:''}
+          </div>
+        </div>
+        <div class="grid4">
+          <div class="stat"><div class="stat-l">Total</div><div class="stat-v b">${campanha.total_contatos}</div></div>
+          <div class="stat"><div class="stat-l">Enviados</div><div class="stat-v g">${campanha.enviados}</div></div>
+          <div class="stat"><div class="stat-l">Falhas</div><div class="stat-v r">${campanha.falhas}</div></div>
+          <div class="stat"><div class="stat-l">Taxa</div><div class="stat-v y">${pct}%</div></div>
+        </div>
+        <div style="margin-bottom:6px;font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;justify-content:space-between">
+          <span>Progresso geral</span><span>${pct}%</span>
+        </div>
+        <div class="bar" style="height:8px"><div class="bar-f" style="width:${pct}%"></div></div>
+      </div>
+      ${porChip.length?`<div class="card">
+        <h3>Envios por chip</h3>
+        <table><thead><tr><th>Chip</th><th>Enviados</th></tr></thead><tbody>
+        ${porChip.map(c=>`<tr><td>${c.nome}</td><td><strong class="g">${c.enviados}</strong></td></tr>`).join('')}
+        </tbody></table>
+      </div>`:''}
+      ${stMap.pendente?`<div class="card">
+        <h3>Status dos disparos</h3>
+        <table><thead><tr><th>Status</th><th>Quantidade</th></tr></thead><tbody>
+        ${stats.map(s=>`<tr><td>${s.status}</td><td>${s.count}</td></tr>`).join('')}
+        </tbody></table>
+      </div>`:''}`;
+  }catch(e){el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;}
+}
+
+// ─── Configurações ───────────────────────────────────────
+async function loadConfig(){
+  try{
+    const r=await fetch(`${API}/config`);const data=await r.json();
+    if(!data.ok)return;
+    const c=data.data;
+    document.getElementById('cfg-evo-url').value=c.evolution_url||'';
+    document.getElementById('cfg-evo-key').value=c.evolution_key||'';
+    document.getElementById('cfg-dmin').value=c.delay_min||20;
+    document.getElementById('cfg-dmax').value=c.delay_max||50;
+    document.getElementById('cfg-sheet-id').value=c.sheets_id||'';
+    document.getElementById('cfg-sheet-range').value=c.sheets_range||'Sheet1!A:Z';
+    document.getElementById('cfg-sync-intervalo').value=c.sync_intervalo||0;
+
+    // Status credenciais
+    const cs=document.getElementById('creds-status');
+    const ce=document.getElementById('client-email-info');
+    if(c.sheets_credentials==='__configurado__'){
+      cs.innerHTML='<div class="hint" style="border-color:var(--green);color:var(--green)">✅ Credenciais salvas no banco</div>';
+      ce.innerHTML='';
+    } else {
+      cs.innerHTML='<div class="hint warn">⚠ Credenciais não configuradas — cole o JSON abaixo</div>';
+      ce.innerHTML='';
+    }
+
+    // Próxima sincronização
+    if(c.sync_proxima){
+      const d=new Date(c.sync_proxima);
+      document.getElementById('cfg-sync-proxima').textContent=d.toLocaleString('pt-BR');
+    }
+
+    // Status badges no topo
+    const evoOk=c.evolution_url&&c.evolution_key;
+    const sheetsOk=c.sheets_credentials==='__configurado__';
+    document.getElementById('cfg-evo-badge').textContent=evoOk?'✅ Configurada':'⚠ Não configurada';
+    document.getElementById('cfg-evo-badge').style.color=evoOk?'var(--green)':'var(--yellow)';
+    document.getElementById('cfg-sheets-badge').textContent=sheetsOk?'✅ Configurado':'⚠ Não configurado';
+    document.getElementById('cfg-sheets-badge').style.color=sheetsOk?'var(--green)':'var(--yellow)';
+    document.getElementById('cfg-db-badge').textContent='✅ Conectado';
+    document.getElementById('cfg-db-badge').style.color='var(--green)';
+
+    // Header status
+    document.getElementById('cfg-status').textContent=evoOk?'API configurada':'⚠ Configure a API';
+    document.getElementById('cfg-status').style.color=evoOk?'var(--green)':'var(--yellow)';
+    loadNotifConfig();
+  }catch(e){console.error(e);}
+}
+
+// Step-by-step para Sheets
+function toggleStep(n){
+  const body=document.getElementById('sbody-'+n);
+  body.style.display=body.style.display==='none'?'block':'none';
+}
+function marcarStep(n){
+  document.getElementById('snum-'+n).classList.add('done');
+  document.getElementById('sbody-'+n).style.display='none';
+  // Abre o próximo
+  const prox=document.getElementById('sbody-'+(n+1));
+  if(prox)prox.style.display='block';
+}
+
+function toggleSenha(id){
+  const el=document.getElementById(id);
+  el.type=el.type==='password'?'text':'password';
+}
+
+function extrairIdDaURL(){
+  const url=prompt('Cole a URL completa da planilha:');
+  if(!url)return;
+  const match=url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if(match){
+    document.getElementById('cfg-sheet-id').value=match[1];
+    toast('ID extraído com sucesso!');
+  } else {
+    toast('URL inválida — não foi possível extrair o ID','err');
+  }
+}
+
+function lerArquivoCreds(input){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const json=JSON.parse(e.target.result);
+      document.getElementById('cfg-sheet-creds').value=e.target.result;
+      // Mostra o client_email para confirmar
+      if(json.client_email){
+        document.getElementById('client-email-info').innerHTML=
+          `<div class="hint" style="border-color:var(--blue)">📧 Service Account: <strong style="color:var(--blue)">${json.client_email}</strong><br>Compartilhe a planilha com este e-mail (permissão Visualizador).</div>`;
+      }
+      document.getElementById('creds-status').innerHTML=
+        '<div class="hint" style="border-color:var(--green);color:var(--green)">✅ Arquivo JSON carregado — clique em Salvar para confirmar</div>';
+      toast('JSON carregado! Salve para confirmar.');
+    }catch(ex){toast('Arquivo JSON inválido','err');}
+  };
+  reader.readAsText(file);
+}
+
+async function salvarConfig(tipo){
+  let payload={};
+  if(tipo==='evolution'){
+    payload={
+      evolution_url:document.getElementById('cfg-evo-url').value.trim(),
+      evolution_key:document.getElementById('cfg-evo-key').value.trim(),
+    };
+    if(!payload.evolution_url){toast('URL obrigatória','err');return;}
+  } else if(tipo==='delays'){
+    const dmin=parseInt(document.getElementById('cfg-dmin').value);
+    const dmax=parseInt(document.getElementById('cfg-dmax').value);
+    if(dmin<5){toast('Mínimo 5s','err');return;}
+    if(dmax<=dmin){toast('Máximo deve ser maior','err');return;}
+    payload={delay_min:String(dmin),delay_max:String(dmax)};
+  } else if(tipo==='sheets'){
+    const creds=document.getElementById('cfg-sheet-creds').value.trim();
+    payload={
+      sheets_id:document.getElementById('cfg-sheet-id').value.trim(),
+      sheets_range:document.getElementById('cfg-sheet-range').value.trim()||'Sheet1!A:Z',
+    };
+    if(creds&&creds.startsWith('{')){
+      try{JSON.parse(creds);}catch(e){toast('JSON inválido nas credenciais','err');return;}
+      payload.sheets_credentials=creds;
+    }
+  }
+  try{
+    const r=await fetch(`${API}/config`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await r.json();if(!data.ok)throw new Error(data.error);
+    toast('Configurações salvas!');log('Configurações atualizadas','ok');
+    loadConfig();
+  }catch(e){toast(e.message,'err');}
+}
+
+async function testarEvolution(){
+  const el=document.getElementById('diag-result');
+  el.innerHTML='<span style="color:var(--muted);font-family:var(--mono);font-size:12px">Testando...</span>';
+  // Usa o primeiro chip disponível
+  try{
+    const r=await fetch(`${API}/chips`);const data=await r.json();
+    const chips=data.data||[];
+    if(!chips.length){el.innerHTML='<div class="hint err">Nenhum chip cadastrado para testar</div>';return;}
+    const r2=await fetch(`${API}/chips/${chips[0].instancia}/status`);
+    const d2=await r2.json();
+    const ok=d2.data?.state==='open';
+    el.innerHTML=`<div class="hint" style="border-color:${ok?'var(--green)':'var(--red)'}">
+      ${ok?'✅':'❌'} Evolution API: ${d2.data?.state||'sem resposta'} — chip "${chips[0].nome}"</div>`;
+  }catch(e){el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;}
+}
+
+async function testarSheets(){
+  const el=document.getElementById('diag-result');
+  el.innerHTML='<span style="color:var(--muted);font-family:var(--mono);font-size:12px">Testando Sheets...</span>';
+  try{
+    const r=await fetch(`${API}/importar/sheets`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+    const data=await r.json();
+    if(data.ok){
+      el.innerHTML=`<div class="hint" style="border-color:var(--green)">✅ Google Sheets OK — ${data.data.total} linhas encontradas</div>`;
+    } else {
+      el.innerHTML=`<div class="hint err">❌ ${data.error}</div>`;
+    }
+  }catch(e){el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;}
+}
+
+// ─── Notificações ────────────────────────────────────────────────────────────
+async function loadNotifConfig() {
+  const r = await fetch(`${API}/config`); const data = await r.json();
+  if (!data.ok) return;
+  const c = data.data;
+  const numEl = document.getElementById('cfg-admin-num');
+  const instEl = document.getElementById('cfg-admin-inst');
+  if (numEl) numEl.value = c.admin_numero || '';
+  if (instEl) instEl.value = c.admin_chip_instancia || '';
+}
+async function salvarNotifConfig() {
+  const numero = (document.getElementById('cfg-admin-num').value || '').trim().replace(/\D/g,'');
+  const instancia = (document.getElementById('cfg-admin-inst').value || '').trim();
+  try {
+    const r = await fetch(`${API}/config`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_numero:numero,admin_chip_instancia:instancia})});
+    const data = await r.json(); if (!data.ok) throw new Error(data.error);
+    toast('Configurações de notificação salvas!');
+  } catch(e) { toast(e.message,'err'); }
+}
+async function testarNotificacao() {
+  try {
+    const r = await fetch(`${API}/config/notificacoes/testar`,{method:'POST'});
+    const data = await r.json(); if (!data.ok) throw new Error(data.error);
+    toast('Notificação de teste enviada!');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+// ─── Wizard ───────────────────────────────────────────────────────────────────
+let wStep = 1;
+
+async function verificarPrimeiroAcesso() {
+  try {
+    const r = await fetch(`${API}/config`); const data = await r.json();
+    if (!data.ok) return;
+    if (!data.data.evolution_key) {
+      document.getElementById('wizard').style.display = 'flex';
+      await wizardHealth();
+    }
+  } catch(e) {}
+}
+
+async function wizardHealth() {
+  try {
+    const r = await fetch(`${API}/health`); const data = await r.json();
+    const s = data.data?.servicos || {};
+    const set = (id, ok, txt) => {
+      const d = document.getElementById('hd-'+id); const t = document.getElementById('hs-'+id);
+      if (d) d.className = 'health-dot '+(ok?'ok':'err');
+      if (t) t.textContent = txt;
+    };
+    set('postgres', s.postgres?.ok, s.postgres?.ok?`OK (${s.postgres.latencia})`:s.postgres?.erro||'offline');
+    set('redis', s.redis?.ok, s.redis?.ok?`OK (${s.redis.latencia})`:s.redis?.erro||'offline');
+    set('evolution', s.evolution?.ok, s.evolution?.ok?`OK (${s.evolution.latencia})`:'Não configurada');
+    const cOk = (s.chips?.conectados||0) > 0;
+    set('chips', cOk, cOk?`${s.chips.conectados} conectado(s)`:'Nenhum');
+    const tudo = s.postgres?.ok && s.redis?.ok;
+    const msg = document.getElementById('health-msg');
+    if (msg) msg.innerHTML = tudo
+      ? '<div class="hint" style="border-color:var(--green)">✅ Serviços OK — clique em Avançar</div>'
+      : '<div class="hint err">❌ PostgreSQL ou Redis offline</div>';
+    document.getElementById('wiz-next').disabled = !tudo;
+  } catch(e) { console.error(e); }
+}
+
+async function wizardNext() {
+  if (wStep === 1) {
+    wStep = 2;
+    document.getElementById('wp-1').style.display='none';
+    document.getElementById('wp-2').style.display='block';
+    document.getElementById('ws-1').className='wstep done';
+    document.getElementById('ws-2').className='wstep active';
+    document.getElementById('wiz-back').style.display='';
+    document.getElementById('wiz-next').textContent='Salvar e avançar →';
+    const r = await fetch(`${API}/config`); const d = await r.json();
+    if (d.ok) document.getElementById('wiz-evo-url').value = d.data.evolution_url||'http://localhost:8080';
+  } else if (wStep === 2) {
+    const url = document.getElementById('wiz-evo-url').value.trim();
+    const key = document.getElementById('wiz-evo-key').value.trim();
+    if (!url||!key) { toast('Preencha URL e chave','err'); return; }
+    const el = document.getElementById('wiz-evo-result');
+    el.innerHTML='<span style="color:var(--muted);font-size:11px;font-family:var(--mono)">Salvando...</span>';
+    try {
+      await fetch(`${API}/config`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({evolution_url:url,evolution_key:key})});
+      el.innerHTML='<div class="hint" style="border-color:var(--green);margin:0">✅ Salvo!</div>';
+      wStep = 3;
+      setTimeout(()=>{
+        document.getElementById('wp-2').style.display='none';
+        document.getElementById('wp-3').style.display='block';
+        document.getElementById('ws-2').className='wstep done';
+        document.getElementById('ws-3').className='wstep active';
+        document.getElementById('wiz-next').textContent='Criar chip →';
+      },600);
+    } catch(e) { el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`; }
+  } else if (wStep === 3 || wStep === 3.5) {
+    if (wStep === 3) {
+      const nome = document.getElementById('wiz-chip-nome').value.trim();
+      const inst = document.getElementById('wiz-chip-inst').value.trim().replace(/\s/g,'');
+      if (!nome||!inst) { toast('Preencha nome e instância','err'); return; }
+      const el = document.getElementById('wiz-chip-result');
+      try {
+        const r1 = await fetch(`${API}/chips`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,instancia:inst})});
+        const d1 = await r1.json(); if (!d1.ok) throw new Error(d1.error);
+        await fetch(`${API}/chips/${inst}/criar`,{method:'POST'});
+        const r2 = await fetch(`${API}/chips/${inst}/qrcode`);
+        const d2 = await r2.json();
+        const qr = d2.data?.qrcode?.base64||d2.data?.base64;
+        if (qr) {
+          document.getElementById('wiz-qr-area').innerHTML=`<img src="${qr}" style="max-width:180px;border:4px solid #fff;border-radius:8px"><br>
+            <p style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:8px">Escaneie com o WhatsApp</p>`;
+        }
+        el.innerHTML='<div class="hint" style="border-color:var(--green);margin:0">✅ Chip criado! Escaneie o QR acima.</div>';
+        wStep = 3.5;
+        document.getElementById('wiz-next').textContent='Concluir →';
+      } catch(e) { el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`; }
+    } else {
+      wStep = 4;
+      document.getElementById('wp-3').style.display='none';
+      document.getElementById('wp-4').style.display='block';
+      document.getElementById('ws-3').className='wstep done';
+      document.getElementById('ws-4').className='wstep active';
+      document.getElementById('wiz-next').textContent='Ir para o painel →';
+      document.getElementById('wiz-back').style.display='none';
+      document.getElementById('wiz-skip').style.display='none';
+      document.getElementById('wiz-next').onclick = fecharWizard;
+    }
+  }
+}
+
+function wizardBack() {
+  if (wStep <= 1) return;
+  wStep = Math.floor(wStep) - 1;
+  document.querySelectorAll('[id^="wp-"]').forEach(el=>el.style.display='none');
+  document.getElementById('wp-'+wStep).style.display='block';
+  if (wStep===1) document.getElementById('wiz-back').style.display='none';
+  document.getElementById('wiz-next').textContent = wStep===1?'Verificar →':'Salvar e avançar →';
+}
+
+function fecharWizard() {
+  document.getElementById('wizard').style.display='none';
+  localStorage.setItem('wizard_done','1');
+}
+
+// ─── Init ─────────────────────────────────────────────────
+loadDash();loadChips();
+setInterval(loadDash,10000);
+setInterval(loadChips,30000);
+if (!localStorage.getItem('wizard_done')) verificarPrimeiroAcesso();
 </script>
 </body>
 </html>
