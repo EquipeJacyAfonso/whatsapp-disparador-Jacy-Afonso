@@ -48,7 +48,6 @@ async function verificarNumero(numero, instancia) {
   }
 }
 
-// ─── HIGIENIZADOR DE LISTAS ──────────────────────────────────────────────────
 async function verificarLoteNumeros(numeros, instancia) {
   const api = await getApi(instancia);
   const limpos = numeros.map(n => {
@@ -61,13 +60,12 @@ async function verificarLoteNumeros(numeros, instancia) {
     const r = await api.post(`/chat/whatsappNumbers/${instancia}`, {
       numbers: limpos
     });
-    return r.data; // Array com { number, exists, jid }
+    return r.data; 
   } catch(err) {
     console.error('[ERRO HIGIENIZADOR]', err.response?.data || err.message);
     throw new Error('Falha ao comunicar com a API para higienizar a lista.');
   }
 }
-// ─────────────────────────────────────────────────────────────────────────────
 
 async function adicionarChip(nome, instancia, limiteDiario = null) {
   const limite = limiteDiario || limitePorDia(0); 
@@ -86,7 +84,6 @@ async function listarChips() {
 
 async function removerChip(id) {
   const result = await pool.query('SELECT instancia FROM chips WHERE id = $1', [id]);
-  
   if (result.rows.length > 0) {
     const instanciaNome = result.rows[0].instancia;
     try {
@@ -175,15 +172,32 @@ async function marcarComoLida(instancia, messageKey) {
 async function enviarMensagem(numero, mensagem, instancia) {
   const api = await getApi(instancia);
   const jidValidado = await verificarNumero(numero, instancia);
-  
   if (!jidValidado || jidValidado === true) throw new Error('O número não possui WhatsApp registado.');
-
   const numeroFinalParaEnvio = jidValidado.split('@')[0];
   const tempoEspera = Math.floor(Math.random() * 3000) + 3000; 
 
   try {
     const r = await api.post(`/message/sendText/${instancia}`, {
       number: numeroFinalParaEnvio, options: { delay: tempoEspera, presence: 'composing' }, textMessage: { text: mensagem }
+    });
+    return r.data;
+  } catch(err) { throw err; }
+}
+
+// ─── NOVO: ENVIO DE IMAGENS ──────────────────────────────────────────────────
+async function enviarImagem(numero, legenda, mediaUrlOuBase64, instancia) {
+  const api = await getApi(instancia);
+  const jidValidado = await verificarNumero(numero, instancia);
+  
+  if (!jidValidado || jidValidado === true) throw new Error('O número não possui WhatsApp registado.');
+  const numeroFinalParaEnvio = jidValidado.split('@')[0];
+  const tempoEspera = Math.floor(Math.random() * 3000) + 3000; 
+
+  try {
+    const r = await api.post(`/message/sendMedia/${instancia}`, {
+      number: numeroFinalParaEnvio,
+      options: { delay: tempoEspera, presence: 'composing' },
+      mediaMessage: { mediatype: 'image', caption: legenda || '', media: mediaUrlOuBase64 }
     });
     return r.data;
   } catch(err) { throw err; }
@@ -227,9 +241,9 @@ async function aquecerChipsInternamente() {
 }
 
 module.exports = {
-  enviarMensagem, formatarNumero, limitePorDia, AQUECIMENTO_BASE,
+  enviarMensagem, enviarImagem, formatarNumero, limitePorDia, AQUECIMENTO_BASE,
   listarChips, adicionarChip, removerChip, statusChip, qrcodeChip, criarInstancia,
   proximoChip, registrarUso, registrarFalha, resetarContadoresDiarios,
   pausarChip, atualizarLimiteDiario, verificarNumero, marcarComoLida, aquecerChipsInternamente,
-  verificarLoteNumeros // <--- Exportado aqui!
+  verificarLoteNumeros
 };

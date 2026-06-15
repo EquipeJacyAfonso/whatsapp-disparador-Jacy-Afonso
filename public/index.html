@@ -26,6 +26,7 @@ h3{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;le
 .g{color:var(--green)}.y{color:var(--yellow)}.r{color:var(--red)}.b{color:var(--blue)}
 label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;font-family:var(--mono)}
 input,textarea,select{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:9px 13px;border-radius:6px;font-family:var(--mono);font-size:12px;margin-bottom:14px;transition:border-color .15s;outline:none}
+input[type=file]{padding:6px;font-family:var(--sans)}
 input:focus,textarea:focus,select:focus{border-color:var(--green)}
 textarea{min-height:100px;resize:vertical}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -137,7 +138,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   <button class="tab" onclick="showPage('config',this)">⚙ Configurações</button>
 </nav>
 
-<!-- DASHBOARD -->
 <div class="page active" id="page-dashboard">
   <h2>Dashboard</h2>
   <div class="grid4">
@@ -160,7 +160,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   <div class="card"><h3>Log do sistema</h3><div class="log-box" id="log-box"><span class="linf">» Sistema iniciado</span><br></div></div>
 </div>
 
-<!-- IMPORTAR -->
 <div class="page" id="page-importar">
   <h2>Importar Contatos</h2>
   <div class="tabs-mini">
@@ -196,16 +195,21 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
-<!-- CAMPANHAS -->
 <div class="page" id="page-campanhas">
   <h2>Campanhas</h2>
   <div class="card">
     <h3>Nova campanha</h3>
     <label>Nome</label>
     <input type="text" id="camp-nome" placeholder="Promoção Junho">
+    
     <label>Template da mensagem</label>
     <div class="hint">Use <strong>{nome}</strong>, <strong>{numero}</strong> e qualquer coluna do CSV/Sheets entre chaves.</div>
     <textarea id="camp-tpl" placeholder="Olá {nome}, temos uma oferta especial! 🎁"></textarea>
+    
+    <label>Anexar Imagem (Opcional - Formato PNG ou JPG)</label>
+    <div class="hint">A mensagem digitada acima será enviada como a legenda desta imagem. <strong>Recomendado: imagens abaixo de 2MB.</strong></div>
+    <input type="file" id="camp-img" accept="image/png, image/jpeg" style="margin-bottom: 20px;">
+    
     <div class="row">
       <div><label>Delay mínimo (segundos)</label><input type="number" id="camp-dmin" value="20" min="5"></div>
       <div><label>Delay máximo (segundos)</label><input type="number" id="camp-dmax" value="50" min="6"></div>
@@ -218,7 +222,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
-<!-- CONTATOS -->
 <div class="page" id="page-contatos">
   <h2>Contatos</h2>
   <div class="card">
@@ -236,7 +239,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
-<!-- CHIPS -->
 <div class="page" id="page-chips">
   <h2>Chips / Instâncias</h2>
   <div class="card">
@@ -262,7 +264,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
-<!-- BLACKLIST -->
 <div class="page" id="page-blacklist">
   <h2>Blacklist</h2>
   <div class="card">
@@ -284,7 +285,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
-<!-- RELATÓRIOS -->
 <div class="page" id="page-relatorios">
   <h2>Relatórios</h2>
   <div class="card">
@@ -296,7 +296,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   <div id="relatorio-conteudo"></div>
 </div>
 
-<!-- ANTI-BAN -->
 <div class="page" id="page-antiban">
   <h2>🛡 Proteção Anti-ban</h2>
 
@@ -343,21 +342,12 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   </div>
 
   <div class="card">
-    <h3>Intervalo entre campanhas por chip</h3>
-    <div class="hint">Tempo mínimo de descanso (em minutos) entre campanhas para o mesmo chip. <strong>0</strong> = sem intervalo.</div>
-    <label>Intervalo mínimo (minutos)</label>
-    <input type="number" id="ab-intervalo" min="0" value="0">
-    <button class="bp" onclick="salvarAntiban('intervalo')">💾 Salvar</button>
-  </div>
-
-  <div class="card">
     <h3>Status atual de proteção</h3>
     <div id="ab-status"><div class="empty">Carregando...</div></div>
     <button class="bs" style="margin-top:12px" onclick="carregarStatusAntiban()">↻ Atualizar</button>
   </div>
 </div>
 
-<!-- LOGS -->
 <div class="page" id="page-logs">
   <h2>📋 Logs do sistema</h2>
   <div class="card">
@@ -375,7 +365,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
-<!-- CONFIGURAÇÕES -->
 <div class="page" id="page-config">
   <h2>⚙ Configurações</h2>
 
@@ -461,40 +450,8 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
     <div id="sheets-test-result" style="margin-top:12px"></div>
   </div>
 
-  <div class="card" id="sec-webhook">
-    <h3>🔔 Webhook (notificações em tempo real)</h3>
-    <div class="hint">O webhook permite que a Evolution API notifique o sistema instantaneamente quando um chip conecta ou desconecta.</div>
-    <label>URL do webhook (endereço público deste servidor)</label>
-    <div style="display:flex;gap:7px;margin-bottom:14px">
-      <input type="text" id="cfg-webhook-url" placeholder="http://seu-servidor:3000/api/webhook/evolution" style="margin:0;flex:1">
-    </div>
-    <div class="bg">
-      <button class="bp" onclick="registrarWebhook()">🔔 Registrar webhook em todos os chips</button>
-    </div>
-    <div id="webhook-result" style="margin-top:12px"></div>
-  </div>
-
-  <div class="card">
-    <h3>🔔 Notificações via WhatsApp</h3>
-    <div class="hint">Receba alertas quando campanhas concluírem, chips forem banidos ou desconectarem.</div>
-    <div class="row">
-      <div>
-        <label>Número para receber notificações (com DDD)</label>
-        <input type="text" id="cfg-admin-num" placeholder="11999998888">
-      </div>
-      <div>
-        <label>Instância do chip enviador</label>
-        <input type="text" id="cfg-admin-inst" placeholder="instancia01">
-      </div>
-    </div>
-    <div class="bg">
-      <button class="bp" onclick="salvarNotifConfig()">💾 Salvar</button>
-      <button class="bs" onclick="testarNotificacao()">📨 Enviar teste</button>
-    </div>
-  </div>
 </div>
 
-<!-- MODAL TEMPLATE -->
 <div class="mb" id="m-tpl">
   <div class="modal">
     <h3>Editar template</h3>
@@ -504,7 +461,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
-<!-- MODAL DELAY -->
 <div class="mb" id="m-delay">
   <div class="modal">
     <h3>Editar delay da campanha</h3>
@@ -517,7 +473,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
-<!-- MODAL LIMITE CHIP -->
 <div class="mb" id="m-limite">
   <div class="modal">
     <h3>Editar limite diário</h3>
@@ -528,7 +483,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
-<!-- MODAL AGENDAR -->
 <div class="mb" id="m-agendar">
   <div class="modal">
     <h3>Agendar Campanha</h3>
@@ -543,7 +497,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
-<!-- MODAL QR -->
 <div class="mb" id="m-qr">
   <div class="modal" style="text-align:center">
     <h3 id="qr-titulo">QR Code</h3>
@@ -555,7 +508,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
-<!-- WIZARD PRIMEIRO ACESSO -->
 <div class="wizard-overlay" id="wizard" style="display:none">
   <div class="wizard-box">
     <div class="wizard-header">
@@ -710,7 +662,7 @@ async function importarSheets(){
   }catch(e){ el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`; toast(e.message,'err'); }
 }
 
-// ─── Campanhas ───────────────────────────────────────────
+// ─── Campanhas & Envio com Imagem ─────────────────────────────────────────
 const sBadge=s=>{const m={rascunho:'gray',em_andamento:'y',pausado:'y',concluido:'g',agendado:'b'};return `<span class="badge bg-${m[s]||'gray'}">${s.replace('_',' ')}</span>`;};
 
 async function loadCamps(){
@@ -723,7 +675,7 @@ async function loadCamps(){
     const pct=c.total_contatos>0?Math.round(c.enviados/c.total_contatos*100):0;
     const ed=c.status==='rascunho'||c.status==='pausado';
     return `<tr>
-      <td>${c.nome}</td><td>${sBadge(c.status)}</td>
+      <td>${c.nome} ${c.media_url ? '📷' : ''}</td><td>${sBadge(c.status)}</td>
       <td style="min-width:150px">${c.enviados}/${c.total_contatos}
         <div class="bar"><div class="bar-f" style="width:${pct}%"></div></div></td>
       <td style="color:var(--muted)">${c.data_agendamento ? '<span style="color:var(--blue)">⏳ '+new Date(c.data_agendamento).toLocaleString('pt-BR')+'</span>' : 'Imediato'}</td>
@@ -731,8 +683,8 @@ async function loadCamps(){
       <td><div class="bg">
         ${ed?`<button class="bs sm" onclick="abrirTpl(${c.id},'${esc(c.template)}')">✏</button>`:''}
         ${ed?`<button class="bs sm" onclick="abrirDelay(${c.id},${c.delay_min||20},${c.delay_max||50})">⏱</button>`:''}
-        ${(ed && c.status!=='agendado')?`<button class="bs sm" style="color:var(--blue)" onclick="abrirAgendar(${c.id})">📅 Agendar</button>`:''}
-        ${c.status==='agendado'?`<button class="bs sm" style="color:var(--red)" onclick="cancelarAgendamento(${c.id})">🚫 Cancelar</button>`:''}
+        ${(ed && c.status!=='agendado')?`<button class="bs sm" style="color:var(--blue)" onclick="abrirAgendar(${c.id})">📅</button>`:''}
+        ${c.status==='agendado'?`<button class="bs sm" style="color:var(--red)" onclick="cancelarAgendamento(${c.id})">🚫</button>`:''}
         ${(ed && c.status!=='agendado')?`<button class="bp sm" onclick="iniciar(${c.id})">▶</button>`:''}
         ${c.status==='em_andamento'?`<button class="bw sm" onclick="pausar(${c.id})">⏸</button>`:''}
         <button class="bs sm" onclick="verRel(${c.id})">📊</button>
@@ -743,17 +695,44 @@ async function loadCamps(){
 
 function esc(s){return(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n');}
 
-async function criarCampanha(){
-  const nome=document.getElementById('camp-nome').value.trim();
-  const template=document.getElementById('camp-tpl').value.trim();
-  const dmin=parseInt(document.getElementById('camp-dmin').value)||20;
-  const dmax=parseInt(document.getElementById('camp-dmax').value)||50;
-  if(!nome||!template){toast('Preencha nome e template','err');return;}
-  try{
-    const r=await fetch(`${API}/campanhas`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,template,delay_min:dmin,delay_max:dmax})});
-    const d=await r.json(); if(!d.ok)throw new Error(d.error);
-    toast(`Campanha "${nome}" criada!`); document.getElementById('camp-nome').value='';document.getElementById('camp-tpl').value=''; loadCamps();
-  }catch(e){toast(e.message,'err');}
+async function criarCampanha() {
+  const nome = document.getElementById('camp-nome').value.trim();
+  const template = document.getElementById('camp-tpl').value.trim();
+  const dmin = parseInt(document.getElementById('camp-dmin').value) || 20;
+  const dmax = parseInt(document.getElementById('camp-dmax').value) || 50;
+  const fileInput = document.getElementById('camp-img');
+
+  if (!nome || !template) { toast('Preencha nome e template', 'err'); return; }
+
+  let mediaUrl = null;
+  if (fileInput.files.length > 0) {
+    const file = fileInput.files[0];
+    if (file.size > 5 * 1024 * 1024) { toast('Imagem muito pesada (máx 5MB).', 'err'); return; }
+    
+    toast('Processando imagem, por favor aguarde...', 'info');
+    mediaUrl = await new Promise((res, rej) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => res(reader.result);
+      reader.onerror = e => rej(e);
+    });
+  }
+
+  try {
+    const r = await fetch(`${API}/campanhas`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nome, template, delay_min: dmin, delay_max: dmax, mediaUrl })
+    });
+    const d = await r.json(); 
+    if (!d.ok) throw new Error(d.error);
+    
+    toast(`Campanha "${nome}" criada!`); 
+    document.getElementById('camp-nome').value = ''; 
+    document.getElementById('camp-tpl').value = ''; 
+    if (fileInput) fileInput.value = '';
+    loadCamps();
+  } catch(e) { toast(e.message, 'err'); }
 }
 
 function abrirTpl(id,tpl){document.getElementById('e-camp-id').value=id;document.getElementById('e-tpl').value=tpl;abrirM('m-tpl');}
@@ -806,115 +785,6 @@ function buscar(){clearTimeout(bTimer);bTimer=setTimeout(()=>{cPage=1;loadContat
 async function loadContatos(){
   const b=document.getElementById('busca').value; const r=await fetch(`${API}/contatos?page=${cPage}&limit=20${b?'&busca='+encodeURIComponent(b):''}`); const d=await r.json();
   const el=document.getElementById('tab-contatos'); if(!d.data.length){el.innerHTML='<div class="empty">Nenhum contato</div>';return;}
-  el.innerHTML=`<table><thead><tr><th>Número</th><th>Nome</th><th>Extras</th><th>Status Wa.</th></tr></thead><tbody>${d.data.map(c=>`<tr><td>${c.numero}</td><td>${c.nome||'—'}</td><td style="color:var(--muted);font-size:10px">${Object.keys(c.dados||{}).filter(k=>k!=='nome').slice(0,4).join(', ')||'—'}</td><td>${c.whatsapp_valido===true?'<span class="badge bg-g">Válido</span>':c.whatsapp_valido===false?'<span class="badge bg-r">Inválido</span>':'<span class="badge bg-gray">Pendente</span>'}</td></tr>`).join('')}</tbody></table>`;
-  document.getElementById('pag-contatos').innerHTML=`<span style="color:var(--muted);font-size:11px">${d.total||0} contatos</span>${cPage>1?`<button class="bs sm" onclick="cPage--;loadContatos()">← Ant</button>`:''}${cPage<Math.ceil((d.total||0)/20)?`<button class="bs sm" onclick="cPage++;loadContatos()">Próx →</button>`:''}`;
+  el.innerHTML=`<table><thead><tr><th>Número</th><th>Nome</th><th>Extras</th><th>Status Wa.</th></tr></thead><tbody>${d.data.map(c=>`<tr><td>${c.numero}</td><td>${c.nome||'—'}</td><td style="color":var(--muted)>${c.extras||'—'}</td><td>${c.status_wa||'—'}</td></tr>`).join('')}</tbody></table>`;
+  const pag=document.getElementById('pag-contatos'); pag.innerHTML=`Página ${cPage} de ${Math.ceil(d.total/20)}`; if(cPage>1)pag.innerHTML+=` <button class="bs sm" onclick="cPage--;loadContatos()">← Anterior</button>`; if(cPage*20<d.total)pag.innerHTML+=` <button class="bs sm" onclick="cPage++;loadContatos()">Próximo →</button>`;
 }
-async function limparContatos(){if(!confirm('Remover TODOS?'))return;await fetch(`${API}/contatos`,{method:'DELETE'});toast('Removidos');loadContatos();}
-let higienizando=false;
-async function higienizarLista(){
-  if(higienizando)return; higienizando=true; const btn=document.getElementById('btn-higienizar'); btn.textContent='⏳ Higienizando...'; toast('Higienização em lote...', 'info');
-  try{while(higienizando){const r=await fetch(`${API}/contatos/higienizar`, {method:'POST'}); const d=await r.json(); if(!d.ok)throw new Error(d.error); if(d.data.finalizado||d.data.concluidos===0){toast('Concluído!','ok');break;} toast(`Lote: ${d.data.validos} válidos, ${d.data.invalidos} inválidos.`,'info'); await loadContatos();}}catch(e){toast(e.message,'err');} higienizando=false; btn.textContent='🧹 Higienizar Lista'; loadContatos();
-}
-async function apagarInvalidos(){if(!confirm('Apagar todos os números inválidos?'))return;try{const r=await fetch(`${API}/contatos/invalidos`, {method:'DELETE'});const d=await r.json();if(!d.ok)throw new Error(d.error);toast(`${d.data.removidos} removidos!`);loadContatos();}catch(e){toast(e.message,'err');}}
-
-// ─── Chips ───────────────────────────────────────────────
-async function loadChips(){
-  const r=await fetch(`${API}/chips`);const d=await r.json(); const chips=d.data||[];
-  document.getElementById('chips-badge').textContent=`${chips.filter(c=>c.status==='open').length}/${chips.length} chips`;
-  const el=document.getElementById('lista-chips'); if(!chips.length){el.innerHTML='<div class="empty">Nenhum chip</div>';return;}
-  el.innerHTML=chips.map(c=>{
-    const pct=c.limite_diario>0?Math.round(c.enviados_hoje/c.limite_diario*100):0; const psd=c.pausado_ate&&new Date(c.pausado_ate)>new Date();
-    return `<div class="chip-card ${psd?'psd':''}">
-      <div class="chip-top"><div class="chip-info"><div class="dot ${c.status}"></div><div><div style="font-family:var(--mono);font-size:12px;font-weight:500">${c.nome}${psd?` <span style="color:var(--yellow);font-size:10px">pausado até ${new Date(c.pausado_ate).toLocaleTimeString('pt-BR')}</span>`:''}</div><div style="font-family:var(--mono);font-size:10px;color:var(--muted)">${c.instancia} · dia ${c.dias_ativo+1}</div></div></div>
-      <div class="bg"><button class="bs sm" onclick="criarInst('${c.instancia}')">+ Criar</button><button class="bs sm" onclick="verQR('${c.instancia}','${c.nome}')">📷 QR</button><button class="bs sm" onclick="pingChip('${c.instancia}')">↻</button><button class="bs sm" onclick="abrirLim(${c.id},${c.limite_diario})">⚙ Limite</button><button class="bw sm" onclick="psdChip(${c.id})">⏸</button><button class="bd sm" onclick="delChip(${c.id})">✕</button></div></div>
-      <div style="margin-bottom:4px"><div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:3px"><span>Enviados hoje</span><span>${c.enviados_hoje}/${c.limite_diario} (${pct}%)</span></div><div class="bar"><div class="bar-f ${pct>=90?'r':pct>=70?'y':''}" style="width:${Math.min(pct,100)}%"></div></div></div>
-      <div class="chip-stats"><div class="cstat"><div class="cstat-l">Total</div><div class="cstat-v">${c.total_enviados||0}</div></div><div class="cstat"><div class="cstat-l">Dia aquec.</div><div class="cstat-v">${c.dias_ativo+1}</div></div><div class="cstat"><div class="cstat-l">Status</div><div class="cstat-v" style="color:${c.status==='open'?'var(--green)':c.status==='desconectado'?'var(--red)':'var(--yellow)'}">${c.status}</div></div><div class="cstat"><div class="cstat-l">Último uso</div><div class="cstat-v" style="font-size:10px">${c.ultimo_uso?new Date(c.ultimo_uso).toLocaleTimeString('pt-BR'):'—'}</div></div></div></div>`;
-  }).join('');
-}
-async function addChip(){const n=document.getElementById('chip-nome').value, i=document.getElementById('chip-inst').value; if(!n||!i)return; try{await fetch(`${API}/chips`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:n,instancia:i})});toast(`Adicionado!`);document.getElementById('chip-nome').value='';document.getElementById('chip-inst').value='';loadChips();}catch(e){}}
-async function delChip(id){if(!confirm('Remover chip?'))return;await fetch(`${API}/chips/${id}`,{method:'DELETE'});toast('Removido');loadChips();}
-async function pingChip(inst){try{const r=await fetch(`${API}/chips/${inst}/status`);const d=await r.json();toast(`${inst}: ${d.data?.state}`);loadChips();}catch(e){}}
-async function sincronizar(){toast('Sincronizando...');await fetch(`${API}/chips/sincronizar`,{method:'POST'});loadChips();loadDash();}
-async function criarInst(inst){try{await fetch(`${API}/chips/${inst}/criar`,{method:'POST'});toast(`Instância criada!`);}catch(e){}}
-async function psdChip(id){const h=prompt('Horas?','1');if(!h)return;try{await fetch(`${API}/chips/${id}/pausar`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({horas:parseFloat(h)})});toast(`Pausado por ${h}h`);loadChips();}catch(e){}}
-function abrirLim(id,lim){document.getElementById('e-lim-id').value=id;document.getElementById('e-lim-val').value=lim;abrirM('m-limite');}
-async function salvarLimite(){try{await fetch(`${API}/chips/${document.getElementById('e-lim-id').value}/limite`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({limite:parseInt(document.getElementById('e-lim-val').value)})});toast(`Salvo`);fecharM('m-limite');loadChips();}catch(e){}}
-async function verQR(inst,nome){qrInst=inst;document.getElementById('qr-titulo').textContent=`QR Code — ${nome}`;document.getElementById('qr-content').innerHTML='<div class="empty">Carregando...</div>';abrirM('m-qr');await recarregarQR();}
-async function recarregarQR(){if(!qrInst)return;try{const r=await fetch(`${API}/chips/${qrInst}/qrcode`);const d=await r.json();const qr=d.data?.qrcode?.base64||d.data?.base64;document.getElementById('qr-content').innerHTML=qr?`<img class="qr-img" src="${qr}">`:'ERRO';}catch(e){}}
-async function limparFila(){if(!confirm('Limpar fila?'))return;await fetch(`${API}/fila/limpar`,{method:'POST'});toast('Limpa');}
-
-// ─── Blacklist & Relatórios ──────────────────────────────
-async function loadBL(){const r=await fetch(`${API}/blacklist?page=${blPage}&limit=20`);const d=await r.json();document.getElementById('tab-blacklist').innerHTML=d.data.length?`<table><thead><tr><th>Número</th><th>Motivo</th><th>Data</th><th>Ação</th></tr></thead><tbody>${d.data.map(b=>`<tr><td>${b.numero}</td><td>${b.motivo||'—'}</td><td>${new Date(b.criado_em).toLocaleDateString('pt-BR')}</td><td><button class="bd sm" onclick="delBL(${b.id})">✕</button></td></tr>`).join('')}</tbody></table>`:'<div class="empty">Vazio</div>';}
-async function addBlacklist(){try{await fetch(`${API}/blacklist`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({numero:document.getElementById('bl-num').value,motivo:document.getElementById('bl-mot').value})});toast('Adicionado');loadBL();}catch(e){}}
-async function delBL(id){await fetch(`${API}/blacklist/${id}`,{method:'DELETE'});toast('Removido');loadBL();}
-async function loadRelCamps(){const r=await fetch(`${API}/campanhas`);const d=await r.json();document.getElementById('rel-camp').innerHTML='<option value="">— Selecione —</option>'+(d.data||[]).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');}
-async function verRel(id){showPage('relatorios');await loadRelCamps();document.getElementById('rel-camp').value=id;await carregarRelatorio();}
-async function carregarRelatorio(){
-  const id=document.getElementById('rel-camp').value; if(!id)return;
-  try{
-    const r=await fetch(`${API}/campanhas/${id}/relatorio`);const d=await r.json(); if(!d.ok)throw new Error();
-    document.getElementById('relatorio-conteudo').innerHTML=`<div class="card"><div style="display:flex;justify-content:space-between;margin-bottom:14px"><h3>${d.data.campanha.nome}</h3><button class="bs sm" onclick="window.location.href='${API}/campanhas/${id}/exportar'">⬇ Exportar CSV</button></div><div class="grid4"><div class="stat"><div class="stat-l">Total</div><div class="stat-v b">${d.data.campanha.total_contatos}</div></div><div class="stat"><div class="stat-l">Enviados</div><div class="stat-v g">${d.data.campanha.enviados}</div></div><div class="stat"><div class="stat-l">Falhas</div><div class="stat-v r">${d.data.campanha.falhas}</div></div></div></div>`;
-  }catch(e){}
-}
-
-// ─── Configurações & Antiban & Logs ───────────────────────
-async function loadConfig(){
-  try{
-    const r=await fetch(`${API}/config`);const d=await r.json(); if(!d.ok)return;
-    document.getElementById('cfg-evo-url').value=d.data.evolution_url||'';
-    document.getElementById('cfg-evo-key').value=d.data.evolution_key||'';
-    document.getElementById('cfg-dmin').value=d.data.delay_min||20;
-    document.getElementById('cfg-dmax').value=d.data.delay_max||50;
-    const evoOk=d.data.evolution_url&&d.data.evolution_key;
-    document.getElementById('cfg-evo-badge').textContent=evoOk?'✅ Configurada':'⚠ Não configurada';
-  }catch(e){}
-}
-async function salvarConfig(tipo){
-  let p={}; if(tipo==='evolution')p={evolution_url:document.getElementById('cfg-evo-url').value,evolution_key:document.getElementById('cfg-evo-key').value}; else if(tipo==='delays')p={delay_min:document.getElementById('cfg-dmin').value,delay_max:document.getElementById('cfg-dmax').value};
-  try{await fetch(`${API}/config`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});toast('Salvo!');loadConfig();}catch(e){}
-}
-async function loadAntiban() {
-  try {
-    const r = await fetch(`${API}/config`); const d = await r.json(); if(!d.ok) return;
-    const ativo = d.data.horario_ativo !== 'false'; 
-    document.getElementById('ab-horario-ativo').checked = ativo;
-    document.getElementById('ab-horario-campos').style.display = ativo ? 'block' : 'none';
-    document.getElementById('ab-hinicio').value = d.data.horario_inicio || 8;
-    document.getElementById('ab-hfim').value = d.data.horario_fim || 20;
-    document.getElementById('ab-threshold').value = d.data.falhas_ban_threshold || 3;
-    document.getElementById('ab-intervalo').value = d.data.intervalo_campanhas_min || 0;
-    carregarStatusAntiban();
-  } catch(e) {}
-}
-function toggleHorario() { document.getElementById('ab-horario-campos').style.display = document.getElementById('ab-horario-ativo').checked ? 'block' : 'none'; }
-async function salvarAntiban(tipo) {
-  let p = {};
-  if (tipo === 'horario') p = {horario_ativo: document.getElementById('ab-horario-ativo').checked?'true':'false', horario_inicio: document.getElementById('ab-hinicio').value, horario_fim: document.getElementById('ab-hfim').value};
-  else if (tipo === 'threshold') p = { falhas_ban_threshold: document.getElementById('ab-threshold').value };
-  else if (tipo === 'intervalo') p = { intervalo_campanhas_min: document.getElementById('ab-intervalo').value };
-  try { await fetch(`${API}/config`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(p)}); toast('Salvo!'); carregarStatusAntiban(); } catch(e){}
-}
-async function carregarStatusAntiban() {
-  try {
-    const r = await fetch(`${API}/antiban/status`); const d = await r.json(); if(!d.ok) return;
-    let h = d.data.config.horario_ativo !== 'false' ? (d.data.janela_aberta ? `<div class="hint" style="border-color:var(--green)">✅ Aberta</div>` : `<div class="hint warn">⏳ Fechada. Abre em ${d.data.abre_em_horas}h.</div>`) : `<div class="hint">ℹ Desativada</div>`;
-    h += d.data.chips_pausados.length ? d.data.chips_pausados.map(c => `<div class="hint warn">⏸ <strong>${c.nome}</strong> pausado</div>`).join('') : `<div class="hint">✅ Nenhum chip pausado.</div>`;
-    document.getElementById('ab-status').innerHTML = h;
-  } catch(e) {}
-}
-
-let logPage=1,logFiltro='';
-async function loadLogs(){
-  try{const r=await fetch(`${API}/logs?page=${logPage}&limit=30${logFiltro?'&nivel='+logFiltro:''}`);const d=await r.json();
-  const el=document.getElementById('tab-logs'); if(!d.data.length){el.innerHTML='<div class="empty">Vazio</div>';return;}
-  el.innerHTML=`<table><thead><tr><th>Hora</th><th>Nível</th><th>Mensagem</th></tr></thead><tbody>${d.data.map(l=>`<tr><td style="color:var(--muted);width:140px">${new Date(l.criado_em).toLocaleString('pt-BR')}</td><td><span class="badge bg-${l.nivel==='erro'?'r':l.nivel==='alerta'?'y':'gray'}">${l.nivel}</span></td><td style="color:${l.nivel==='erro'?'var(--red)':l.nivel==='alerta'?'var(--yellow)':'var(--green)'}">${l.mensagem}</td></tr>`).join('')}</tbody></table>`;
-  document.getElementById('pag-logs').innerHTML=`<span style="color:var(--muted);font-size:11px">${d.total||0} regs</span>`;}catch(e){}
-}
-function filtrarLogs(n){logFiltro=n;logPage=1;loadLogs();}
-function fecharWizard() { document.getElementById('wizard').style.display='none'; localStorage.setItem('wizard_done','1'); }
-
-loadDash();loadChips(); setInterval(loadDash,10000); setInterval(loadChips,30000); 
-if (!localStorage.getItem('wizard_done')) { document.getElementById('wizard').style.display='flex'; }
-</script>
-</body>
-</html>
