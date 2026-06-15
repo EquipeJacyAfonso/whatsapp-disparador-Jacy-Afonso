@@ -123,7 +123,7 @@ router.post('/chips/sincronizar', async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-// ─── Importar & Higienizar (NOVO) ─────────────────────────────────────────────
+// ─── Importar & Higienizar ────────────────────────────────────────────────────
 router.post('/importar/csv', upload.single('arquivo'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ ok: false, error: 'Nenhum arquivo enviado' });
@@ -138,7 +138,6 @@ router.post('/importar/sheets', async (req, res) => {
 
 router.post('/contatos/higienizar', async (req, res) => {
   try {
-    // Processa de 100 em 100 contatos para não sobrecarregar a Evolution API
     const contatos = await pool.query(`SELECT id, numero FROM contatos WHERE whatsapp_valido IS NULL LIMIT 100`);
     if (!contatos.rows.length) return res.json({ ok: true, data: { concluidos: 0, finalizado: true } });
 
@@ -148,12 +147,10 @@ router.post('/contatos/higienizar', async (req, res) => {
     const instancia = chips.rows[Math.floor(Math.random() * chips.rows.length)].instancia;
     const numeros = contatos.rows.map(c => c.numero);
     
-    // Consulta a API
     const resultados = await verificarLoteNumeros(numeros, instancia);
 
     let validos = 0, invalidos = 0;
 
-    // Atualiza a Base de Dados
     for (const c of contatos.rows) {
       let numLimpo = String(c.numero).replace(/\D/g, '');
       if (!numLimpo.startsWith('55')) numLimpo = `55${numLimpo}`;
@@ -218,7 +215,7 @@ router.delete('/contatos', async (req, res) => {
   catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-// ─── Campanhas ────────────────────────────────────────────────────────────────
+// ─── Campanhas & Agendamento ──────────────────────────────────────────────────
 router.get('/campanhas', async (req, res) => {
   try { res.json({ ok: true, data: (await pool.query('SELECT * FROM campanhas ORDER BY criado_em DESC')).rows }); }
   catch (err) { res.status(500).json({ ok: false, error: err.message }); }
@@ -239,7 +236,6 @@ router.post('/campanhas', async (req, res) => {
     const { nome, template, delay_min = 20, delay_max = 50 } = req.body;
     if (!nome || !template) return res.status(400).json({ ok: false, error: 'nome e template obrigatórios' });
     
-    // 🛡️ ANTI-BAN: Na hora de criar a campanha, só seleciona os contatos VERIFICADOS
     const contatos = await pool.query('SELECT id FROM contatos WHERE whatsapp_valido IS NULL OR whatsapp_valido = true');
     if (!contatos.rows.length) return res.status(400).json({ ok: false, error: 'Nenhum contato válido para criar a campanha.' });
     
@@ -276,6 +272,23 @@ router.post('/campanhas/:id/iniciar', async (req, res) => {
   try { res.json({ ok: true, message: `${await enfileirarCampanha(parseInt(req.params.id))} mensagens enfileiradas` }); }
   catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
+
+// ─── AGENDAMENTO DE CAMPANHAS ───
+router.post('/campanhas/:id/agendar', async (req, res) => {
+  try {
+    if (!req.body.data_agendamento) return res.status(400).json({ ok: false, error: 'Data de agendamento obrigatória' });
+    await pool.query(`UPDATE campanhas SET status='agendado', data_agendamento=$1 WHERE id=$2 AND status IN ('rascunho', 'pausado')`, [req.body.data_agendamento, req.params.id]);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+router.post('/campanhas/:id/cancelar-agendamento', async (req, res) => {
+  try {
+    await pool.query(`UPDATE campanhas SET status='rascunho', data_agendamento=NULL WHERE id=$1 AND status='agendado'`, [req.params.id]);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+// ────────────────────────────────
 
 router.post('/campanhas/:id/pausar', async (req, res) => {
   try { await pausarCampanha(parseInt(req.params.id)); res.json({ ok: true }); }

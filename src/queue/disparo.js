@@ -135,7 +135,7 @@ disparoQueue.process(1, async (job) => {
     // 🛡️ ANTI-BAN: Delay Protetor para Chips Novos
     let delayExtra = 0;
     if (chip.dias_ativo < 3) {
-      delayExtra = delayAleatorio(15000, 30000); // 15s a 30s de penalidade forçada no backend
+      delayExtra = delayAleatorio(15000, 30000); 
       console.log(`[ANTIBAN] 🛡️ Chip muito novo (Dia ${chip.dias_ativo + 1}). Injetado +${Math.round(delayExtra/1000)}s de proteção.`);
     }
 
@@ -257,19 +257,23 @@ function pararMonitorChips() {
 
 // ─── API pública ──────────────────────────────────────────────────────────────
 
-async function enfileirarCampanha(campanhaId) {
+// Atualização: bypassWindow permite ignorar a janela de horário para colocar
+// as campanhas agendadas na fila sem erros.
+async function enfileirarCampanha(campanhaId, bypassWindow = false) {
   const campanha = await pool.query('SELECT * FROM campanhas WHERE id=$1', [campanhaId]);
   if (!campanha.rows.length) throw new Error('Campanha não encontrada');
 
   const chips = await pool.query(`SELECT COUNT(*) FROM chips WHERE status='open'`);
   if (parseInt(chips.rows[0].count) === 0) throw new Error('Nenhum chip conectado.');
 
-  const { dentroDaJanela } = require('../services/antiban');
-  if (!(await dentroDaJanela())) {
-    const ms = await msAteJanelaAbrir();
-    const h = Math.round(ms / 1000 / 60 / 60 * 10) / 10;
-    const horaInicio = await config.get('horario_inicio', '8');
-    throw new Error(`Fora da janela de disparo. Iniciará automaticamente às ${horaInicio}h (${h}h restantes).`);
+  if (!bypassWindow) {
+    const { dentroDaJanela } = require('../services/antiban');
+    if (!(await dentroDaJanela())) {
+      const ms = await msAteJanelaAbrir();
+      const h = Math.round(ms / 1000 / 60 / 60 * 10) / 10;
+      const horaInicio = await config.get('horario_inicio', '8');
+      throw new Error(`Fora da janela de disparo. Iniciará automaticamente às ${horaInicio}h (${h}h restantes).`);
+    }
   }
 
   const { template, delay_min, delay_max } = campanha.rows[0];
@@ -294,7 +298,7 @@ async function enfileirarCampanha(campanhaId) {
     await disparoQueue.add({ disparoId: row.id, numero: row.numero, mensagem, campanhaId, delayMin, delayMax });
   }
 
-  await pool.query(`UPDATE campanhas SET status='em_andamento', iniciado_em=NOW() WHERE id=$1`, [campanhaId]);
+  await pool.query(`UPDATE campanhas SET status='em_andamento', iniciado_em=NOW(), data_agendamento=NULL WHERE id=$1`, [campanhaId]);
   await addLog('info', `Campanha #${campanhaId} iniciada — ${disparos.rows.length} mensagens.`);
   return disparos.rows.length;
 }
@@ -321,6 +325,27 @@ async function statusFila() {
   ]);
   return { waiting, active, completed, failed };
 }
+
+// ─── Scheduler: Robô de Campanhas Agendadas ──────────────────────────────────
+let isScheduling = false;
+setInterval(async () => {
+  if (isScheduling) return;
+  isScheduling = true;
+  try {
+    const res = await pool.query(`SELECT id FROM campanhas WHERE status = 'agendado' AND data_agendamento <= NOW()`);
+    for (const row of res.rows) {
+      console.log(`[SCHEDULER] Acordando campanha agendada #${row.id}`);
+      try {
+         await enfileirarCampanha(row.id, true);
+      } catch(e) {
+         console.error(`[SCHEDULER] Erro ao iniciar campanha ${row.id}:`, e.message);
+         await pool.query(`UPDATE campanhas SET status='pausado' WHERE id=$1`, [row.id]);
+         await addLog('erro', `Falha ao arrancar campanha agendada #${row.id}: ${e.message}`);
+      }
+    }
+  } catch (e) { }
+  isScheduling = false;
+}, 30000); // Acorda e verifica a cada 30 segundos
 
 module.exports = {
   enfileirarCampanha, pausarCampanha, retomar, limparFila, statusFila,
