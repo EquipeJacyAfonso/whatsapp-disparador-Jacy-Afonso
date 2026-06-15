@@ -18,7 +18,6 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 
 router.get('/config', async (req, res) => {
   try {
     const all = await cfgGetAll();
-    // Não expõe credenciais completas, só indica se estão configuradas
     const safe = { ...all };
     if (safe.sheets_credentials) safe.sheets_credentials = '__configurado__';
     res.json({ ok: true, data: safe });
@@ -45,13 +44,43 @@ router.get('/health', async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-// ─── Notificações ─────────────────────────────────────────────────────────────
-
 router.post('/config/notificacoes/testar', async (req, res) => {
   try {
     const { enviarNotificacao } = require('../services/notificacoes');
     await enviarNotificacao('✅ Teste de notificação do Disparador funcionando!');
     res.json({ ok: true, message: 'Notificação enviada' });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+// ─── Anti-ban (NOVO) ──────────────────────────────────────────────────────────
+
+router.post('/antiban/spintax/testar', (req, res) => {
+  try {
+    const { texto } = req.body;
+    if (!texto) return res.status(400).json({ ok: false, error: 'texto vazio' });
+    const { processarSpintax } = require('../services/antiban');
+    const variacoes = [];
+    for(let i=0; i<5; i++) variacoes.push(processarSpintax(texto));
+    res.json({ ok: true, data: variacoes });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+router.get('/antiban/status', async (req, res) => {
+  try {
+    const { dentroDaJanela, msAteJanelaAbrir } = require('../services/antiban');
+    const c = await cfgGetAll();
+    const ativo = await dentroDaJanela();
+    const ms = await msAteJanelaAbrir();
+    const hrs = Math.round(ms / 1000 / 60 / 60 * 10) / 10;
+
+    const pausados = await pool.query(`SELECT nome, pausado_ate FROM chips WHERE pausado_ate > NOW()`);
+
+    res.json({ ok: true, data: {
+      janela_aberta: ativo,
+      abre_em_horas: hrs,
+      config: c,
+      chips_pausados: pausados.rows
+    }});
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
@@ -117,10 +146,7 @@ router.post('/chips/sincronizar', async (req, res) => {
 
 router.get('/chips/:id/historico', async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT * FROM chip_historico WHERE chip_id=$1 ORDER BY data DESC LIMIT 30`,
-      [req.params.id]
-    );
+    const result = await pool.query(`SELECT * FROM chip_historico WHERE chip_id=$1 ORDER BY data DESC LIMIT 30`, [req.params.id]);
     res.json({ ok: true, data: result.rows });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
@@ -161,7 +187,6 @@ router.post('/blacklist', async (req, res) => {
     const limpo = String(numero).replace(/\D/g, '');
     if (!limpo) return res.status(400).json({ ok: false, error: 'número inválido' });
     await pool.query(`INSERT INTO blacklist (numero, motivo) VALUES ($1,$2) ON CONFLICT DO NOTHING`, [limpo, motivo]);
-    // Remove dos contatos também
     await pool.query('DELETE FROM contatos WHERE numero=$1', [limpo]);
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
@@ -206,9 +231,7 @@ router.get('/campanhas/:id/relatorio', async (req, res) => {
   try {
     const campanha = await pool.query('SELECT * FROM campanhas WHERE id=$1', [req.params.id]);
     if (!campanha.rows.length) return res.status(404).json({ ok: false, error: 'Não encontrada' });
-    const stats = await pool.query(`
-      SELECT status, COUNT(*) as count FROM disparos WHERE campanha_id=$1 GROUP BY status
-    `, [req.params.id]);
+    const stats = await pool.query(`SELECT status, COUNT(*) as count FROM disparos WHERE campanha_id=$1 GROUP BY status`, [req.params.id]);
     const porChip = await pool.query(`
       SELECT ch.nome, COUNT(*) as enviados FROM disparos d
       JOIN chips ch ON ch.id = d.chip_id
@@ -313,18 +336,15 @@ router.post('/fila/limpar', async (req, res) => {
   catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-// ─── Webhook Evolution API ────────────────────────────────────────────────────
-// Recebe notificações em tempo real da Evolution API sobre conexão/desconexão
-// Configure na Evolution API: POST http://seu-servidor:3000/api/webhook/evolution
+// ─── Webhooks Evolution API ───────────────────────────────────────────────────
 
 router.post('/webhook/evolution', async (req, res) => {
   try {
     const { event, instance, data } = req.body;
-    if (!event || !instance) return res.json({ ok: true }); // ignora payloads inválidos
+    if (!event || !instance) return res.json({ ok: true }); 
 
     console.log(`[WEBHOOK] Evento: ${event} — instância: ${instance}`);
 
-    // Mapeia eventos da Evolution API para status interno
     const mapaStatus = {
       'connection.update': async () => {
         const state = data?.state || data?.status || 'desconhecido';
@@ -333,7 +353,6 @@ router.post('/webhook/evolution', async (req, res) => {
         await pool.query(`INSERT INTO logs (nivel, mensagem, dados) VALUES ($1,$2,$3)`,
           ['info', `Webhook: chip ${instance} → ${state}`, JSON.stringify({ instance, state })]);
 
-        // Se chip reconectou e a fila estava pausada por falta de chips, retoma
         if (state === 'open') {
           const { disparoQueue } = require('../queue/disparo');
           const pausado = await disparoQueue.isPaused();
@@ -343,35 +362,24 @@ router.post('/webhook/evolution', async (req, res) => {
               await disparoQueue.resume();
               await pool.query(`INSERT INTO logs (nivel, mensagem) VALUES ('info', $1)`,
                 [`Webhook: fila retomada automaticamente após reconexão de ${instance}`]);
-              console.log(`[WEBHOOK] ✅ Fila retomada após reconexão de ${instance}`);
             }
           }
         }
 
-        // Se desconectou durante disparo ativo, pausa a fila
         if (['close', 'connecting', 'disconnected'].includes(state)) {
           const { disparoQueue } = require('../queue/disparo');
           const active = await disparoQueue.getActiveCount();
           const waiting = await disparoQueue.getWaitingCount();
           if ((active > 0 || waiting > 0) && !(await disparoQueue.isPaused())) {
-            // Verifica se ainda tem outro chip conectado
-            const outrosConectados = await pool.query(
-              `SELECT COUNT(*) FROM chips WHERE status='open' AND instancia!=$1`, [instance]
-            );
+            const outrosConectados = await pool.query(`SELECT COUNT(*) FROM chips WHERE status='open' AND instancia!=$1`, [instance]);
             if (parseInt(outrosConectados.rows[0].count) === 0) {
               await disparoQueue.pause();
-              console.warn(`[WEBHOOK] ⚠ Chip ${instance} desconectou. Fila pausada.`);
             }
           }
         }
       },
-
       'qrcode.updated': async () => {
         await pool.query(`UPDATE chips SET status='qr_code', ultimo_ping=NOW() WHERE instancia=$1`, [instance]);
-      },
-
-      'messages.upsert': async () => {
-        // Futuro: processar respostas / opt-outs automáticos
       },
     };
 
@@ -381,11 +389,10 @@ router.post('/webhook/evolution', async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error('[WEBHOOK] Erro:', err.message);
-    res.json({ ok: true }); // sempre retorna 200 para a Evolution não tentar de novo
+    res.json({ ok: true }); 
   }
 });
 
-// Rota para registrar o webhook na Evolution API automaticamente
 router.post('/webhook/registrar', async (req, res) => {
   try {
     const { cfgGet } = require('../services/config');
@@ -417,7 +424,7 @@ router.post('/webhook/registrar', async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-// ─── Exportar relatório CSV ───────────────────────────────────────────────────
+// ─── Exportação e Duplicatas ──────────────────────────────────────────────────
 
 router.get('/campanhas/:id/exportar', async (req, res) => {
   try {
@@ -425,86 +432,48 @@ router.get('/campanhas/:id/exportar', async (req, res) => {
     if (!campanha.rows.length) return res.status(404).json({ ok: false, error: 'Não encontrada' });
 
     const disparos = await pool.query(`
-      SELECT
-        c.numero, c.nome,
-        d.status, d.mensagem, d.tentativas, d.erro,
-        d.enviado_em,
-        ch.nome AS chip_nome
-      FROM disparos d
-      JOIN contatos c ON c.id = d.contato_id
-      LEFT JOIN chips ch ON ch.id = d.chip_id
-      WHERE d.campanha_id = $1
-      ORDER BY d.id
+      SELECT c.numero, c.nome, d.status, d.mensagem, d.tentativas, d.erro, d.enviado_em, ch.nome AS chip_nome
+      FROM disparos d JOIN contatos c ON c.id = d.contato_id LEFT JOIN chips ch ON ch.id = d.chip_id
+      WHERE d.campanha_id = $1 ORDER BY d.id
     `, [req.params.id]);
 
-    // Gera CSV
     const cabecalho = ['numero','nome','status','chip','tentativas','enviado_em','erro','mensagem'];
     const linhas = disparos.rows.map(r => [
-      r.numero,
-      (r.nome || '').replace(/,/g, ';'),
-      r.status,
-      (r.chip_nome || ''),
-      r.tentativas,
+      r.numero, (r.nome || '').replace(/,/g, ';'), r.status, (r.chip_nome || ''), r.tentativas,
       r.enviado_em ? new Date(r.enviado_em).toLocaleString('pt-BR') : '',
       (r.erro || '').replace(/,/g, ';').replace(/\n/g, ' '),
       (r.mensagem || '').replace(/,/g, ';').replace(/\n/g, ' ').substring(0, 100),
     ].join(','));
 
     const csv = [cabecalho.join(','), ...linhas].join('\n');
-    const nomeArquivo = `campanha-${req.params.id}-${Date.now()}.csv`;
-
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="${nomeArquivo}"`);
-    res.send('\uFEFF' + csv); // BOM para Excel reconhecer UTF-8
+    res.setHeader('Content-Disposition', `attachment; filename="campanha-${req.params.id}-${Date.now()}.csv"`);
+    res.send('\uFEFF' + csv); 
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
-
-// ─── Controle de duplicatas por campanha ─────────────────────────────────────
-// Verifica quais números já receberam em campanhas anteriores
 
 router.get('/campanhas/:id/duplicatas', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT c.numero, c.nome, COUNT(DISTINCT d2.campanha_id) as recebeu_em_campanhas
-      FROM disparos d1
-      JOIN contatos c ON c.id = d1.contato_id
-      JOIN disparos d2 ON d2.contato_id = d1.contato_id
-        AND d2.campanha_id != d1.campanha_id
-        AND d2.status = 'enviado'
-      WHERE d1.campanha_id = $1
-      GROUP BY c.numero, c.nome
-      ORDER BY recebeu_em_campanhas DESC
-      LIMIT 100
+      FROM disparos d1 JOIN contatos c ON c.id = d1.contato_id
+      JOIN disparos d2 ON d2.contato_id = d1.contato_id AND d2.campanha_id != d1.campanha_id AND d2.status = 'enviado'
+      WHERE d1.campanha_id = $1 GROUP BY c.numero, c.nome ORDER BY recebeu_em_campanhas DESC LIMIT 100
     `, [req.params.id]);
     res.json({ ok: true, data: result.rows, total: result.rows.length });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-// Remove duplicatas de uma campanha (contatos que já receberam em outras campanhas)
 router.post('/campanhas/:id/remover-duplicatas', async (req, res) => {
   try {
     const result = await pool.query(`
       UPDATE disparos SET status='bloqueado', erro='Duplicata — já recebeu em campanha anterior'
-      WHERE campanha_id = $1
-        AND status = 'pendente'
-        AND contato_id IN (
-          SELECT DISTINCT d2.contato_id
-          FROM disparos d2
-          WHERE d2.campanha_id != $1
-            AND d2.status = 'enviado'
-        )
-      RETURNING id
+      WHERE campanha_id = $1 AND status = 'pendente' AND contato_id IN (
+          SELECT DISTINCT d2.contato_id FROM disparos d2 WHERE d2.campanha_id != $1 AND d2.status = 'enviado'
+      ) RETURNING id
     `, [req.params.id]);
-
-    // Atualiza total de contatos restantes
-    const pendentes = await pool.query(
-      `SELECT COUNT(*) FROM disparos WHERE campanha_id=$1 AND status='pendente'`, [req.params.id]
-    );
-    await pool.query(
-      `UPDATE campanhas SET total_contatos=$1 WHERE id=$2`,
-      [parseInt(pendentes.rows[0].count), req.params.id]
-    );
-
+    const pendentes = await pool.query(`SELECT COUNT(*) FROM disparos WHERE campanha_id=$1 AND status='pendente'`, [req.params.id]);
+    await pool.query(`UPDATE campanhas SET total_contatos=$1 WHERE id=$2`, [parseInt(pendentes.rows[0].count), req.params.id]);
     res.json({ ok: true, data: { removidos: result.rows.length } });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
@@ -517,9 +486,7 @@ router.get('/logs', async (req, res) => {
     const offset = (page - 1) * limit;
     let where = nivel ? `WHERE nivel=$1` : '';
     const params = nivel ? [nivel] : [];
-    const result = await pool.query(
-      `SELECT * FROM logs ${where} ORDER BY criado_em DESC LIMIT ${limit} OFFSET ${offset}`, params
-    );
+    const result = await pool.query(`SELECT * FROM logs ${where} ORDER BY criado_em DESC LIMIT ${limit} OFFSET ${offset}`, params);
     const count = await pool.query(`SELECT COUNT(*) FROM logs ${where}`, params);
     res.json({ ok: true, data: result.rows, total: parseInt(count.rows[0].count) });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }

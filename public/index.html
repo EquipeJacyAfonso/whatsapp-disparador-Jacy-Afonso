@@ -1417,6 +1417,131 @@ async function testarNotificacao() {
   } catch(e) { toast(e.message,'err'); }
 }
 
+// ─── Anti-ban ────────────────────────────────────────────────────────────
+
+async function loadAntiban() {
+  try {
+    const r = await fetch(`${API}/config`); const d = await r.json();
+    if(!d.ok) return;
+    const c = d.data;
+    const ativo = c.horario_ativo !== 'false'; 
+    document.getElementById('ab-horario-ativo').checked = ativo;
+    document.getElementById('ab-horario-campos').style.display = ativo ? 'block' : 'none';
+    document.getElementById('ab-hinicio').value = c.horario_inicio || 8;
+    document.getElementById('ab-hfim').value = c.horario_fim || 20;
+    document.getElementById('ab-threshold').value = c.falhas_ban_threshold || 3;
+    document.getElementById('ab-intervalo').value = c.intervalo_campanhas_min || 0;
+    carregarStatusAntiban();
+  } catch(e) { console.error(e); }
+}
+
+function toggleHorario() {
+  const ativo = document.getElementById('ab-horario-ativo').checked;
+  document.getElementById('ab-horario-campos').style.display = ativo ? 'block' : 'none';
+}
+
+async function salvarAntiban(tipo) {
+  let payload = {};
+  if (tipo === 'horario') {
+    payload = {
+      horario_ativo: document.getElementById('ab-horario-ativo').checked ? 'true' : 'false',
+      horario_inicio: document.getElementById('ab-hinicio').value,
+      horario_fim: document.getElementById('ab-hfim').value
+    };
+  } else if (tipo === 'threshold') {
+    payload = { falhas_ban_threshold: document.getElementById('ab-threshold').value };
+  } else if (tipo === 'intervalo') {
+    payload = { intervalo_campanhas_min: document.getElementById('ab-intervalo').value };
+  }
+  try {
+    const r = await fetch(`${API}/config`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+    const d = await r.json();
+    if(!d.ok) throw new Error(d.error);
+    toast('Configurações anti-ban salvas!');
+    carregarStatusAntiban();
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+async function testarSpintax() {
+  const texto = document.getElementById('ab-spintax-teste').value;
+  if (!texto) return;
+  try {
+    const r = await fetch(`${API}/antiban/spintax/testar`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({texto})});
+    const d = await r.json();
+    if(!d.ok) throw new Error(d.error);
+    document.getElementById('ab-spintax-result').innerHTML = d.data.map(v => `<div class="hint" style="margin-bottom:5px;padding:8px">${v}</div>`).join('');
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+async function carregarStatusAntiban() {
+  try {
+    const r = await fetch(`${API}/antiban/status`); const d = await r.json();
+    if(!d.ok) return;
+    const st = d.data;
+    let html = '';
+    if (st.config.horario_ativo !== 'false') {
+      if (st.janela_aberta) {
+        html += `<div class="hint" style="border-color:var(--green)">✅ <strong>Janela de horário:</strong> Aberta (Disparos permitidos)</div>`;
+      } else {
+        html += `<div class="hint warn">⏳ <strong>Janela de horário:</strong> Fechada. Abre em aprox. ${st.abre_em_horas} horas.</div>`;
+      }
+    } else {
+      html += `<div class="hint">ℹ <strong>Janela de horário:</strong> Desativada (Ativo 24h)</div>`;
+    }
+
+    if (st.chips_pausados && st.chips_pausados.length) {
+      html += `<h4 style="font-size:11px;margin:10px 0 5px;color:var(--yellow)">Chips em repouso de segurança:</h4>`;
+      st.chips_pausados.forEach(c => {
+         html += `<div class="hint warn" style="padding:6px 10px;margin-bottom:4px">⏸ <strong>${c.nome}</strong> pausado até ${new Date(c.pausado_ate).toLocaleTimeString('pt-BR')}</div>`;
+      });
+    } else {
+      html += `<div class="hint" style="padding:6px 10px;margin-bottom:4px">✅ Nenhum chip pausado por falhas no momento.</div>`;
+    }
+    document.getElementById('ab-status').innerHTML = html;
+  } catch(e) { console.error(e); }
+}
+
+// ─── Logs  ──────────────────────────────────────────────────────────────
+
+let logPage = 1;
+let logFiltro = '';
+
+async function loadLogs() {
+  try {
+    const r = await fetch(`${API}/logs?page=${logPage}&limit=30${logFiltro ? '&nivel='+logFiltro : ''}`);
+    const data = await r.json();
+    const el = document.getElementById('tab-logs');
+    if (!data.data || !data.data.length) { el.innerHTML = '<div class="empty">Nenhum log registrado</div>'; return; }
+    
+    el.innerHTML = `<table><thead><tr><th>Data/Hora</th><th>Nível</th><th>Mensagem</th></tr></thead><tbody>` +
+      data.data.map(l => {
+        const date = new Date(l.criado_em).toLocaleString('pt-BR');
+        let color = 'var(--text)';
+        if (l.nivel === 'erro') color = 'var(--red)';
+        if (l.nivel === 'alerta') color = 'var(--yellow)';
+        if (l.nivel === 'ok') color = 'var(--green)';
+        
+        return `<tr>
+          <td style="color:var(--muted);width:140px">${date}</td>
+          <td><span class="badge bg-${l.nivel==='erro'?'r':l.nivel==='alerta'?'y':'gray'}">${l.nivel}</span></td>
+          <td style="color:${color}">${l.mensagem}</td>
+        </tr>`;
+      }).join('') + `</tbody></table>`;
+
+    const total = data.total || 0, pages = Math.ceil(total / 30);
+    document.getElementById('pag-logs').innerHTML =
+      `<span style="color:var(--muted);font-family:var(--mono);font-size:11px">${total} registros</span>
+      ${logPage > 1 ? `<button class="bs sm" onclick="logPage--;loadLogs()">← Ant</button>` : ''}
+      ${logPage < pages ? `<button class="bs sm" onclick="logPage++;loadLogs()">Próx →</button>` : ''}`;
+  } catch(e) { console.error('Erro logs:', e); }
+}
+
+function filtrarLogs(nivel) {
+  logFiltro = nivel;
+  logPage = 1;
+  loadLogs();
+}
+
 // ─── Wizard ───────────────────────────────────────────────────────────────────
 let wStep = 1;
 
