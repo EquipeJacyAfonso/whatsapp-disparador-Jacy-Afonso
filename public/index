@@ -67,9 +67,40 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
 .drop{border:2px dashed var(--border);border-radius:8px;padding:36px;text-align:center;cursor:pointer;transition:all .2s;font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:14px}
 .drop:hover,.drop.dg{border-color:var(--green);color:var(--green);background:var(--gdim)}
 .drop input{display:none}
+.aq-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:3px;margin-top:7px}
+.step{border:1px solid var(--border);border-radius:6px;margin-bottom:7px;overflow:hidden}
+.step-header{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;background:var(--surface2);transition:background .15s}
+.step-header:hover{background:var(--border)}
+.step-num{width:20px;height:20px;border-radius:50%;background:var(--border);color:var(--muted);font-family:var(--mono);font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-num.done{background:var(--green);color:#000}
+.step-title{flex:1;font-family:var(--mono);font-size:11px;color:var(--text)}
+.step-arrow{font-size:9px;color:var(--muted)}
+.step-body{padding:14px;font-family:var(--mono);font-size:11px;line-height:2;border-top:1px solid var(--border)}
+.step-body p{margin-bottom:4px}
+.step-body strong{color:var(--yellow)}
+.cfg-saved{position:relative}
+.wizard-overlay{position:fixed;inset:0;background:#0d0f12f0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
+.wizard-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:600px;max-width:100%;max-height:90vh;overflow-y:auto}
+.wizard-header{padding:28px 28px 0;border-bottom:1px solid var(--border);padding-bottom:20px}
+.wizard-header h2{font-size:18px;font-weight:500;margin-bottom:6px}
+.wizard-header p{font-size:12px;color:var(--muted);font-family:var(--mono)}
+.wizard-steps{display:flex;gap:0;padding:0 28px;margin:20px 0;border-bottom:1px solid var(--border);padding-bottom:0}
+.wstep{padding:8px 14px;font-size:11px;font-family:var(--mono);color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;cursor:default}
+.wstep.active{color:var(--green);border-color:var(--green)}
+.wstep.done{color:var(--muted)}
+.wizard-body{padding:28px}
+.wizard-footer{padding:0 28px 28px;display:flex;justify-content:space-between;align-items:center}
+.health-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.health-item{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px 14px;display:flex;align-items:center;gap:10px}
+.health-dot{width:10px;height:10px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.health-dot.ok{background:var(--green);box-shadow:0 0 6px var(--green)}
+.health-dot.err{background:var(--red)}
+.health-dot.warn{background:var(--yellow)}
+.health-dot.checking{background:var(--muted);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.cfg-saved::after{content:'✅ Salvo';position:absolute;right:10px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:10px;color:var(--green);pointer-events:none}
 .aq-day{background:var(--surface2);border-radius:4px;padding:5px 3px;text-align:center;font-family:var(--mono);font-size:9px;color:var(--muted)}
 .aq-day span{display:block;font-size:11px;color:var(--text);margin-top:1px}
-.aq-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:3px;margin-top:7px}
 #toast{position:fixed;bottom:22px;right:22px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 18px;font-family:var(--mono);font-size:12px;transform:translateY(70px);opacity:0;transition:all .3s;z-index:999;max-width:340px}
 #toast.show{transform:translateY(0);opacity:1}
 #toast.ok{border-color:var(--green);color:var(--green)}#toast.err{border-color:var(--red);color:var(--red)}
@@ -83,11 +114,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
 .tab-mini{padding:7px 14px;font-size:11px;font-family:var(--mono);background:var(--surface2);border:1px solid var(--border);border-radius:5px;cursor:pointer;color:var(--muted);transition:all .15s}
 .tab-mini.active{background:var(--gdim);border-color:var(--green);color:var(--green)}
 .section{display:none}.section.active{display:block}
-.wizard-overlay{position:fixed;inset:0;background:#0d0f12f0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
-.wizard-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:600px;max-width:100%;max-height:90vh;overflow-y:auto}
-.wizard-header{padding:28px 28px 0;border-bottom:1px solid var(--border);padding-bottom:20px}
-.wizard-header h2{font-size:18px;font-weight:500;margin-bottom:6px}
-.wizard-body{padding:28px}
 </style>
 </head>
 <body>
@@ -404,18 +430,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
-<div class="wizard-overlay" id="wizard" style="display:none">
-  <div class="wizard-box">
-    <div class="wizard-header"><h2>👋 Bem-vindo</h2></div>
-    <div class="wizard-body">
-      <div id="wp-1" style="text-align:center;padding:20px 0">
-        <h3 style="font-size:16px;margin-bottom:10px">O sistema está pronto.</h3>
-        <button class="bp" id="wiz-next" onclick="fecharWizard()">Ir para o painel →</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <div id="toast"></div>
 
 <script>
@@ -572,27 +586,23 @@ async function criarCampanha() {
   let mediaUrl = null;
   if (fileInput && fileInput.files.length > 0) {
     const file = fileInput.files[0];
-    if (file.size > 5 * 1024 * 1024) { toast('Imagem muito pesada (máx 5MB).', 'err'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast('Imagem pesada (máx 5MB).', 'err'); return; }
     toast('Processando imagem, aguarde...', 'info');
     mediaUrl = await new Promise((res, rej) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => res(reader.result);
-      reader.onerror = e => rej(e);
+      const reader = new FileReader(); reader.readAsDataURL(file);
+      reader.onload = () => res(reader.result); reader.onerror = e => rej(e);
     });
   }
 
   try {
     const r = await fetch(`${API}/campanhas`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nome, template, delay_min: dmin, delay_max: dmax, mediaUrl })
     });
     const d = await r.json(); 
     if (!d.ok) throw new Error(d.error);
     toast(`Campanha "${nome}" criada!`); 
-    document.getElementById('camp-nome').value = ''; 
-    document.getElementById('camp-tpl').value = ''; 
+    document.getElementById('camp-nome').value = ''; document.getElementById('camp-tpl').value = ''; 
     if (fileInput) fileInput.value = '';
     loadCamps();
   } catch(e) { toast(e.message, 'err'); }
@@ -647,11 +657,57 @@ async function loadContatos(){
   document.getElementById('pag-contatos').innerHTML=`<span style="color:var(--muted);font-size:11px">${d.total||0} contatos</span>${cPage>1?`<button class="bs sm" onclick="cPage--;loadContatos()">← Ant</button>`:''}${cPage<Math.ceil((d.total||0)/20)?`<button class="bs sm" onclick="cPage++;loadContatos()">Próx →</button>`:''}`;
 }
 async function limparContatos(){if(!confirm('Remover TODOS?'))return;await fetch(`${API}/contatos`,{method:'DELETE'});toast('Removidos');loadContatos();}
-let higienizando=false;
-async function higienizarLista(){
-  if(higienizando)return; higienizando=true; const btn=document.getElementById('btn-higienizar'); btn.textContent='⏳ Higienizando...'; toast('Higienização em lote...', 'info');
-  try{while(higienizando){const r=await fetch(`${API}/contatos/higienizar`, {method:'POST'}); const d=await r.json(); if(!d.ok)throw new Error(d.error); if(d.data.finalizado||d.data.concluidos===0){toast('Concluído!','ok');break;} toast(`Lote: ${d.data.validos} válidos, ${d.data.invalidos} inválidos.`,'info'); await loadContatos();}}catch(e){toast(e.message,'err');} higienizando=false; btn.textContent='🧹 Higienizar Lista'; loadContatos();
+
+// ─── HIGIENIZADOR REESCRITO (NÃO CONGELA A TELA) ───
+let higienizando = false;
+async function higienizarLista() {
+  if (higienizando) return;
+  higienizando = true;
+  const btn = document.getElementById('btn-higienizar');
+  btn.textContent = '⏳ Higienizando...';
+  toast('Iniciando varredura segura...', 'info');
+
+  try {
+    while (higienizando) {
+      // Cria um limite de 25s de espera para o fetch não ficar a girar eternamente
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000);
+
+      try {
+        const r = await fetch(`${API}/contatos/higienizar`, { method: 'POST', signal: controller.signal });
+        clearTimeout(timeoutId);
+        const d = await r.json();
+
+        if (!d.ok) throw new Error(d.error);
+
+        if (d.data.finalizado || d.data.concluidos === 0) {
+          toast('Higienização concluída com sucesso!', 'ok');
+          break;
+        }
+
+        toast(`Verificados 20: ${d.data.validos} válidos, ${d.data.invalidos} sem WhatsApp.`, 'info');
+        await loadContatos();
+        
+        // Pausa simulando paciência humana (2.5s) para enganar o Anti-Scraping
+        await new Promise(res => setTimeout(res, 2500)); 
+      } catch (fetchErr) {
+        clearTimeout(timeoutId);
+        if (fetchErr.name === 'AbortError') {
+          throw new Error('A conexão com a API demorou muito. Processo abortado para evitar congelamento.');
+        }
+        throw fetchErr;
+      }
+    }
+  } catch (e) {
+    toast(e.message, 'err');
+  }
+
+  higienizando = false;
+  btn.textContent = '🧹 Higienizar Lista';
+  loadContatos();
+  loadChips();
 }
+
 async function apagarInvalidos(){if(!confirm('Apagar todos os números sem WhatsApp?'))return;try{const r=await fetch(`${API}/contatos/invalidos`, {method:'DELETE'});const d=await r.json();if(!d.ok)throw new Error(d.error);toast(`${d.data.removidos} removidos!`);loadContatos();}catch(e){toast(e.message,'err');}}
 
 // ─── Chips ───────────────────────────────────────────────
@@ -752,7 +808,6 @@ function filtrarLogs(n){logFiltro=n;logPage=1;loadLogs();}
 function fecharWizard() { document.getElementById('wizard').style.display='none'; localStorage.setItem('wizard_done','1'); }
 
 loadDash();loadChips(); setInterval(loadDash,10000); setInterval(loadChips,30000); 
-if (!localStorage.getItem('wizard_done')) { document.getElementById('wizard').style.display='flex'; }
 </script>
 </body>
 </html>
