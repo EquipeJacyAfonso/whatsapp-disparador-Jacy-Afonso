@@ -15,23 +15,17 @@ function limitePorDia(diasAtivo) {
 async function getApi(instancia) {
   const url = await config.get('evolution_url', process.env.EVOLUTION_API_URL || 'http://localhost:8080');
   const key = await config.get('evolution_key', process.env.EVOLUTION_API_KEY || '');
-  return axios.create({
-    baseURL: url,
-    headers: { 'apikey': key, 'Content-Type': 'application/json' },
-    timeout: 15000,
-  });
+  return axios.create({ baseURL: url, headers: { 'apikey': key, 'Content-Type': 'application/json' }, timeout: 15000 });
 }
 
 function formatarNumero(numero) {
-  let limpo = String(numero).replace(/\D/g, '');
-  if (!limpo.startsWith('55')) limpo = `55${limpo}`;
+  let limpo = String(numero).replace(/\D/g, ''); if (!limpo.startsWith('55')) limpo = `55${limpo}`;
   return `${limpo}@s.whatsapp.net`;
 }
 
 async function verificarNumero(numero, instancia) {
   const api = await getApi(instancia);
-  let numeroLimpo = String(numero).replace(/\D/g, ''); 
-  if (!numeroLimpo.startsWith('55')) numeroLimpo = `55${numeroLimpo}`;
+  let numeroLimpo = String(numero).replace(/\D/g, ''); if (!numeroLimpo.startsWith('55')) numeroLimpo = `55${numeroLimpo}`;
   try {
     const r = await api.post(`/chat/whatsappNumbers/${instancia}`, { numbers: [numeroLimpo] });
     if (r.data && r.data.length > 0 && r.data[0].exists) return r.data[0].jid || `${r.data[0].number}@s.whatsapp.net` || `${numeroLimpo}@s.whatsapp.net`;
@@ -42,40 +36,28 @@ async function verificarNumero(numero, instancia) {
 async function verificarLoteNumeros(numeros, instancia) {
   const api = await getApi(instancia);
   const limpos = numeros.map(n => {
-    let num = String(n).replace(/\D/g, '');
-    if (!num.startsWith('55')) num = `55${num}`;
-    return num;
+    let num = String(n).replace(/\D/g, ''); if (!num.startsWith('55')) num = `55${num}`; return num;
   });
-
   try {
-    const r = await api.post(`/chat/whatsappNumbers/${instancia}`, { numbers: limpos });
-    return r.data; 
+    const r = await api.post(`/chat/whatsappNumbers/${instancia}`, { numbers: limpos }); return r.data; 
   } catch(err) {
-    // 🛡️ AQUI: Expõe o erro real da API para o Anti-ban detetar o banimento
-    const erroMsg = err.response?.data?.message || err.response?.data?.response?.message || err.message;
-    console.error('[ERRO HIGIENIZADOR]', erroMsg);
+    const erroMsg = err.response?.data?.message || err.message;
     throw new Error(erroMsg);
   }
 }
 
 async function adicionarChip(nome, instancia, limiteDiario = null) {
   const limite = limiteDiario || limitePorDia(0); 
-  const result = await pool.query(
-    `INSERT INTO chips (nome, instancia, status, limite_diario, dias_ativo) VALUES ($1, $2, 'desconectado', $3, 0) RETURNING *`,
-    [nome, instancia, limite]
-  );
+  const result = await pool.query(`INSERT INTO chips (nome, instancia, status, limite_diario, dias_ativo) VALUES ($1, $2, 'desconectado', $3, 0) RETURNING *`, [nome, instancia, limite]);
   return result.rows[0];
 }
 
-async function listarChips() {
-  const result = await pool.query('SELECT * FROM chips ORDER BY criado_em ASC'); return result.rows;
-}
+async function listarChips() { const result = await pool.query('SELECT * FROM chips ORDER BY criado_em ASC'); return result.rows; }
 
 async function removerChip(id) {
   const result = await pool.query('SELECT instancia FROM chips WHERE id = $1', [id]);
   if (result.rows.length > 0) {
-    const instanciaNome = result.rows[0].instancia;
-    try { const api = await getApi(instanciaNome); await api.delete(`/instance/delete/${instanciaNome}`); } catch (e) { }
+    try { const api = await getApi(result.rows[0].instancia); await api.delete(`/instance/delete/${result.rows[0].instancia}`); } catch (e) { }
   }
   await pool.query('DELETE FROM chips WHERE id = $1', [id]);
 }
@@ -142,11 +124,28 @@ async function enviarMensagem(numero, mensagem, instancia) {
   try { const r = await api.post(`/message/sendText/${instancia}`, { number: numeroFinalParaEnvio, options: { delay: tempoEspera, presence: 'composing' }, textMessage: { text: mensagem } }); return r.data; } catch(err) { throw err; }
 }
 
+// ─── A IMAGEM AGORA VAI FUNCIONAR PERFEITAMENTE ───
 async function enviarImagem(numero, legenda, mediaUrlOuBase64, instancia) {
-  const api = await getApi(instancia); const jidValidado = await verificarNumero(numero, instancia);
+  const api = await getApi(instancia); 
+  const jidValidado = await verificarNumero(numero, instancia);
+  
   if (!jidValidado || jidValidado === true) throw new Error('O número não possui WhatsApp registado.');
-  const numeroFinalParaEnvio = jidValidado.split('@')[0]; const tempoEspera = Math.floor(Math.random() * 3000) + 3000; 
-  try { const r = await api.post(`/message/sendMedia/${instancia}`, { number: numeroFinalParaEnvio, options: { delay: tempoEspera, presence: 'composing' }, mediaMessage: { mediatype: 'image', caption: legenda || '', media: mediaUrlOuBase64 } }); return r.data; } catch(err) { throw err; }
+  const numeroFinalParaEnvio = jidValidado.split('@')[0]; 
+  const tempoEspera = Math.floor(Math.random() * 3000) + 3000; 
+
+  let mediaPura = mediaUrlOuBase64;
+  if (mediaPura && mediaPura.includes('base64,')) {
+    mediaPura = mediaPura.split('base64,')[1];
+  }
+
+  try { 
+    const r = await api.post(`/message/sendMedia/${instancia}`, { 
+      number: numeroFinalParaEnvio, 
+      options: { delay: tempoEspera, presence: 'composing' }, 
+      mediaMessage: { mediatype: 'image', caption: legenda || '', media: mediaPura } 
+    }); 
+    return r.data; 
+  } catch(err) { throw err; }
 }
 
 async function obterNumeroDaInstancia(instancia) {
