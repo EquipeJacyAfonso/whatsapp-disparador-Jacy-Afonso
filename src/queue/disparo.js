@@ -37,7 +37,6 @@ disparoQueue.on('active', job => console.log(`[FILA] Processando #${job.id} → 
 disparoQueue.on('completed', (job, r) => console.log(`[FILA] ✅ #${job.id} via ${r?.chip||'?'}`));
 disparoQueue.on('failed', (job, err) => console.error(`[FILA] ❌ #${job.id}: ${err.message}`));
 
-// ─── FIX 1: Cleanup de jobs travados no startup ───────────────────────────────
 async function limparJobsTravados() {
   try {
     const ativos = await disparoQueue.getActive();
@@ -62,7 +61,6 @@ async function limparJobsTravados() {
   }
 }
 
-// ─── FIX 3: Detecção de chip desconectado durante o disparo ──────────────────
 async function verificarChipConectado(chip) {
   try {
     const state = await statusChip(chip.instancia);
@@ -119,7 +117,7 @@ disparoQueue.process(1, async (job) => {
     throw err;
   }
 
-  // 4. Spintax (Processado aqui uma única vez!)
+  // 4. Spintax 
   const mensagemFinal = processarSpintax(mensagem);
 
   // 5. Envia
@@ -134,11 +132,16 @@ disparoQueue.process(1, async (job) => {
 
     await verificarConclusaoCampanha(campanhaId);
 
-    const delay = delayAleatorio(delayMin, delayMax);
-    console.log(`[DISPARO] ✅ ${numero} — próxima em ${Math.round(delay/1000)}s`);
+    // 🛡️ ANTI-BAN: Delay Protetor para Chips Novos
+    let delayExtra = 0;
+    if (chip.dias_ativo < 3) {
+      delayExtra = delayAleatorio(15000, 30000); // 15s a 30s de penalidade forçada no backend
+      console.log(`[ANTIBAN] 🛡️ Chip muito novo (Dia ${chip.dias_ativo + 1}). Injetado +${Math.round(delayExtra/1000)}s de proteção.`);
+    }
+
+    const delay = delayAleatorio(delayMin, delayMax) + delayExtra;
+    console.log(`[DISPARO] ✅ ${numero} — próxima mensagem na fila em ${Math.round(delay/1000)}s`);
     
-    // O Node.js dorme um pouco aqui para gerir a velocidade da Fila principal,
-    // mas já NÃO fica bloqueado pela simulação do "A escrever..." da Meta.
     await new Promise(r => setTimeout(r, delay));
     
     return { ok: true, chip: chip.instancia };
@@ -178,7 +181,6 @@ disparoQueue.on('failed', async (job, err) => {
   }
 });
 
-// ─── FIX 1: Conclusão automática de campanhas ─────────────────────────────────
 async function verificarConclusaoCampanha(campanhaId) {
   try {
     const pendentes = await pool.query(`
@@ -215,7 +217,6 @@ async function verificarConclusaoCampanha(campanhaId) {
   }
 }
 
-// ─── FIX 2: Monitor de chips desconectados ─────────────────────────────
 let monitorInterval = null;
 
 function iniciarMonitorChips() {

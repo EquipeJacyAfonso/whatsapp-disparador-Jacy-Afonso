@@ -2,12 +2,17 @@ require('dotenv').config();
 const axios = require('axios');
 const pool = require('../db');
 const config = require('./config');
-const { processarSpintax } = require('./antiban'); // Importa o Spintax daqui!
+const { processarSpintax } = require('./antiban');
 
-const AQUECIMENTO = [20,30,40,50,60,80,100,120,150];
+// ─── 🛡️ NOVA TABELA DE AQUECIMENTO (BASE) ───
+// Começa muito mais devagar nos primeiros dias
+const AQUECIMENTO_BASE = [15, 25, 40, 60, 80, 100, 120, 150];
 
 function limitePorDia(diasAtivo) {
-  return AQUECIMENTO[Math.min(diasAtivo, AQUECIMENTO.length - 1)];
+  const base = AQUECIMENTO_BASE[Math.min(diasAtivo, AQUECIMENTO_BASE.length - 1)];
+  // 🛡️ ANTI-PADRÃO: Variação de -2 a +4 mensagens para não ser um número redondo de bot
+  const variacao = Math.floor(Math.random() * 7) - 2;
+  return Math.max(10, base + variacao);
 }
 
 async function getApi(instancia) {
@@ -41,12 +46,10 @@ async function verificarNumero(numero, instancia) {
     });
     
     if (r.data && r.data.length > 0 && r.data[0].exists) {
-      // Devolve o ID oficial da Meta
       return r.data[0].jid || `${r.data[0].number}@s.whatsapp.net` || `${numeroLimpo}@s.whatsapp.net`;
     }
-    return null; // Não tem WhatsApp
+    return null; 
   } catch (erro) {
-    // Se der erro de rede, tenta enviar da forma padrão
     return `${numeroLimpo}@s.whatsapp.net`; 
   }
 }
@@ -54,7 +57,7 @@ async function verificarNumero(numero, instancia) {
 // ─── Gestão de Chips ─────────────────────────────────────────────────────────
 
 async function adicionarChip(nome, instancia, limiteDiario = null) {
-  const limite = limiteDiario || AQUECIMENTO[0];
+  const limite = limiteDiario || limitePorDia(0); // Puxa o limite calculado inteligente
   const result = await pool.query(
     `INSERT INTO chips (nome, instancia, status, limite_diario, dias_ativo)
      VALUES ($1, $2, 'desconectado', $3, 0) RETURNING *`,
@@ -134,7 +137,6 @@ async function criarInstancia(instancia) {
       webhookByEvents: false,
       events: ["MESSAGES_UPSERT"]
     });
-    console.log(`[OPT-OUT] Webhook ativado para o chip: ${instancia}`);
   } catch(e) {
     console.log(`[OPT-OUT] Erro ao ativar webhook em ${instancia}`);
   }
@@ -218,28 +220,24 @@ async function marcarComoLida(instancia, messageKey) {
 async function enviarMensagem(numero, mensagem, instancia) {
   const api = await getApi(instancia);
 
-  // 1. Obtém o número oficial validado pelo próprio WhatsApp
   const jidValidado = await verificarNumero(numero, instancia);
   
   if (!jidValidado || jidValidado === true) {
     throw new Error('O número não possui WhatsApp registado.');
   }
 
-  // BUG 1 FIX: Remove o '@s.whatsapp.net' e usa só o número para evitar falsos positivos na API
   const numeroFinalParaEnvio = jidValidado.split('@')[0];
-
-  // BUG 3 FIX: O Node.js liberta a fila instantaneamente. O Delay vai para a própria Evolution API.
   const tempoEspera = Math.floor(Math.random() * 3000) + 3000; 
 
   try {
     const r = await api.post(`/message/sendText/${instancia}`, {
       number: numeroFinalParaEnvio,
       options: {
-        delay: tempoEspera,     // API segura a mensagem antes de enviar
-        presence: 'composing'   // API mostra o "A escrever..."
+        delay: tempoEspera,     
+        presence: 'composing'   
       },
       textMessage: {
-        text: mensagem          // BUG 2 FIX: Texto limpo, o Spintax já foi processado na origem!
+        text: mensagem          
       }
     });
     return r.data;
@@ -278,14 +276,18 @@ async function aquecerChipsInternamente() {
     const numeroDestinatario = await obterNumeroDaInstancia(destinatario.instancia);
     if (!numeroDestinatario) return;
 
+    // 🛡️ ANTI-BAN: Frases orgânicas simulando conversas reais do dia a dia
     const frasesAquecimento = [
       "{Olá|Oi|Opa}, {tudo bem?|como vai?|tranquilo?}",
-      "Teste de {conexão|sistema|sinal}, {tudo ok|recebido}?"
+      "{Bom dia|Boa tarde|Boa noite}! {Sabe me dizer se vai chover hoje?|Tudo certo por aí?}",
+      "Estava a tentar ligar-te, mas {caiu|não deu}. {Tudo ok?|Podes falar agora?}",
+      "Acho que perdi o teu número novo. É {este mesmo|aqui}?",
+      "Teste de {conexão|sistema|sinal}, {tudo ok|recebido}?",
+      "{Desculpa a demora|Foi mal a demora}, {estava em reunião|estava a conduzir}. {Fala aí|Diz lá}.",
+      "Que {calor|frio} {hoje|agora}, {né?|não acha?}"
     ];
     
     const fraseSorteada = frasesAquecimento[Math.floor(Math.random() * frasesAquecimento.length)];
-    
-    // Processa o Spintax AQUI antes de passar para a função de envio otimizada
     const fraseProcessada = processarSpintax(fraseSorteada);
     
     await enviarMensagem(numeroDestinatario, fraseProcessada, remetente.instancia);
@@ -295,7 +297,7 @@ async function aquecerChipsInternamente() {
 }
 
 module.exports = {
-  enviarMensagem, formatarNumero, limitePorDia, AQUECIMENTO,
+  enviarMensagem, formatarNumero, limitePorDia, AQUECIMENTO_BASE,
   listarChips, adicionarChip, removerChip, statusChip, qrcodeChip, criarInstancia,
   proximoChip, registrarUso, registrarFalha, resetarContadoresDiarios,
   pausarChip, atualizarLimiteDiario, verificarNumero, marcarComoLida, aquecerChipsInternamente
