@@ -18,6 +18,7 @@ async function migrate() {
         falhas INTEGER DEFAULT 0,
         delay_min INTEGER DEFAULT 20,
         delay_max INTEGER DEFAULT 50,
+        media_url TEXT,
         criado_em TIMESTAMP DEFAULT NOW(),
         iniciado_em TIMESTAMP,
         finalizado_em TIMESTAMP
