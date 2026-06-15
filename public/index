@@ -67,40 +67,9 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
 .drop{border:2px dashed var(--border);border-radius:8px;padding:36px;text-align:center;cursor:pointer;transition:all .2s;font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:14px}
 .drop:hover,.drop.dg{border-color:var(--green);color:var(--green);background:var(--gdim)}
 .drop input{display:none}
-.aq-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:3px;margin-top:7px}
-.step{border:1px solid var(--border);border-radius:6px;margin-bottom:7px;overflow:hidden}
-.step-header{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;background:var(--surface2);transition:background .15s}
-.step-header:hover{background:var(--border)}
-.step-num{width:20px;height:20px;border-radius:50%;background:var(--border);color:var(--muted);font-family:var(--mono);font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.step-num.done{background:var(--green);color:#000}
-.step-title{flex:1;font-family:var(--mono);font-size:11px;color:var(--text)}
-.step-arrow{font-size:9px;color:var(--muted)}
-.step-body{padding:14px;font-family:var(--mono);font-size:11px;line-height:2;border-top:1px solid var(--border)}
-.step-body p{margin-bottom:4px}
-.step-body strong{color:var(--yellow)}
-.cfg-saved{position:relative}
-.wizard-overlay{position:fixed;inset:0;background:#0d0f12f0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
-.wizard-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:600px;max-width:100%;max-height:90vh;overflow-y:auto}
-.wizard-header{padding:28px 28px 0;border-bottom:1px solid var(--border);padding-bottom:20px}
-.wizard-header h2{font-size:18px;font-weight:500;margin-bottom:6px}
-.wizard-header p{font-size:12px;color:var(--muted);font-family:var(--mono)}
-.wizard-steps{display:flex;gap:0;padding:0 28px;margin:20px 0;border-bottom:1px solid var(--border);padding-bottom:0}
-.wstep{padding:8px 14px;font-size:11px;font-family:var(--mono);color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;cursor:default}
-.wstep.active{color:var(--green);border-color:var(--green)}
-.wstep.done{color:var(--muted)}
-.wizard-body{padding:28px}
-.wizard-footer{padding:0 28px 28px;display:flex;justify-content:space-between;align-items:center}
-.health-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
-.health-item{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px 14px;display:flex;align-items:center;gap:10px}
-.health-dot{width:10px;height:10px;border-radius:50%;background:var(--muted);flex-shrink:0}
-.health-dot.ok{background:var(--green);box-shadow:0 0 6px var(--green)}
-.health-dot.err{background:var(--red)}
-.health-dot.warn{background:var(--yellow)}
-.health-dot.checking{background:var(--muted);animation:pulse 1s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.cfg-saved::after{content:'✅ Salvo';position:absolute;right:10px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:10px;color:var(--green);pointer-events:none}
 .aq-day{background:var(--surface2);border-radius:4px;padding:5px 3px;text-align:center;font-family:var(--mono);font-size:9px;color:var(--muted)}
 .aq-day span{display:block;font-size:11px;color:var(--text);margin-top:1px}
+.aq-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:3px;margin-top:7px}
 #toast{position:fixed;bottom:22px;right:22px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 18px;font-family:var(--mono);font-size:12px;transform:translateY(70px);opacity:0;transition:all .3s;z-index:999;max-width:340px}
 #toast.show{transform:translateY(0);opacity:1}
 #toast.ok{border-color:var(--green);color:var(--green)}#toast.err{border-color:var(--red);color:var(--red)}
@@ -114,6 +83,11 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
 .tab-mini{padding:7px 14px;font-size:11px;font-family:var(--mono);background:var(--surface2);border:1px solid var(--border);border-radius:5px;cursor:pointer;color:var(--muted);transition:all .15s}
 .tab-mini.active{background:var(--gdim);border-color:var(--green);color:var(--green)}
 .section{display:none}.section.active{display:block}
+.wizard-overlay{position:fixed;inset:0;background:#0d0f12f0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
+.wizard-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:600px;max-width:100%;max-height:90vh;overflow-y:auto}
+.wizard-header{padding:28px 28px 0;border-bottom:1px solid var(--border);padding-bottom:20px}
+.wizard-header h2{font-size:18px;font-weight:500;margin-bottom:6px}
+.wizard-body{padding:28px}
 </style>
 </head>
 <body>
@@ -208,7 +182,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
     
     <label>Anexar Imagem (Opcional - Formato PNG ou JPG)</label>
     <div class="hint">A mensagem digitada acima será enviada como a legenda desta imagem. <strong>Recomendado: imagens abaixo de 2MB.</strong></div>
-    <input type="file" id="camp-img" accept="image/png, image/jpeg" style="margin-bottom: 20px;">
+    <input type="file" id="camp-img" accept="image/png, image/jpeg" style="margin-bottom: 20px; font-family: var(--mono); color: var(--text);">
     
     <div class="row">
       <div><label>Delay mínimo (segundos)</label><input type="number" id="camp-dmin" value="20" min="5"></div>
@@ -298,7 +272,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
 
 <div class="page" id="page-antiban">
   <h2>🛡 Proteção Anti-ban</h2>
-
   <div class="card">
     <h3>Janela de horário</h3>
     <div class="hint">Mensagens só são enviadas dentro do horário configurado. Fora dele, os jobs ficam na fila e disparam automaticamente quando a janela abre.</div>
@@ -313,34 +286,22 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
         <div><label>Hora de início (0–23)</label><input type="number" id="ab-hinicio" min="0" max="23" value="8"></div>
         <div><label>Hora de fim (0–23)</label><input type="number" id="ab-hfim" min="0" max="23" value="20"></div>
       </div>
-      <div class="hint">Exemplo: início <strong>8</strong>, fim <strong>20</strong> → dispara das 8h às 19h59.</div>
     </div>
     <button class="bp" onclick="salvarAntiban('horario')">💾 Salvar janela</button>
   </div>
-
   <div class="card">
     <h3>Spintax — variação automática de texto</h3>
-    <div class="hint">Use <strong>{opção1|opção2|opção3}</strong> no template para variar o texto a cada mensagem enviada.<br>
-    Suporta aninhamento: <strong>{Olá|{Oi|Ei}, tudo bem?}</strong><br><br>
-    Exemplo completo:<br>
-    <strong>{Olá|Oi|Bom dia}, {nome}! 👋</strong><br>
-    <strong>{Temos uma novidade|Preparamos algo especial} para você{!| hoje!| esta semana!}</strong></div>
-    <div class="card" style="background:var(--bg);margin-bottom:0">
-      <h3>Testar spintax</h3>
-      <textarea id="ab-spintax-teste" placeholder="{Olá|Oi|Bom dia}, {nome}! Temos {uma oferta|uma novidade|algo especial} para você." style="min-height:80px"></textarea>
-      <button class="bs" onclick="testarSpintax()">▶ Gerar 5 variações</button>
-      <div id="ab-spintax-result" style="margin-top:12px"></div>
-    </div>
+    <div class="hint">Use <strong>{opção1|opção2}</strong> no template para variar o texto a cada mensagem enviada.</div>
+    <textarea id="ab-spintax-teste" placeholder="{Olá|Oi|Bom dia}, {nome}!" style="min-height:80px"></textarea>
+    <button class="bs" onclick="testarSpintax()">▶ Gerar 5 variações</button>
+    <div id="ab-spintax-result" style="margin-top:12px"></div>
   </div>
-
   <div class="card">
     <h3>Pausa automática por falhas</h3>
-    <div class="hint">Se um chip atingir o número de falhas consecutivas configurado em 30 minutos, ele é pausado automaticamente por 30 minutos. Erros que indicam ban pausam o chip por 24h.</div>
     <label>Falhas consecutivas para pausa automática (em 30 min)</label>
     <input type="number" id="ab-threshold" min="1" max="20" value="3">
     <button class="bp" onclick="salvarAntiban('threshold')">💾 Salvar</button>
   </div>
-
   <div class="card">
     <h3>Status atual de proteção</h3>
     <div id="ab-status"><div class="empty">Carregando...</div></div>
@@ -353,7 +314,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
       <div class="bg">
-        <button class="bs sm" id="log-fil-todos" onclick="filtrarLogs('')" style="border-color:var(--green);color:var(--green)">Todos</button>
+        <button class="bs sm" onclick="filtrarLogs('')" style="border-color:var(--green);color:var(--green)">Todos</button>
         <button class="bs sm" onclick="filtrarLogs('erro')">❌ Erros</button>
         <button class="bs sm" onclick="filtrarLogs('alerta')">⚠ Alertas</button>
         <button class="bs sm" onclick="filtrarLogs('info')">ℹ Info</button>
@@ -367,89 +328,30 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
 
 <div class="page" id="page-config">
   <h2>⚙ Configurações</h2>
-
   <div class="row3" style="margin-bottom:18px">
-    <div class="stat" id="cfg-stat-evo" style="cursor:pointer" onclick="document.getElementById('sec-evo').scrollIntoView({behavior:'smooth'})">
-      <div class="stat-l">Evolution API</div>
-      <div id="cfg-evo-badge" style="font-family:var(--mono);font-size:13px;color:var(--muted)">Verificando...</div>
-    </div>
-    <div class="stat" id="cfg-stat-sheets" style="cursor:pointer" onclick="document.getElementById('sec-sheets').scrollIntoView({behavior:'smooth'})">
-      <div class="stat-l">Google Sheets</div>
-      <div id="cfg-sheets-badge" style="font-family:var(--mono);font-size:13px;color:var(--muted)">Verificando...</div>
-    </div>
-    <div class="stat" id="cfg-stat-db">
-      <div class="stat-l">Banco de dados</div>
-      <div id="cfg-db-badge" style="font-family:var(--mono);font-size:13px;color:var(--muted)">Verificando...</div>
-    </div>
+    <div class="stat"><div class="stat-l">Evolution API</div><div id="cfg-evo-badge" style="font-family:var(--mono);font-size:13px;color:var(--muted)">Verificando...</div></div>
+    <div class="stat"><div class="stat-l">Banco de dados</div><div id="cfg-db-badge" style="font-family:var(--mono);font-size:13px;color:var(--muted)">Verificando...</div></div>
   </div>
-
   <div class="card" id="sec-evo">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
       <h3 style="margin:0">🔌 Evolution API</h3>
-      <span id="evo-status-badge" class="badge bg-gray">não testado</span>
     </div>
-    <div class="hint">Configurações de conexão com a Evolution API. Salvas no banco — sem editar arquivos.</div>
     <div class="row">
-      <div>
-        <label>URL da Evolution API</label>
-        <input type="text" id="cfg-evo-url" placeholder="http://localhost:8080">
-      </div>
-      <div>
-        <label>Chave de autenticação (API Key)</label>
-        <input type="password" id="cfg-evo-key" placeholder="sua_chave_aqui">
-        <div style="display:flex;gap:4px;margin-top:-10px;margin-bottom:14px">
-          <button class="bs sm" onclick="toggleSenha('cfg-evo-key')">👁 Ver</button>
-        </div>
-      </div>
+      <div><label>URL da Evolution API</label><input type="text" id="cfg-evo-url" placeholder="http://localhost:8080"></div>
+      <div><label>Chave de autenticação (API Key)</label><input type="password" id="cfg-evo-key"></div>
     </div>
     <div class="bg">
       <button class="bp" onclick="salvarConfig('evolution')">💾 Salvar</button>
-      <button class="bs" onclick="testarEvolution()">🔌 Testar conexão</button>
     </div>
-    <div id="evo-test-result" style="margin-top:12px"></div>
   </div>
-
   <div class="card">
     <h3>⏱ Delays padrão</h3>
-    <div class="hint">Intervalo padrão entre mensagens. Campanhas podem ter delay próprio que substitui este.</div>
     <div class="row">
       <div><label>Mínimo (segundos)</label><input type="number" id="cfg-dmin" value="20" min="5"></div>
       <div><label>Máximo (segundos)</label><input type="number" id="cfg-dmax" value="50" min="6"></div>
     </div>
     <button class="bp" onclick="salvarConfig('delays')">💾 Salvar delays</button>
   </div>
-
-  <div class="card" id="sec-sheets">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <h3 style="margin:0">📊 Google Sheets</h3>
-      <span id="sheets-status-badge" class="badge bg-gray">não configurado</span>
-    </div>
-    <label>ID da planilha</label>
-    <div style="display:flex;gap:7px;margin-bottom:14px">
-      <input type="text" id="cfg-sheet-id" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms" style="margin:0;flex:1">
-      <button class="bs sm" onclick="extrairIdDaURL()">📋 Extrair da URL</button>
-    </div>
-    <div class="hint">O ID está na URL da planilha: docs.google.com/spreadsheets/d/<strong style="color:var(--green)">ID_AQUI</strong>/edit</div>
-
-    <label>Range (aba e colunas)</label>
-    <input type="text" id="cfg-sheet-range" placeholder="Sheet1!A:Z" value="Sheet1!A:Z">
-
-    <label>JSON da Service Account</label>
-    <div style="position:relative;margin-bottom:14px">
-      <textarea id="cfg-sheet-creds" placeholder='Cole aqui o conteúdo completo do arquivo JSON baixado do Google Cloud...' style="min-height:100px;font-size:11px;margin:0;padding-right:80px"></textarea>
-      <button class="bs sm" style="position:absolute;top:8px;right:8px" onclick="document.getElementById('creds-file').click()">📁 Arquivo</button>
-      <input type="file" id="creds-file" accept=".json" style="display:none" onchange="lerArquivoCreds(this)">
-    </div>
-    <div id="creds-status" style="margin-bottom:14px"></div>
-    <div id="client-email-info" style="margin-bottom:14px"></div>
-
-    <div class="bg">
-      <button class="bp" onclick="salvarConfig('sheets')">💾 Salvar configurações</button>
-      <button class="bs" onclick="testarSheets()">📊 Testar conexão</button>
-    </div>
-    <div id="sheets-test-result" style="margin-top:12px"></div>
-  </div>
-
 </div>
 
 <div class="mb" id="m-tpl">
@@ -490,10 +392,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
     <div class="hint">A campanha será iniciada automaticamente na data e hora selecionadas.</div>
     <label>Data e Hora de Início</label>
     <input type="datetime-local" id="e-data-agendamento">
-    <div class="mf">
-      <button class="bs" onclick="fecharM('m-agendar')">Cancelar</button>
-      <button class="bp" onclick="salvarAgendamento()">Agendar</button>
-    </div>
+    <div class="mf"><button class="bs" onclick="fecharM('m-agendar')">Cancelar</button><button class="bp" onclick="salvarAgendamento()">Agendar</button></div>
   </div>
 </div>
 
@@ -501,18 +400,13 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   <div class="modal" style="text-align:center">
     <h3 id="qr-titulo">QR Code</h3>
     <div id="qr-content"><div class="empty">Carregando...</div></div>
-    <div class="mf" style="justify-content:center">
-      <button class="bs" onclick="fecharM('m-qr')">Fechar</button>
-      <button class="bs" onclick="recarregarQR()">↻ Atualizar</button>
-    </div>
+    <div class="mf" style="justify-content:center"><button class="bs" onclick="fecharM('m-qr')">Fechar</button><button class="bs" onclick="recarregarQR()">↻ Atualizar</button></div>
   </div>
 </div>
 
 <div class="wizard-overlay" id="wizard" style="display:none">
   <div class="wizard-box">
-    <div class="wizard-header">
-      <h2>👋 Bem-vindo</h2>
-    </div>
+    <div class="wizard-header"><h2>👋 Bem-vindo</h2></div>
     <div class="wizard-body">
       <div id="wp-1" style="text-align:center;padding:20px 0">
         <h3 style="font-size:16px;margin-bottom:10px">O sistema está pronto.</h3>
@@ -558,9 +452,7 @@ function toast(msg,type='ok'){
 }
 function log(msg,type='info'){
   const b=document.getElementById('log-box');
-  const s=document.createElement('span');
-  s.className='l'+type;
-  s.textContent=`» [${new Date().toLocaleTimeString()}] ${msg}`;
+  const s=document.createElement('span'); s.className='l'+type; s.textContent=`» [${new Date().toLocaleTimeString()}] ${msg}`;
   b.appendChild(s);b.appendChild(document.createElement('br'));
   b.scrollTop=b.scrollHeight;
 }
@@ -591,45 +483,20 @@ async function loadDash(){
     if(ativas.length){
       htmlCamps+=ativas.map(c=>{
         const pct=c.total_contatos>0?Math.round(c.enviados/c.total_contatos*100):0;
-        return `<div style="margin-bottom:14px">
-          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-            <span style="font-family:var(--mono);font-size:12px">${c.nome} <span class="badge bg-y">em andamento</span></span>
-            <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${c.enviados}/${c.total_contatos} — ${pct}%</span>
-          </div>
-          <div class="bar"><div class="bar-f" style="width:${pct}%"></div></div>
-        </div>`;
+        return `<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-family:var(--mono);font-size:12px">${c.nome} <span class="badge bg-y">em andamento</span></span><span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${c.enviados}/${c.total_contatos} — ${pct}%</span></div><div class="bar"><div class="bar-f" style="width:${pct}%"></div></div></div>`;
       }).join('');
     }
     if(agendadas.length){
-      htmlCamps+=agendadas.map(c=>`
-        <div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
-          <span style="font-family:var(--mono);font-size:12px;color:var(--muted)">${c.nome} <span class="badge bg-b">agendada</span></span>
-          <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">Início: ${new Date(c.data_agendamento).toLocaleString('pt-BR')}</span>
-        </div>
-      `).join('');
+      htmlCamps+=agendadas.map(c=>`<div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--mono);font-size:12px;color:var(--muted)">${c.nome} <span class="badge bg-b">agendada</span></span><span style="font-family:var(--mono);font-size:11px;color:var(--muted)">Início: ${new Date(c.data_agendamento).toLocaleString('pt-BR')}</span></div>`).join('');
     }
     dc.innerHTML=htmlCamps||'<div class="empty">Nenhuma campanha em andamento ou agendada</div>';
 
-    const chips=chR.data||[];
-    const con=chips.filter(c=>c.status==='open').length;
-    const banidos=chips.filter(c=>c.status==='banido').length;
-    let badgeText=`${con}/${chips.length} chips`;
-    if(banidos>0)badgeText+=` · ⚠ ${banidos} banido(s)`;
+    const chips=chR.data||[]; const con=chips.filter(c=>c.status==='open').length; const banidos=chips.filter(c=>c.status==='banido').length;
+    let badgeText=`${con}/${chips.length} chips`; if(banidos>0)badgeText+=` · ⚠ ${banidos} banido(s)`;
     document.getElementById('chips-badge').textContent=badgeText;
     document.getElementById('dash-chips').innerHTML=chips.length?chips.map(c=>{
-      const pct=c.limite_diario>0?Math.round(c.enviados_hoje/c.limite_diario*100):0;
-      const cor=pct>=90?'r':pct>=70?'y':'';
-      const psd=c.pausado_ate&&new Date(c.pausado_ate)>new Date();
-      return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <div class="dot ${c.status}" style="flex-shrink:0"></div>
-        <div style="flex:1">
-          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-            <span style="font-family:var(--mono);font-size:11px">${c.nome}${psd?` <span style="color:var(--yellow)">(pausado)</span>`:''}</span>
-            <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${c.enviados_hoje}/${c.limite_diario}</span>
-          </div>
-          <div class="bar"><div class="bar-f ${cor}" style="width:${Math.min(pct,100)}%"></div></div>
-        </div>
-      </div>`;
+      const pct=c.limite_diario>0?Math.round(c.enviados_hoje/c.limite_diario*100):0; const cor=pct>=90?'r':pct>=70?'y':''; const psd=c.pausado_ate&&new Date(c.pausado_ate)>new Date();
+      return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div class="dot ${c.status}" style="flex-shrink:0"></div><div style="flex:1"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-family:var(--mono);font-size:11px">${c.nome}${psd?` <span style="color:var(--yellow)">(pausado)</span>`:''}</span><span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${c.enviados_hoje}/${c.limite_diario}</span></div><div class="bar"><div class="bar-f ${cor}" style="width:${Math.min(pct,100)}%"></div></div></div></div>`;
     }).join(''):'<div class="empty">Nenhum chip</div>';
   }catch(e){log(e.message,'err');}
 }
@@ -672,12 +539,10 @@ async function loadCamps(){
   if(!camps.length){el.innerHTML='<div class="empty">Nenhuma campanha</div>';return;}
   el.innerHTML=`<table><thead><tr><th>Nome</th><th>Status</th><th>Progresso</th><th>Início Agendado</th><th>Criado</th><th>Ações</th></tr></thead><tbody>
   ${camps.map(c=>{
-    const pct=c.total_contatos>0?Math.round(c.enviados/c.total_contatos*100):0;
-    const ed=c.status==='rascunho'||c.status==='pausado';
+    const pct=c.total_contatos>0?Math.round(c.enviados/c.total_contatos*100):0; const ed=c.status==='rascunho'||c.status==='pausado';
     return `<tr>
       <td>${c.nome} ${c.media_url ? '📷' : ''}</td><td>${sBadge(c.status)}</td>
-      <td style="min-width:150px">${c.enviados}/${c.total_contatos}
-        <div class="bar"><div class="bar-f" style="width:${pct}%"></div></div></td>
+      <td style="min-width:150px">${c.enviados}/${c.total_contatos}<div class="bar"><div class="bar-f" style="width:${pct}%"></div></div></td>
       <td style="color:var(--muted)">${c.data_agendamento ? '<span style="color:var(--blue)">⏳ '+new Date(c.data_agendamento).toLocaleString('pt-BR')+'</span>' : 'Imediato'}</td>
       <td>${new Date(c.criado_em).toLocaleDateString('pt-BR')}</td>
       <td><div class="bg">
@@ -705,11 +570,10 @@ async function criarCampanha() {
   if (!nome || !template) { toast('Preencha nome e template', 'err'); return; }
 
   let mediaUrl = null;
-  if (fileInput.files.length > 0) {
+  if (fileInput && fileInput.files.length > 0) {
     const file = fileInput.files[0];
     if (file.size > 5 * 1024 * 1024) { toast('Imagem muito pesada (máx 5MB).', 'err'); return; }
-    
-    toast('Processando imagem, por favor aguarde...', 'info');
+    toast('Processando imagem, aguarde...', 'info');
     mediaUrl = await new Promise((res, rej) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -726,7 +590,6 @@ async function criarCampanha() {
     });
     const d = await r.json(); 
     if (!d.ok) throw new Error(d.error);
-    
     toast(`Campanha "${nome}" criada!`); 
     document.getElementById('camp-nome').value = ''; 
     document.getElementById('camp-tpl').value = ''; 
@@ -751,14 +614,9 @@ async function salvarDelay(){
   }catch(e){toast(e.message,'err');}
 }
 
-function abrirAgendar(id) {
-  document.getElementById('e-agendar-id').value = id;
-  document.getElementById('e-data-agendamento').value = '';
-  abrirM('m-agendar');
-}
+function abrirAgendar(id) { document.getElementById('e-agendar-id').value = id; document.getElementById('e-data-agendamento').value = ''; abrirM('m-agendar'); }
 async function salvarAgendamento() {
-  const id = document.getElementById('e-agendar-id').value;
-  const dataAgendada = document.getElementById('e-data-agendamento').value;
+  const id = document.getElementById('e-agendar-id').value; const dataAgendada = document.getElementById('e-data-agendamento').value;
   if (!dataAgendada) { toast('Informe a data e hora.', 'err'); return; }
   try {
     const r = await fetch(`${API}/campanhas/${id}/agendar`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data_agendamento: new Date(dataAgendada).toISOString()})});
@@ -785,6 +643,116 @@ function buscar(){clearTimeout(bTimer);bTimer=setTimeout(()=>{cPage=1;loadContat
 async function loadContatos(){
   const b=document.getElementById('busca').value; const r=await fetch(`${API}/contatos?page=${cPage}&limit=20${b?'&busca='+encodeURIComponent(b):''}`); const d=await r.json();
   const el=document.getElementById('tab-contatos'); if(!d.data.length){el.innerHTML='<div class="empty">Nenhum contato</div>';return;}
-  el.innerHTML=`<table><thead><tr><th>Número</th><th>Nome</th><th>Extras</th><th>Status Wa.</th></tr></thead><tbody>${d.data.map(c=>`<tr><td>${c.numero}</td><td>${c.nome||'—'}</td><td style="color":var(--muted)>${c.extras||'—'}</td><td>${c.status_wa||'—'}</td></tr>`).join('')}</tbody></table>`;
-  const pag=document.getElementById('pag-contatos'); pag.innerHTML=`Página ${cPage} de ${Math.ceil(d.total/20)}`; if(cPage>1)pag.innerHTML+=` <button class="bs sm" onclick="cPage--;loadContatos()">← Anterior</button>`; if(cPage*20<d.total)pag.innerHTML+=` <button class="bs sm" onclick="cPage++;loadContatos()">Próximo →</button>`;
+  el.innerHTML=`<table><thead><tr><th>Número</th><th>Nome</th><th>Extras</th><th>Status Wa.</th></tr></thead><tbody>${d.data.map(c=>`<tr><td>${c.numero}</td><td>${c.nome||'—'}</td><td style="color:var(--muted);font-size:10px">${Object.keys(c.dados||{}).filter(k=>k!=='nome').slice(0,4).join(', ')||'—'}</td><td>${c.whatsapp_valido===true?'<span class="badge bg-g">Válido</span>':c.whatsapp_valido===false?'<span class="badge bg-r">Inválido</span>':'<span class="badge bg-gray">Pendente</span>'}</td></tr>`).join('')}</tbody></table>`;
+  document.getElementById('pag-contatos').innerHTML=`<span style="color:var(--muted);font-size:11px">${d.total||0} contatos</span>${cPage>1?`<button class="bs sm" onclick="cPage--;loadContatos()">← Ant</button>`:''}${cPage<Math.ceil((d.total||0)/20)?`<button class="bs sm" onclick="cPage++;loadContatos()">Próx →</button>`:''}`;
 }
+async function limparContatos(){if(!confirm('Remover TODOS?'))return;await fetch(`${API}/contatos`,{method:'DELETE'});toast('Removidos');loadContatos();}
+let higienizando=false;
+async function higienizarLista(){
+  if(higienizando)return; higienizando=true; const btn=document.getElementById('btn-higienizar'); btn.textContent='⏳ Higienizando...'; toast('Higienização em lote...', 'info');
+  try{while(higienizando){const r=await fetch(`${API}/contatos/higienizar`, {method:'POST'}); const d=await r.json(); if(!d.ok)throw new Error(d.error); if(d.data.finalizado||d.data.concluidos===0){toast('Concluído!','ok');break;} toast(`Lote: ${d.data.validos} válidos, ${d.data.invalidos} inválidos.`,'info'); await loadContatos();}}catch(e){toast(e.message,'err');} higienizando=false; btn.textContent='🧹 Higienizar Lista'; loadContatos();
+}
+async function apagarInvalidos(){if(!confirm('Apagar todos os números sem WhatsApp?'))return;try{const r=await fetch(`${API}/contatos/invalidos`, {method:'DELETE'});const d=await r.json();if(!d.ok)throw new Error(d.error);toast(`${d.data.removidos} removidos!`);loadContatos();}catch(e){toast(e.message,'err');}}
+
+// ─── Chips ───────────────────────────────────────────────
+async function loadChips(){
+  const r=await fetch(`${API}/chips`);const d=await r.json(); const chips=d.data||[];
+  document.getElementById('chips-badge').textContent=`${chips.filter(c=>c.status==='open').length}/${chips.length} chips`;
+  const el=document.getElementById('lista-chips'); if(!chips.length){el.innerHTML='<div class="empty">Nenhum chip</div>';return;}
+  el.innerHTML=chips.map(c=>{
+    const pct=c.limite_diario>0?Math.round(c.enviados_hoje/c.limite_diario*100):0; const psd=c.pausado_ate&&new Date(c.pausado_ate)>new Date();
+    return `<div class="chip-card ${psd?'psd':''}">
+      <div class="chip-top"><div class="chip-info"><div class="dot ${c.status}"></div><div><div style="font-family:var(--mono);font-size:12px;font-weight:500">${c.nome}${psd?` <span style="color:var(--yellow);font-size:10px">pausado até ${new Date(c.pausado_ate).toLocaleTimeString('pt-BR')}</span>`:''}</div><div style="font-family:var(--mono);font-size:10px;color:var(--muted)">${c.instancia} · dia ${c.dias_ativo+1}</div></div></div>
+      <div class="bg"><button class="bs sm" onclick="criarInst('${c.instancia}')">+ Criar</button><button class="bs sm" onclick="verQR('${c.instancia}','${c.nome}')">📷 QR</button><button class="bs sm" onclick="pingChip('${c.instancia}')">↻</button><button class="bs sm" onclick="abrirLim(${c.id},${c.limite_diario})">⚙ Limite</button><button class="bw sm" onclick="psdChip(${c.id})">⏸</button><button class="bd sm" onclick="delChip(${c.id})">✕</button></div></div>
+      <div style="margin-bottom:4px"><div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:3px"><span>Enviados hoje</span><span>${c.enviados_hoje}/${c.limite_diario} (${pct}%)</span></div><div class="bar"><div class="bar-f ${pct>=90?'r':pct>=70?'y':''}" style="width:${Math.min(pct,100)}%"></div></div></div>
+      <div class="chip-stats"><div class="cstat"><div class="cstat-l">Total</div><div class="cstat-v">${c.total_enviados||0}</div></div><div class="cstat"><div class="cstat-l">Dia aquec.</div><div class="cstat-v">${c.dias_ativo+1}</div></div><div class="cstat"><div class="cstat-l">Status</div><div class="cstat-v" style="color:${c.status==='open'?'var(--green)':c.status==='desconectado'?'var(--red)':'var(--yellow)'}">${c.status}</div></div><div class="cstat"><div class="cstat-l">Último uso</div><div class="cstat-v" style="font-size:10px">${c.ultimo_uso?new Date(c.ultimo_uso).toLocaleTimeString('pt-BR'):'—'}</div></div></div></div>`;
+  }).join('');
+}
+async function addChip(){const n=document.getElementById('chip-nome').value, i=document.getElementById('chip-inst').value; if(!n||!i)return; try{await fetch(`${API}/chips`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:n,instancia:i})});toast(`Adicionado!`);document.getElementById('chip-nome').value='';document.getElementById('chip-inst').value='';loadChips();}catch(e){}}
+async function delChip(id){if(!confirm('Remover chip?'))return;await fetch(`${API}/chips/${id}`,{method:'DELETE'});toast('Removido');loadChips();}
+async function pingChip(inst){try{const r=await fetch(`${API}/chips/${inst}/status`);const d=await r.json();toast(`${inst}: ${d.data?.state}`);loadChips();}catch(e){}}
+async function sincronizar(){toast('Sincronizando...');await fetch(`${API}/chips/sincronizar`,{method:'POST'});loadChips();loadDash();}
+async function criarInst(inst){try{await fetch(`${API}/chips/${inst}/criar`,{method:'POST'});toast(`Instância criada!`);}catch(e){}}
+async function psdChip(id){const h=prompt('Horas?','1');if(!h)return;try{await fetch(`${API}/chips/${id}/pausar`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({horas:parseFloat(h)})});toast(`Pausado por ${h}h`);loadChips();}catch(e){}}
+function abrirLim(id,lim){document.getElementById('e-lim-id').value=id;document.getElementById('e-lim-val').value=lim;abrirM('m-limite');}
+async function salvarLimite(){try{await fetch(`${API}/chips/${document.getElementById('e-lim-id').value}/limite`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({limite:parseInt(document.getElementById('e-lim-val').value)})});toast(`Salvo`);fecharM('m-limite');loadChips();}catch(e){}}
+async function verQR(inst,nome){qrInst=inst;document.getElementById('qr-titulo').textContent=`QR Code — ${nome}`;document.getElementById('qr-content').innerHTML='<div class="empty">Carregando...</div>';abrirM('m-qr');await recarregarQR();}
+async function recarregarQR(){if(!qrInst)return;try{const r=await fetch(`${API}/chips/${qrInst}/qrcode`);const d=await r.json();const qr=d.data?.qrcode?.base64||d.data?.base64;document.getElementById('qr-content').innerHTML=qr?`<img class="qr-img" src="${qr}">`:'ERRO';}catch(e){}}
+async function limparFila(){if(!confirm('Limpar fila?'))return;await fetch(`${API}/fila/limpar`,{method:'POST'});toast('Limpa');}
+
+// ─── Blacklist & Relatórios ──────────────────────────────
+async function loadBL(){const r=await fetch(`${API}/blacklist?page=${blPage}&limit=20`);const d=await r.json();document.getElementById('tab-blacklist').innerHTML=d.data.length?`<table><thead><tr><th>Número</th><th>Motivo</th><th>Data</th><th>Ação</th></tr></thead><tbody>${d.data.map(b=>`<tr><td>${b.numero}</td><td>${b.motivo||'—'}</td><td>${new Date(b.criado_em).toLocaleDateString('pt-BR')}</td><td><button class="bd sm" onclick="delBL(${b.id})">✕</button></td></tr>`).join('')}</tbody></table>`:'<div class="empty">Vazio</div>';}
+async function addBlacklist(){try{await fetch(`${API}/blacklist`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({numero:document.getElementById('bl-num').value,motivo:document.getElementById('bl-mot').value})});toast('Adicionado');loadBL();}catch(e){}}
+async function delBL(id){await fetch(`${API}/blacklist/${id}`,{method:'DELETE'});toast('Removido');loadBL();}
+async function loadRelCamps(){const r=await fetch(`${API}/campanhas`);const d=await r.json();document.getElementById('rel-camp').innerHTML='<option value="">— Selecione —</option>'+(d.data||[]).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');}
+async function verRel(id){showPage('relatorios');await loadRelCamps();document.getElementById('rel-camp').value=id;await carregarRelatorio();}
+async function carregarRelatorio(){
+  const id=document.getElementById('rel-camp').value; if(!id)return;
+  try{
+    const r=await fetch(`${API}/campanhas/${id}/relatorio`);const d=await r.json(); if(!d.ok)throw new Error();
+    document.getElementById('relatorio-conteudo').innerHTML=`<div class="card"><div style="display:flex;justify-content:space-between;margin-bottom:14px"><h3>${d.data.campanha.nome}</h3><button class="bs sm" onclick="window.location.href='${API}/campanhas/${id}/exportar'">⬇ Exportar CSV</button></div><div class="grid4"><div class="stat"><div class="stat-l">Total</div><div class="stat-v b">${d.data.campanha.total_contatos}</div></div><div class="stat"><div class="stat-l">Enviados</div><div class="stat-v g">${d.data.campanha.enviados}</div></div><div class="stat"><div class="stat-l">Falhas</div><div class="stat-v r">${d.data.campanha.falhas}</div></div></div></div>`;
+  }catch(e){}
+}
+
+// ─── Configurações & Antiban & Logs ───────────────────────
+async function loadConfig(){
+  try{
+    const r=await fetch(`${API}/config`);const d=await r.json(); if(!d.ok)return;
+    const c=d.data;
+    document.getElementById('cfg-evo-url').value=c.evolution_url||'';
+    document.getElementById('cfg-evo-key').value=c.evolution_key||'';
+    document.getElementById('cfg-dmin').value=c.delay_min||20;
+    document.getElementById('cfg-dmax').value=c.delay_max||50;
+    const evoOk=c.evolution_url&&c.evolution_key;
+    document.getElementById('cfg-evo-badge').textContent=evoOk?'✅ Configurada':'⚠ Não configurada';
+  }catch(e){}
+}
+async function salvarConfig(tipo){
+  let p={}; if(tipo==='evolution')p={evolution_url:document.getElementById('cfg-evo-url').value,evolution_key:document.getElementById('cfg-evo-key').value}; else if(tipo==='delays')p={delay_min:document.getElementById('cfg-dmin').value,delay_max:document.getElementById('cfg-dmax').value};
+  try{await fetch(`${API}/config`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});toast('Salvo!');loadConfig();}catch(e){}
+}
+async function loadAntiban() {
+  try {
+    const r = await fetch(`${API}/config`); const d = await r.json(); if(!d.ok) return;
+    const ativo = d.data.horario_ativo !== 'false'; 
+    document.getElementById('ab-horario-ativo').checked = ativo;
+    document.getElementById('ab-horario-campos').style.display = ativo ? 'block' : 'none';
+    document.getElementById('ab-hinicio').value = d.data.horario_inicio || 8;
+    document.getElementById('ab-hfim').value = d.data.horario_fim || 20;
+    document.getElementById('ab-threshold').value = d.data.falhas_ban_threshold || 3;
+    document.getElementById('ab-intervalo').value = d.data.intervalo_campanhas_min || 0;
+    carregarStatusAntiban();
+  } catch(e) {}
+}
+function toggleHorario() { document.getElementById('ab-horario-campos').style.display = document.getElementById('ab-horario-ativo').checked ? 'block' : 'none'; }
+async function salvarAntiban(tipo) {
+  let p = {};
+  if (tipo === 'horario') p = {horario_ativo: document.getElementById('ab-horario-ativo').checked?'true':'false', horario_inicio: document.getElementById('ab-hinicio').value, horario_fim: document.getElementById('ab-hfim').value};
+  else if (tipo === 'threshold') p = { falhas_ban_threshold: document.getElementById('ab-threshold').value };
+  else if (tipo === 'intervalo') p = { intervalo_campanhas_min: document.getElementById('ab-intervalo').value };
+  try { await fetch(`${API}/config`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(p)}); toast('Salvo!'); carregarStatusAntiban(); } catch(e){}
+}
+async function carregarStatusAntiban() {
+  try {
+    const r = await fetch(`${API}/antiban/status`); const d = await r.json(); if(!d.ok) return;
+    let h = d.data.config.horario_ativo !== 'false' ? (d.data.janela_aberta ? `<div class="hint" style="border-color:var(--green)">✅ Aberta</div>` : `<div class="hint warn">⏳ Fechada. Abre em ${d.data.abre_em_horas}h.</div>`) : `<div class="hint">ℹ Desativada</div>`;
+    h += d.data.chips_pausados.length ? d.data.chips_pausados.map(c => `<div class="hint warn">⏸ <strong>${c.nome}</strong> pausado</div>`).join('') : `<div class="hint">✅ Nenhum chip pausado.</div>`;
+    document.getElementById('ab-status').innerHTML = h;
+  } catch(e) {}
+}
+
+let logPage=1,logFiltro='';
+async function loadLogs(){
+  try{const r=await fetch(`${API}/logs?page=${logPage}&limit=30${logFiltro?'&nivel='+logFiltro:''}`);const d=await r.json();
+  const el=document.getElementById('tab-logs'); if(!d.data.length){el.innerHTML='<div class="empty">Vazio</div>';return;}
+  el.innerHTML=`<table><thead><tr><th>Hora</th><th>Nível</th><th>Mensagem</th></tr></thead><tbody>${d.data.map(l=>`<tr><td style="color:var(--muted);width:140px">${new Date(l.criado_em).toLocaleString('pt-BR')}</td><td><span class="badge bg-${l.nivel==='erro'?'r':l.nivel==='alerta'?'y':'gray'}">${l.nivel}</span></td><td style="color:${l.nivel==='erro'?'var(--red)':l.nivel==='alerta'?'var(--yellow)':'var(--green)'}">${l.mensagem}</td></tr>`).join('')}</tbody></table>`;
+  document.getElementById('pag-logs').innerHTML=`<span style="color:var(--muted);font-size:11px">${d.total||0} regs</span>`;}catch(e){}
+}
+function filtrarLogs(n){logFiltro=n;logPage=1;loadLogs();}
+function fecharWizard() { document.getElementById('wizard').style.display='none'; localStorage.setItem('wizard_done','1'); }
+
+loadDash();loadChips(); setInterval(loadDash,10000); setInterval(loadChips,30000); 
+if (!localStorage.getItem('wizard_done')) { document.getElementById('wizard').style.display='flex'; }
+</script>
+</body>
+</html>
