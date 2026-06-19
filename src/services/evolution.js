@@ -223,13 +223,19 @@ async function enviarImagem(numero, mensagem, instancia, midiaBase64, mimetype, 
   // Remove prefixo data URI se presente
   const base64Limpo = midiaBase64.replace(/^data:image\/\w+;base64,/, '');
 
+  // MUDANÇA CRUCIAL: O "envelope" mediaMessage e options exigido pela Evolution API v1.8+
   const r = await api.post('/message/sendMedia/' + instancia, {
     number: numeroLimpo,
-    mediatype: 'image',
-    mimetype: mimetype || 'image/jpeg',
-    caption: mensagem || '',
-    media: base64Limpo,
-    fileName: midiaNome || 'imagem.jpg',
+    options: {
+      delay: 1000,
+      presence: "composing"
+    },
+    mediaMessage: {
+      mediatype: 'image',
+      caption: mensagem || '',
+      media: base64Limpo,
+      fileName: midiaNome || 'imagem.jpg'
+    }
   });
 
   console.log('[SEND-IMG] ✅ ' + numeroLimpo);
