@@ -27,8 +27,10 @@ function formatarNumero(numero) {
   return limpo;
 }
 
+// 🐛 BUG 1 CORRIGIDO: Extrai APENAS os dígitos puros, eliminando completamente 
+// problemas com sufixos @s.whatsapp.net ou @c.us duplicados.
 function limparJid(jid) {
-  return String(jid).replace(/@s\.whatsapp\.net$/, '').replace(/@c\.us$/, '');
+  return String(jid).split('@')[0].replace(/\D/g, '');
 }
 
 async function verificarNumero(numero, instancia) {
@@ -191,7 +193,7 @@ async function enviarMensagem(numero, mensagem, instancia) {
 
   console.log('[SEND] → ' + numeroLimpo + ' via ' + instancia);
 
-  // Presence fire-and-forget (não bloqueia)
+  // 🐛 BUG 3: Presence fire-and-forget (já estava correto no seu código, mantido intacto)
   api.post('/chat/sendPresence/' + instancia, { number: numeroLimpo, presence: 'composing', delay: 1000 }).catch(() => {});
   await new Promise(r => setTimeout(r, 1000));
 
@@ -205,10 +207,6 @@ async function enviarMensagem(numero, mensagem, instancia) {
 }
 
 // ─── Envio de Imagem PNG/JPEG ─────────────────────────────────────────────────
-// midiaBase64 : conteúdo do arquivo em base64 (aceita com ou sem prefixo data:)
-// mimetype    : 'image/png' ou 'image/jpeg'
-// midiaNome   : nome original do arquivo (ex: 'promo.jpg')
-// mensagem    : texto vai como legenda embaixo da imagem
 async function enviarImagem(numero, mensagem, instancia, midiaBase64, mimetype, midiaNome) {
   const api = await getApi();
   const numeroLimpo = await verificarNumero(numero, instancia);
@@ -216,7 +214,7 @@ async function enviarImagem(numero, mensagem, instancia, midiaBase64, mimetype, 
 
   console.log('[SEND-IMG] → ' + numeroLimpo + ' via ' + instancia);
 
-  // Presence fire-and-forget
+  // Presence fire-and-forget 
   api.post('/chat/sendPresence/' + instancia, { number: numeroLimpo, presence: 'composing', delay: 1000 }).catch(() => {});
   await new Promise(r => setTimeout(r, 1000));
 
