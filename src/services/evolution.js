@@ -248,6 +248,7 @@ async function enviarImagem(numero, mensagem, instancia, midiaBase64, mimetype, 
 
   if (!numeroLimpo) throw new Error(`Número ${numero} não possui WhatsApp registrado.`);
 
+  // Garante que o número está 100% limpo, sem o @s.whatsapp.net
   const numeroFinal = limparJid(numeroLimpo);
   console.log(`[SEND-IMG] → ${numeroFinal} via ${instancia}`);
 
@@ -258,22 +259,21 @@ async function enviarImagem(numero, mensagem, instancia, midiaBase64, mimetype, 
     delay: 1000
   }).catch(() => {});
 
-  // Remove o prefixo data URI se estiver presente
+  // Extrai apenas o Base64 puro
   const base64Limpo = midiaBase64.replace(/^data:image\/\w+;base64,/, '');
 
-  // O "envelope" mediaMessage e options exigido pela Evolution API v1.8+
+  // ESTRUTURA PLANA (FLAT): Sem "mediaMessage". É assim que a v1.8.2 processa mídias.
   const r = await api.post(`/message/sendMedia/${instancia}`, {
     number: numeroFinal,
     options: {
       delay: 1000,
       presence: "composing"
     },
-    mediaMessage: {
-      mediatype: 'image',
-      caption: mensagem || '',
-      media: base64Limpo,
-      fileName: midiaNome || 'imagem.jpg'
-    }
+    mediatype: 'image',
+    mimetype: mimetype || 'image/jpeg',
+    caption: mensagem || '',
+    media: base64Limpo,
+    fileName: midiaNome || 'imagem.jpg'
   });
 
   console.log(`[SEND-IMG] ✅ Entregue para ${numeroFinal}`);
