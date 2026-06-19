@@ -189,18 +189,24 @@ async function enviarMensagem(numero, mensagem, instancia) {
   const numeroLimpo = await verificarNumero(numero, instancia);
   if (!numeroLimpo) throw new Error('Número ' + numero + ' não possui WhatsApp registrado.');
 
-  console.log('[SEND] → ' + numeroLimpo + ' via ' + instancia);
+  // Garante a remoção absoluta do JID para evitar erro de formatação
+  const numeroFinal = limparJid(numeroLimpo);
+
+  console.log('[SEND] → ' + numeroFinal + ' via ' + instancia);
 
   // Presence fire-and-forget (não bloqueia)
-  api.post('/chat/sendPresence/' + instancia, { number: numeroLimpo, presence: 'composing', delay: 1000 }).catch(() => {});
-  await new Promise(r => setTimeout(r, 1000));
+  api.post('/chat/sendPresence/' + instancia, { number: numeroFinal, presence: 'composing', delay: 1000 }).catch(() => {});
 
   const r = await api.post('/message/sendText/' + instancia, {
-    number: numeroLimpo,
+    number: numeroFinal,
+    options: {
+      delay: 1000,
+      presence: "composing"
+    },
     textMessage: { text: mensagem }
   });
 
-  console.log('[SEND] ✅ ' + numeroLimpo);
+  console.log('[SEND] ✅ ' + numeroFinal);
   return r.data;
 }
 
@@ -214,18 +220,20 @@ async function enviarImagem(numero, mensagem, instancia, midiaBase64, mimetype, 
   const numeroLimpo = await verificarNumero(numero, instancia);
   if (!numeroLimpo) throw new Error('Número ' + numero + ' não possui WhatsApp registrado.');
 
-  console.log('[SEND-IMG] → ' + numeroLimpo + ' via ' + instancia);
+  // Garante a remoção absoluta do JID para evitar erro de formatação
+  const numeroFinal = limparJid(numeroLimpo);
+
+  console.log('[SEND-IMG] → ' + numeroFinal + ' via ' + instancia);
 
   // Presence fire-and-forget
-  api.post('/chat/sendPresence/' + instancia, { number: numeroLimpo, presence: 'composing', delay: 1000 }).catch(() => {});
-  await new Promise(r => setTimeout(r, 1000));
+  api.post('/chat/sendPresence/' + instancia, { number: numeroFinal, presence: 'composing', delay: 1000 }).catch(() => {});
 
   // Remove prefixo data URI se presente
   const base64Limpo = midiaBase64.replace(/^data:image\/\w+;base64,/, '');
 
-  // MUDANÇA CRUCIAL: O "envelope" mediaMessage e options exigido pela Evolution API v1.8+
+  // O "envelope" mediaMessage e options exigido pela Evolution API v1.8+
   const r = await api.post('/message/sendMedia/' + instancia, {
-    number: numeroLimpo,
+    number: numeroFinal,
     options: {
       delay: 1000,
       presence: "composing"
@@ -238,7 +246,7 @@ async function enviarImagem(numero, mensagem, instancia, midiaBase64, mimetype, 
     }
   });
 
-  console.log('[SEND-IMG] ✅ ' + numeroLimpo);
+  console.log('[SEND-IMG] ✅ ' + numeroFinal);
   return r.data;
 }
 
