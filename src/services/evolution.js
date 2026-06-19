@@ -197,10 +197,6 @@ async function enviarMensagem(numero, mensagem, instancia) {
 
   const r = await api.post('/message/sendText/' + instancia, {
     number: numeroLimpo,
-    options: {
-        delay: 1200,
-        presence: 'composing'
-    },
     textMessage: { text: mensagem }
   });
 
@@ -229,10 +225,6 @@ async function enviarImagem(numero, mensagem, instancia, midiaBase64, mimetype, 
 
   const r = await api.post('/message/sendMedia/' + instancia, {
     number: numeroLimpo,
-    options: {
-        delay: 1200,
-        presence: 'composing'
-    },
     mediatype: 'image',
     mimetype: mimetype || 'image/jpeg',
     caption: mensagem || '',
