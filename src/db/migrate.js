@@ -91,6 +91,18 @@ async function migrate() {
     `);
 
     await client.query(`
+      CREATE TABLE IF NOT EXISTS usuarios (
+        id SERIAL PRIMARY KEY,
+        nome VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        senha_hash VARCHAR(255) NOT NULL,
+        ativo BOOLEAN DEFAULT true,
+        criado_em TIMESTAMP DEFAULT NOW(),
+        ultimo_acesso TIMESTAMP
+      );
+    `);
+
+    await client.query(`
       CREATE TABLE IF NOT EXISTS configuracoes (
         chave VARCHAR(100) PRIMARY KEY,
         valor TEXT,
@@ -139,7 +151,8 @@ async function migrate() {
         ('intervalo_campanhas_min','0',    'Minutos de descanso entre campanhas por chip'),
         ('falhas_ban_threshold',   '3',    'Falhas seguidas para pausar chip automaticamente'),
         ('sync_intervalo', '0',  'Intervalo de sincronização automática com Sheets (horas)'),
-        ('sync_proxima',   '',   'Timestamp da próxima sincronização automática')
+        ('sync_proxima',   '',   'Timestamp da próxima sincronização automática'),
+        ('jwt_secret',     '',   'Chave secreta JWT (gerada automaticamente no primeiro start)')
       ON CONFLICT (chave) DO NOTHING;
     `);
 

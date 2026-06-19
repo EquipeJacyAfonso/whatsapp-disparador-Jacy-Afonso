@@ -86,6 +86,24 @@ async function startup() {
     console.error('[STARTUP] Erro ao verificar campanhas:', e.message);
   }
 
+  // Garante que o usuário admin padrão existe
+  try {
+    const bcrypt = require('bcryptjs');
+    const pool = require('./db');
+    const existente = await pool.query('SELECT COUNT(*) FROM usuarios');
+    if (parseInt(existente.rows[0].count) === 0) {
+      const hash = await bcrypt.hash('admin123', 12);
+      await pool.query(
+        "INSERT INTO usuarios (nome, email, senha_hash) VALUES ('Administrador', 'admin@disparador.local', $1)",
+        [hash]
+      );
+      console.log('[AUTH] ✅ Usuário admin criado — email: admin@disparador.local / senha: admin123');
+      console.log('[AUTH] ⚠ Troque a senha no primeiro acesso!');
+    }
+  } catch(e) {
+    console.warn('[AUTH] Aviso ao verificar usuários:', e.message);
+  }
+
   console.log('⏰ Reset diário configurado para meia-noite (Brasília)');
   console.log('🔍 Monitor de chips ativo (intervalo: 2min)\n');
 }

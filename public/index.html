@@ -102,6 +102,20 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
 #toast.ok{border-color:var(--green);color:var(--green)}#toast.err{border-color:var(--red);color:var(--red)}
 /* Config status */
 .cfg-stat-badge{font-family:var(--mono);font-size:13px}
+
+/* Auth */
+.auth-overlay{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;align-items:center;justify-content:center}
+.auth-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:40px;width:380px;max-width:93vw}
+.auth-box h1{font-family:var(--mono);font-size:18px;color:var(--green);margin-bottom:6px;letter-spacing:.08em}
+.auth-box p{font-size:12px;color:var(--muted);font-family:var(--mono);margin-bottom:28px}
+.auth-err{color:var(--red);font-family:var(--mono);font-size:11px;margin-top:-10px;margin-bottom:10px;display:none}
+.user-menu{display:flex;align-items:center;gap:10px}
+.user-name{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.btn-logout{padding:4px 10px;font-size:10px;font-family:var(--mono);background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:4px;cursor:pointer}
+.btn-logout:hover{border-color:var(--red);color:var(--red)}
+/* Senha dialog */
+.pwd-modal{display:none;position:fixed;inset:0;background:#00000099;z-index:300;align-items:center;justify-content:center}
+.pwd-modal.open{display:flex}
 </style>
 </head>
 <body>
@@ -110,6 +124,11 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   <div style="display:flex;align-items:center;gap:10px">
     <span id="chips-badge" style="font-family:var(--mono);font-size:11px;color:var(--muted)">— chips</span>
     <span id="cfg-status" style="font-family:var(--mono);font-size:11px;color:var(--muted)"></span>
+    <div class="user-menu" id="user-menu" style="display:none">
+      <span class="user-name" id="user-name"></span>
+      <button class="btn-logout" onclick="abrirM('m-senha')">🔒 Senha</button>
+      <button class="btn-logout" onclick="logout()">Sair</button>
+    </div>
   </div>
 </header>
 
@@ -512,6 +531,40 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
     <div class="mf" style="justify-content:center">
       <button class="bs" onclick="fecharM('m-qr')">Fechar</button>
       <button class="bs" onclick="recarregarQR()">↻ Atualizar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- LOGIN OVERLAY -->
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-box">
+    <h1>WA/DISPARADOR</h1>
+    <p>Faça login para continuar</p>
+    <label>Email</label>
+    <input type="email" id="login-email" placeholder="admin@disparador.local" autocomplete="email">
+    <label>Senha</label>
+    <input type="password" id="login-senha" placeholder="••••••••" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')fazerLogin()">
+    <div class="auth-err" id="login-err"></div>
+    <button class="bp" style="width:100%" onclick="fazerLogin()" id="login-btn">Entrar →</button>
+  </div>
+</div>
+
+<!-- MODAL ALTERAR SENHA -->
+<div class="pwd-modal" id="m-senha">
+  <div class="modal" style="width:400px">
+    <h3>Alterar senha</h3>
+    <label>Senha atual</label>
+    <input type="password" id="pwd-atual" placeholder="••••••••">
+    <label>Nova senha (mín. 6 caracteres)</label>
+    <input type="password" id="pwd-nova" placeholder="••••••••">
+    <label>Confirmar nova senha</label>
+    <input type="password" id="pwd-conf" placeholder="••••••••">
+    <div id="pwd-err" style="color:var(--red);font-family:var(--mono);font-size:11px;margin-bottom:10px;display:none"></div>
+    <div class="mf">
+      <button class="bs" onclick="fecharM('m-senha')">Cancelar</button>
+      <button class="bp" onclick="salvarSenha()">Salvar</button>
     </div>
   </div>
 </div>
@@ -1115,10 +1168,132 @@ async function registrarWebhook(){const url=document.getElementById('cfg-webhook
 async function salvarNotifConfig(){const numero=(document.getElementById('cfg-admin-num')?.value||'').trim().replace(/\D/g,'');const instancia=(document.getElementById('cfg-admin-inst')?.value||'').trim();try{const r=await fetch(`${API}/config`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_numero:numero,admin_chip_instancia:instancia})});const data=await r.json();if(!data.ok)throw new Error(data.error);toast('Notificações salvas!');}catch(e){toast(e.message,'err');}}
 async function testarNotificacao(){try{const r=await fetch(`${API}/config/notificacoes/testar`,{method:'POST'});const data=await r.json();if(!data.ok)throw new Error(data.error);toast('Notificação enviada!');}catch(e){toast(e.message,'err');}}
 
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+let authToken = localStorage.getItem('auth_token') || '';
+
+// Intercept all fetch calls to add Authorization header
+const originalFetch = window.fetch;
+window.fetch = function(url, opts = {}) {
+  if (authToken && url.startsWith('/api') && !url.includes('/auth/login')) {
+    opts.headers = opts.headers || {};
+    opts.headers['Authorization'] = 'Bearer ' + authToken;
+  }
+  return originalFetch(url, opts).then(async res => {
+    if (res.status === 401) {
+      // Token expirado — força novo login
+      const clone = res.clone();
+      const data = await clone.json().catch(() => ({}));
+      if (data.error && data.error.includes('Token')) {
+        logout();
+      }
+    }
+    return res;
+  });
+};
+
+async function fazerLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const senha = document.getElementById('login-senha').value;
+  const err = document.getElementById('login-err');
+  const btn = document.getElementById('login-btn');
+  if (!email || !senha) { mostrarErroLogin('Preencha email e senha'); return; }
+  btn.textContent = 'Entrando...'; btn.disabled = true;
+  try {
+    const r = await originalFetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, senha })
+    });
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error);
+    authToken = data.data.token;
+    localStorage.setItem('auth_token', authToken);
+    document.getElementById('auth-overlay').style.display = 'none';
+    document.getElementById('user-menu').style.display = 'flex';
+    document.getElementById('user-name').textContent = data.data.usuario.nome;
+    // Verifica se é a senha padrão e avisa
+    if (senha === 'admin123') {
+      setTimeout(() => {
+        if (confirm('⚠ Você está usando a senha padrão. Deseja alterá-la agora?')) {
+          abrirM('m-senha');
+        }
+      }, 800);
+    }
+    iniciarApp();
+  } catch(e) {
+    mostrarErroLogin(e.message);
+  } finally {
+    btn.textContent = 'Entrar →'; btn.disabled = false;
+  }
+}
+
+function mostrarErroLogin(msg) {
+  const el = document.getElementById('login-err');
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+function logout() {
+  authToken = '';
+  localStorage.removeItem('auth_token');
+  document.getElementById('auth-overlay').style.display = 'flex';
+  document.getElementById('user-menu').style.display = 'none';
+}
+
+async function salvarSenha() {
+  const atual = document.getElementById('pwd-atual').value;
+  const nova = document.getElementById('pwd-nova').value;
+  const conf = document.getElementById('pwd-conf').value;
+  const err = document.getElementById('pwd-err');
+  err.style.display = 'none';
+  if (!atual || !nova) { err.textContent = 'Preencha todos os campos'; err.style.display = 'block'; return; }
+  if (nova !== conf) { err.textContent = 'As senhas não coincidem'; err.style.display = 'block'; return; }
+  if (nova.length < 6) { err.textContent = 'Mínimo 6 caracteres'; err.style.display = 'block'; return; }
+  try {
+    const r = await fetch('/api/auth/alterar-senha', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ senhaAtual: atual, novaSenha: nova })
+    });
+    const data = await r.json();
+    if (!data.ok) throw new Error(data.error);
+    fecharM('m-senha');
+    document.getElementById('pwd-atual').value = '';
+    document.getElementById('pwd-nova').value = '';
+    document.getElementById('pwd-conf').value = '';
+    toast('Senha alterada com sucesso!');
+  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
+}
+
+async function verificarLogin() {
+  if (!authToken) {
+    document.getElementById('auth-overlay').style.display = 'flex';
+    return;
+  }
+  try {
+    const r = await originalFetch('/api/auth/me', {
+      headers: { 'Authorization': 'Bearer ' + authToken }
+    });
+    const data = await r.json();
+    if (!data.ok) throw new Error('inválido');
+    document.getElementById('auth-overlay').style.display = 'none';
+    document.getElementById('user-menu').style.display = 'flex';
+    document.getElementById('user-name').textContent = data.data.nome;
+    iniciarApp();
+  } catch(e) {
+    authToken = '';
+    localStorage.removeItem('auth_token');
+    document.getElementById('auth-overlay').style.display = 'flex';
+  }
+}
+
+function iniciarApp() {
+  loadDash(); loadChips(); renderAQ();
+  setInterval(loadDash, 10000);
+  setInterval(loadChips, 30000);
+}
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
-loadDash();loadChips();renderAQ();
-setInterval(loadDash,10000);
-setInterval(loadChips,30000);
+verificarLogin();
 </script>
 </body>
 </html>

@@ -10,12 +10,39 @@ const {
   criarInstancia, pausarChip, atualizarLimiteDiario
 } = require('../services/evolution');
 const { enfileirarCampanha, pausarCampanha, retomar, limparFila, statusFila } = require('../queue/disparo');
+const { requireAuth } = require('../services/auth');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
+// ─── Autenticação ─────────────────────────────────────────────────────────────
+
+router.post('/auth/login', async (req, res) => {
+  try {
+    const { email, senha } = req.body;
+    if (!email || !senha) return res.status(400).json({ ok: false, error: 'Email e senha obrigatórios' });
+    const { login } = require('../services/auth');
+    const result = await login(email, senha);
+    if (!result) return res.status(401).json({ ok: false, error: 'Email ou senha incorretos' });
+    res.json({ ok: true, data: result });
+  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+});
+
+router.get('/auth/me', requireAuth, async (req, res) => {
+  res.json({ ok: true, data: req.usuario });
+});
+
+router.post('/auth/alterar-senha', requireAuth, async (req, res) => {
+  try {
+    const { senhaAtual, novaSenha } = req.body;
+    const { alterarSenha } = require('../services/auth');
+    await alterarSenha(req.usuario.id, senhaAtual, novaSenha);
+    res.json({ ok: true, message: 'Senha alterada com sucesso!' });
+  } catch (err) { res.status(400).json({ ok: false, error: err.message }); }
+});
+
 // ─── Configurações ────────────────────────────────────────────────────────────
 
-router.get('/config', async (req, res) => {
+router.get('/config', requireAuth, async (req, res) => {
   try {
     const all = await cfgGetAll();
     const safe = { ...all };
@@ -24,7 +51,7 @@ router.get('/config', async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.post('/config', async (req, res) => {
+router.post('/config', requireAuth, async (req, res) => {
   try {
     await cfgSetMany(req.body);
     invalidarCache();
@@ -44,7 +71,7 @@ router.get('/health', async (req, res) => {
 
 // ─── Notificações ─────────────────────────────────────────────────────────────
 
-router.post('/config/notificacoes/testar', async (req, res) => {
+router.post('/config/notificacoes/testar', requireAuth, async (req, res) => {
   try {
     const { enviarNotificacao } = require('../services/notificacoes');
     await enviarNotificacao('✅ Teste de notificação do Disparador funcionando!');
@@ -54,12 +81,12 @@ router.post('/config/notificacoes/testar', async (req, res) => {
 
 // ─── Chips ────────────────────────────────────────────────────────────────────
 
-router.get('/chips', async (req, res) => {
+router.get('/chips', requireAuth, async (req, res) => {
   try { res.json({ ok: true, data: await listarChips() }); }
   catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.post('/chips', async (req, res) => {
+router.post('/chips', requireAuth, async (req, res) => {
   try {
     const { nome, instancia } = req.body;
     if (!nome || !instancia) return res.status(400).json({ ok: false, error: 'nome e instancia obrigatórios' });
@@ -68,27 +95,27 @@ router.post('/chips', async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.delete('/chips/:id', async (req, res) => {
+router.delete('/chips/:id', requireAuth, async (req, res) => {
   try { await removerChip(req.params.id); res.json({ ok: true }); }
   catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.get('/chips/:instancia/status', async (req, res) => {
+router.get('/chips/:instancia/status', requireAuth, async (req, res) => {
   try { res.json({ ok: true, data: { state: await statusChip(req.params.instancia) } }); }
   catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.get('/chips/:instancia/qrcode', async (req, res) => {
+router.get('/chips/:instancia/qrcode', requireAuth, async (req, res) => {
   try { res.json({ ok: true, data: await qrcodeChip(req.params.instancia) }); }
   catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.post('/chips/:instancia/criar', async (req, res) => {
+router.post('/chips/:instancia/criar', requireAuth, async (req, res) => {
   try { res.json({ ok: true, data: await criarInstancia(req.params.instancia) }); }
   catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.post('/chips/:id/pausar', async (req, res) => {
+router.post('/chips/:id/pausar', requireAuth, async (req, res) => {
   try {
     const { horas = 1 } = req.body;
     const ate = await pausarChip(req.params.id, horas);
@@ -96,7 +123,7 @@ router.post('/chips/:id/pausar', async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.patch('/chips/:id/limite', async (req, res) => {
+router.patch('/chips/:id/limite', requireAuth, async (req, res) => {
   try {
     const { limite } = req.body;
     if (!limite || limite < 1) return res.status(400).json({ ok: false, error: 'limite inválido' });
@@ -104,7 +131,7 @@ router.patch('/chips/:id/limite', async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.post('/chips/sincronizar', async (req, res) => {
+router.post('/chips/sincronizar', requireAuth, async (req, res) => {
   try {
     const chips = await listarChips();
     const resultados = await Promise.all(chips.map(c => statusChip(c.instancia).then(s => ({ instancia: c.instancia, state: s }))));
@@ -112,7 +139,7 @@ router.post('/chips/sincronizar', async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.get('/chips/:id/historico', async (req, res) => {
+router.get('/chips/:id/historico', requireAuth, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM chip_historico WHERE chip_id=$1 ORDER BY data DESC LIMIT 30', [req.params.id]);
     res.json({ ok: true, data: result.rows });
@@ -121,7 +148,7 @@ router.get('/chips/:id/historico', async (req, res) => {
 
 // ─── Importar ─────────────────────────────────────────────────────────────────
 
-router.post('/importar/csv', upload.single('arquivo'), async (req, res) => {
+router.post('/importar/csv', upload.single('arquivo'), requireAuth, async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ ok: false, error: 'Nenhum arquivo enviado' });
     const resultado = await importarCSV(req.file.buffer.toString('utf-8'));
@@ -129,7 +156,7 @@ router.post('/importar/csv', upload.single('arquivo'), async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.post('/importar/sheets', async (req, res) => {
+router.post('/importar/sheets', requireAuth, async (req, res) => {
   try {
     const { sheetId, range } = req.body;
     const resultado = await importarDoSheets(sheetId, range);
@@ -139,7 +166,7 @@ router.post('/importar/sheets', async (req, res) => {
 
 // ─── Blacklist ────────────────────────────────────────────────────────────────
 
-router.get('/blacklist', async (req, res) => {
+router.get('/blacklist', requireAuth, async (req, res) => {
   try {
     const { page = 1, limit = 50 } = req.query;
     const offset = (page - 1) * limit;
@@ -149,7 +176,7 @@ router.get('/blacklist', async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.post('/blacklist', async (req, res) => {
+router.post('/blacklist', requireAuth, async (req, res) => {
   try {
     const { numero, motivo } = req.body;
     const limpo = String(numero).replace(/\D/g, '');
@@ -160,7 +187,7 @@ router.post('/blacklist', async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.delete('/blacklist/:id', async (req, res) => {
+router.delete('/blacklist/:id', requireAuth, async (req, res) => {
   try {
     await pool.query('DELETE FROM blacklist WHERE id=$1', [req.params.id]);
     res.json({ ok: true });
@@ -169,7 +196,7 @@ router.delete('/blacklist/:id', async (req, res) => {
 
 // ─── Contatos ─────────────────────────────────────────────────────────────────
 
-router.get('/contatos', async (req, res) => {
+router.get('/contatos', requireAuth, async (req, res) => {
   try {
     const { page = 1, limit = 50, busca } = req.query;
     const offset = (page - 1) * limit;
@@ -181,21 +208,21 @@ router.get('/contatos', async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.delete('/contatos', async (req, res) => {
+router.delete('/contatos', requireAuth, async (req, res) => {
   try { await pool.query('DELETE FROM contatos'); res.json({ ok: true }); }
   catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
 // ─── Campanhas ────────────────────────────────────────────────────────────────
 
-router.get('/campanhas', async (req, res) => {
+router.get('/campanhas', requireAuth, async (req, res) => {
   try {
     const result = await pool.query('SELECT id, nome, status, total_contatos, enviados, falhas, delay_min, delay_max, criado_em, iniciado_em, finalizado_em, midia_mimetype, midia_nome FROM campanhas ORDER BY criado_em DESC');
     res.json({ ok: true, data: result.rows });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.get('/campanhas/:id/relatorio', async (req, res) => {
+router.get('/campanhas/:id/relatorio', requireAuth, async (req, res) => {
   try {
     const campanha = await pool.query('SELECT id, nome, status, total_contatos, enviados, falhas, delay_min, delay_max, criado_em, iniciado_em, finalizado_em, midia_mimetype, midia_nome FROM campanhas WHERE id=$1', [req.params.id]);
     if (!campanha.rows.length) return res.status(404).json({ ok: false, error: 'Não encontrada' });
@@ -212,7 +239,7 @@ router.get('/campanhas/:id/relatorio', async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.post('/campanhas', async (req, res) => {
+router.post('/campanhas', requireAuth, async (req, res) => {
   try {
     const { nome, template, delay_min = 20, delay_max = 50 } = req.body;
     if (!nome || !template) return res.status(400).json({ ok: false, error: 'nome e template obrigatórios' });
@@ -234,7 +261,7 @@ router.post('/campanhas', async (req, res) => {
 
 // ─── Upload de imagem para campanha ──────────────────────────────────────────
 
-router.post('/campanhas/:id/midia', upload.single('imagem'), async (req, res) => {
+router.post('/campanhas/:id/midia', upload.single('imagem'), requireAuth, async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ ok: false, error: 'Nenhuma imagem enviada' });
     const { mimetype, originalname, size } = req.file;
@@ -253,14 +280,14 @@ router.post('/campanhas/:id/midia', upload.single('imagem'), async (req, res) =>
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.delete('/campanhas/:id/midia', async (req, res) => {
+router.delete('/campanhas/:id/midia', requireAuth, async (req, res) => {
   try {
     await pool.query('UPDATE campanhas SET midia_base64=NULL, midia_mimetype=NULL, midia_nome=NULL WHERE id=$1', [req.params.id]);
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.patch('/campanhas/:id/template', async (req, res) => {
+router.patch('/campanhas/:id/template', requireAuth, async (req, res) => {
   try {
     const { template } = req.body;
     if (!template) return res.status(400).json({ ok: false, error: 'template obrigatório' });
@@ -281,7 +308,7 @@ router.patch('/campanhas/:id/template', async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.patch('/campanhas/:id/delay', async (req, res) => {
+router.patch('/campanhas/:id/delay', requireAuth, async (req, res) => {
   try {
     const { delay_min, delay_max } = req.body;
     if (delay_min < 5) return res.status(400).json({ ok: false, error: 'mínimo 5s' });
@@ -295,36 +322,36 @@ router.patch('/campanhas/:id/delay', async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.post('/campanhas/:id/iniciar', async (req, res) => {
+router.post('/campanhas/:id/iniciar', requireAuth, async (req, res) => {
   try {
     const total = await enfileirarCampanha(parseInt(req.params.id));
     res.json({ ok: true, message: total + ' mensagens enfileiradas' });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.post('/campanhas/:id/pausar', async (req, res) => {
+router.post('/campanhas/:id/pausar', requireAuth, async (req, res) => {
   try { await pausarCampanha(parseInt(req.params.id)); res.json({ ok: true }); }
   catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.post('/campanhas/retomar', async (req, res) => {
+router.post('/campanhas/retomar', requireAuth, async (req, res) => {
   try { await retomar(); res.json({ ok: true }); }
   catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.delete('/campanhas/:id', async (req, res) => {
+router.delete('/campanhas/:id', requireAuth, async (req, res) => {
   try { await pool.query('DELETE FROM campanhas WHERE id=$1', [req.params.id]); res.json({ ok: true }); }
   catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
 // ─── Fila ─────────────────────────────────────────────────────────────────────
 
-router.get('/fila/status', async (req, res) => {
+router.get('/fila/status', requireAuth, async (req, res) => {
   try { res.json({ ok: true, data: await statusFila() }); }
   catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.post('/fila/limpar', async (req, res) => {
+router.post('/fila/limpar', requireAuth, async (req, res) => {
   try { await limparFila(); res.json({ ok: true }); }
   catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
@@ -392,7 +419,7 @@ router.post('/webhook/registrar', async (req, res) => {
 
 // ─── Exportar CSV ─────────────────────────────────────────────────────────────
 
-router.get('/campanhas/:id/exportar', async (req, res) => {
+router.get('/campanhas/:id/exportar', requireAuth, async (req, res) => {
   try {
     const campanha = await pool.query('SELECT nome FROM campanhas WHERE id=$1', [req.params.id]);
     if (!campanha.rows.length) return res.status(404).json({ ok: false, error: 'Não encontrada' });
@@ -420,7 +447,7 @@ router.get('/campanhas/:id/exportar', async (req, res) => {
 
 // ─── Duplicatas ───────────────────────────────────────────────────────────────
 
-router.get('/campanhas/:id/duplicatas', async (req, res) => {
+router.get('/campanhas/:id/duplicatas', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
       "SELECT c.numero, c.nome, COUNT(DISTINCT d2.campanha_id) as recebeu_em_campanhas FROM disparos d1 JOIN contatos c ON c.id = d1.contato_id JOIN disparos d2 ON d2.contato_id = d1.contato_id AND d2.campanha_id != d1.campanha_id AND d2.status = 'enviado' WHERE d1.campanha_id = $1 GROUP BY c.numero, c.nome ORDER BY recebeu_em_campanhas DESC LIMIT 100",
@@ -430,7 +457,7 @@ router.get('/campanhas/:id/duplicatas', async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.post('/campanhas/:id/remover-duplicatas', async (req, res) => {
+router.post('/campanhas/:id/remover-duplicatas', requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
       "UPDATE disparos SET status='bloqueado', erro='Duplicata — já recebeu em campanha anterior' WHERE campanha_id = $1 AND status = 'pendente' AND contato_id IN (SELECT DISTINCT d2.contato_id FROM disparos d2 WHERE d2.campanha_id != $1 AND d2.status = 'enviado') RETURNING id",
@@ -444,7 +471,7 @@ router.post('/campanhas/:id/remover-duplicatas', async (req, res) => {
 
 // ─── Logs ─────────────────────────────────────────────────────────────────────
 
-router.get('/logs', async (req, res) => {
+router.get('/logs', requireAuth, async (req, res) => {
   try {
     const { page = 1, limit = 50, nivel } = req.query;
     const offset = (page - 1) * limit;
