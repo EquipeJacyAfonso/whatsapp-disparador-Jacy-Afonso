@@ -7,12 +7,10 @@ const pool = require('../db');
 const config = require('./config');
 
 async function getSheetsClient() {
-  // Tenta pegar credenciais do banco primeiro, depois do arquivo
   const credsJson = await config.get('sheets_credentials', '');
 
   let auth;
   if (credsJson && credsJson.trim().startsWith('{')) {
-    // Credenciais salvas no banco via painel
     const tmpFile = path.join(os.tmpdir(), 'sheets-creds.json');
     fs.writeFileSync(tmpFile, credsJson);
     auth = new google.auth.GoogleAuth({
@@ -56,7 +54,6 @@ async function importarDoSheets(sheetId, range) {
     const numero = String(row[numeroIdx] || '').replace(/\D/g, '');
     if (!numero || numero.length < 10) { ignorados++; continue; }
 
-    // Verifica blacklist
     const bl = await pool.query('SELECT 1 FROM blacklist WHERE numero = $1', [numero]);
     if (bl.rows.length) { ignorados++; continue; }
 

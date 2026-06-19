@@ -1,6 +1,5 @@
 // Execute este script se o banco já existia antes desta atualização:
 // node src/db/migrate-delay.js
-
 require('dotenv').config();
 const pool = require('./index');
 
@@ -17,5 +16,4 @@ async function run() {
     await pool.end();
   }
 }
-
 run();

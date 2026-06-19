@@ -33,7 +33,6 @@ async function importarCSV(conteudoCSV) {
     const numero = String(row[numeroIdx] || '').replace(/\D/g, '');
     if (!numero || numero.length < 10) { ignorados++; continue; }
 
-    // Verifica blacklist
     const bl = await pool.query('SELECT 1 FROM blacklist WHERE numero = $1', [numero]);
     if (bl.rows.length) { ignorados++; continue; }
 

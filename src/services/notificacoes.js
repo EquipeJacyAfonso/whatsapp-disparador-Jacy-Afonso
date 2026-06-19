@@ -1,18 +1,12 @@
-// Notificações via WhatsApp para o número administrativo
-// Envia alertas quando campanhas concluem, chips são banidos, etc.
-
 const pool = require('../db');
 const config = require('./config');
 
 async function enviarNotificacao(mensagem) {
   try {
     const numAdmin = await config.get('admin_numero', '');
-    if (!numAdmin) return; // não configurado — silencioso
-
+    if (!numAdmin) return;
     const instancia = await config.get('admin_chip_instancia', '');
     if (!instancia) return;
-
-    // Importa enviarMensagem aqui para evitar circular dependency
     const { enviarMensagem } = require('./evolution');
     await enviarMensagem(numAdmin, `🤖 *Disparador*\n\n${mensagem}`, instancia);
     console.log(`[NOTIF] ✅ Notificação enviada para ${numAdmin}`);
@@ -30,44 +24,29 @@ async function notificarCampanhaConcluida(campanhaId) {
     const duracao = c.finalizado_em && c.iniciado_em
       ? Math.round((new Date(c.finalizado_em) - new Date(c.iniciado_em)) / 1000 / 60)
       : null;
-    const msg = `✅ *Campanha concluída!*\n\n` +
-      `📋 *${c.nome}*\n` +
-      `📤 Enviados: ${c.enviados}/${c.total_contatos} (${taxa}%)\n` +
-      `❌ Falhas: ${c.falhas}\n` +
+    const msg = `✅ *Campanha concluída!*\n\n📋 *${c.nome}*\n📤 Enviados: ${c.enviados}/${c.total_contatos} (${taxa}%)\n❌ Falhas: ${c.falhas}\n` +
       (duracao ? `⏱ Duração: ${duracao} minutos` : '');
     await enviarNotificacao(msg);
   } catch(e) {}
 }
 
 async function notificarChipBanido(nomeChip, instancia) {
-  const msg = `⚠️ *Chip banido detectado!*\n\n` +
-    `📱 Chip: *${nomeChip}*\n` +
-    `🔗 Instância: ${instancia}\n\n` +
-    `A fila foi pausada automaticamente. Verifique o número no celular.`;
+  const msg = `⚠️ *Chip banido detectado!*\n\n📱 Chip: *${nomeChip}*\n🔗 Instância: ${instancia}\n\nA fila foi pausada automaticamente.`;
   await enviarNotificacao(msg);
 }
 
 async function notificarChipDesconectado(nomeChip, instancia) {
-  const msg = `🔴 *Chip desconectado!*\n\n` +
-    `📱 Chip: *${nomeChip}*\n` +
-    `🔗 Instância: ${instancia}\n\n` +
-    `Reconecte o chip e retome a campanha no painel.`;
+  const msg = `🔴 *Chip desconectado!*\n\n📱 Chip: *${nomeChip}*\n🔗 Instância: ${instancia}\n\nReconecte e retome a campanha.`;
   await enviarNotificacao(msg);
 }
 
 async function notificarSyncSheets(resultado) {
-  if (!resultado.importados && !resultado.atualizados) return; // nada mudou
-  const msg = `🔄 *Sync automático concluído*\n\n` +
-    `✅ Novos: ${resultado.importados}\n` +
-    `🔁 Atualizados: ${resultado.atualizados}\n` +
-    `⚠️ Ignorados: ${resultado.ignorados}`;
+  if (!resultado.importados && !resultado.atualizados) return;
+  const msg = `🔄 *Sync automático concluído*\n\n✅ Novos: ${resultado.importados}\n🔁 Atualizados: ${resultado.atualizados}\n⚠️ Ignorados: ${resultado.ignorados}`;
   await enviarNotificacao(msg);
 }
 
 module.exports = {
-  enviarNotificacao,
-  notificarCampanhaConcluida,
-  notificarChipBanido,
-  notificarChipDesconectado,
-  notificarSyncSheets,
+  enviarNotificacao, notificarCampanhaConcluida, notificarChipBanido,
+  notificarChipDesconectado, notificarSyncSheets,
 };

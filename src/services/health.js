@@ -1,6 +1,3 @@
-// Verificador de saúde de todos os serviços
-// Chamado no startup e exposto via GET /api/health
-
 require('dotenv').config();
 const pool = require('../db');
 
@@ -40,10 +37,7 @@ async function checkEvolution() {
     const url = await config.get('evolution_url', process.env.EVOLUTION_API_URL || 'http://localhost:8080');
     const key = await config.get('evolution_key', process.env.EVOLUTION_API_KEY || '');
     const start = Date.now();
-    await axios.get(`${url}/`, {
-      headers: { apikey: key },
-      timeout: 5000,
-    });
+    await axios.get(`${url}/`, { headers: { apikey: key }, timeout: 5000 });
     return { ok: true, url, latencia: Date.now() - start + 'ms' };
   } catch(e) {
     return { ok: false, erro: e.message };
@@ -85,15 +79,9 @@ async function checkFila() {
 
 async function checkGeral() {
   const [postgres, redis, evolution, chips, fila] = await Promise.all([
-    checkPostgres(),
-    checkRedis(),
-    checkEvolution(),
-    checkChips(),
-    checkFila(),
+    checkPostgres(), checkRedis(), checkEvolution(), checkChips(), checkFila(),
   ]);
-
   const tudo_ok = postgres.ok && redis.ok;
-
   return {
     status: tudo_ok ? 'ok' : 'degradado',
     timestamp: new Date().toISOString(),
@@ -102,7 +90,6 @@ async function checkGeral() {
   };
 }
 
-// Verifica dependências críticas no startup e exibe mensagens claras
 async function verificarStartup() {
   console.log('\n[HEALTH] Verificando dependências...');
 
@@ -128,7 +115,6 @@ async function verificarStartup() {
   if (!evolution.ok) {
     console.warn(`[HEALTH] ⚠ Evolution API offline: ${evolution.erro}`);
     console.warn('[HEALTH] → Configure a URL e chave em Configurações no painel');
-    console.warn('[HEALTH] → O sistema iniciará, mas disparos falharão até a API estar acessível');
   } else {
     console.log(`[HEALTH] ✅ Evolution API OK (${evolution.latencia})`);
   }

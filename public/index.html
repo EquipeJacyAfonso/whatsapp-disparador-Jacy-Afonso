@@ -53,7 +53,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
 .lok{color:var(--green)}.lerr{color:var(--red)}.linf{color:var(--blue)}
 .empty{text-align:center;padding:40px;color:var(--muted);font-family:var(--mono);font-size:12px}
 .chip-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-bottom:9px}
-.chip-card.psd{border-color:var(--yellow)}
 .chip-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
 .chip-info{display:flex;align-items:center;gap:12px}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex-shrink:0}
@@ -66,53 +65,43 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
 .drop{border:2px dashed var(--border);border-radius:8px;padding:36px;text-align:center;cursor:pointer;transition:all .2s;font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:14px}
 .drop:hover,.drop.dg{border-color:var(--green);color:var(--green);background:var(--gdim)}
 .drop input{display:none}
-.aq-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:3px;margin-top:7px}
+/* Imagem preview */
+.img-preview{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px;position:relative}
+.img-preview img{width:100%;max-height:200px;object-fit:contain;background:#000;display:block}
+.img-preview-info{padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.img-drop{border:2px dashed var(--border);border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:14px}
+.img-drop:hover{border-color:var(--green);color:var(--green);background:var(--gdim)}
+.img-drop input{display:none}
+/* Tabs mini */
+.tabs-mini{display:flex;gap:2px;margin-bottom:18px}
+.tab-mini{padding:7px 14px;font-size:11px;font-family:var(--mono);background:var(--surface2);border:1px solid var(--border);border-radius:5px;cursor:pointer;color:var(--muted);transition:all .15s}
+.tab-mini.active{background:var(--gdim);border-color:var(--green);color:var(--green)}
+.section{display:none}.section.active{display:block}
+/* Steps */
 .step{border:1px solid var(--border);border-radius:6px;margin-bottom:7px;overflow:hidden}
-.step-header{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;background:var(--surface2);transition:background .15s}
-.step-header:hover{background:var(--border)}
+.step-header{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;background:var(--surface2)}
 .step-num{width:20px;height:20px;border-radius:50%;background:var(--border);color:var(--muted);font-family:var(--mono);font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .step-num.done{background:var(--green);color:#000}
-.step-title{flex:1;font-family:var(--mono);font-size:11px;color:var(--text)}
+.step-title{flex:1;font-family:var(--mono);font-size:11px}
 .step-arrow{font-size:9px;color:var(--muted)}
 .step-body{padding:14px;font-family:var(--mono);font-size:11px;line-height:2;border-top:1px solid var(--border)}
-.step-body p{margin-bottom:4px}
-.step-body strong{color:var(--yellow)}
-.cfg-saved{position:relative}
-.wizard-overlay{position:fixed;inset:0;background:#0d0f12f0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
-.wizard-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;width:600px;max-width:100%;max-height:90vh;overflow-y:auto}
-.wizard-header{padding:28px 28px 0;border-bottom:1px solid var(--border);padding-bottom:20px}
-.wizard-header h2{font-size:18px;font-weight:500;margin-bottom:6px}
-.wizard-header p{font-size:12px;color:var(--muted);font-family:var(--mono)}
-.wizard-steps{display:flex;gap:0;padding:0 28px;margin:20px 0;border-bottom:1px solid var(--border);padding-bottom:0}
-.wstep{padding:8px 14px;font-size:11px;font-family:var(--mono);color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;cursor:default}
-.wstep.active{color:var(--green);border-color:var(--green)}
-.wstep.done{color:var(--muted)}
-.wizard-body{padding:28px}
-.wizard-footer{padding:0 28px 28px;display:flex;justify-content:space-between;align-items:center}
-.health-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
-.health-item{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px 14px;display:flex;align-items:center;gap:10px}
-.health-dot{width:10px;height:10px;border-radius:50%;background:var(--muted);flex-shrink:0}
-.health-dot.ok{background:var(--green);box-shadow:0 0 6px var(--green)}
-.health-dot.err{background:var(--red)}
-.health-dot.warn{background:var(--yellow)}
-.health-dot.checking{background:var(--muted);animation:pulse 1s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.cfg-saved::after{content:'✅ Salvo';position:absolute;right:10px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:10px;color:var(--green);pointer-events:none}
-.aq-day{background:var(--surface2);border-radius:4px;padding:5px 3px;text-align:center;font-family:var(--mono);font-size:9px;color:var(--muted)}
-.aq-day span{display:block;font-size:11px;color:var(--text);margin-top:1px}
-#toast{position:fixed;bottom:22px;right:22px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 18px;font-family:var(--mono);font-size:12px;transform:translateY(70px);opacity:0;transition:all .3s;z-index:999;max-width:340px}
-#toast.show{transform:translateY(0);opacity:1}
-#toast.ok{border-color:var(--green);color:var(--green)}#toast.err{border-color:var(--red);color:var(--red)}
+.step-body p{margin-bottom:4px}.step-body strong{color:var(--yellow)}
+/* Modal */
 .mb{display:none;position:fixed;inset:0;background:#00000099;z-index:100;align-items:center;justify-content:center}
 .mb.open{display:flex}
 .modal{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:26px;width:560px;max-width:93vw;max-height:90vh;overflow-y:auto}
 .modal h3{margin-bottom:18px;font-size:13px;color:var(--text);text-transform:none;letter-spacing:0}
 .mf{display:flex;gap:9px;justify-content:flex-end;margin-top:7px}
 .qr-img{max-width:190px;border:4px solid #fff;border-radius:7px;display:block;margin:0 auto 10px}
-.tabs-mini{display:flex;gap:2px;margin-bottom:18px}
-.tab-mini{padding:7px 14px;font-size:11px;font-family:var(--mono);background:var(--surface2);border:1px solid var(--border);border-radius:5px;cursor:pointer;color:var(--muted);transition:all .15s}
-.tab-mini.active{background:var(--gdim);border-color:var(--green);color:var(--green)}
-.section{display:none}.section.active{display:block}
+.aq-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:3px;margin-top:7px}
+.aq-day{background:var(--surface2);border-radius:4px;padding:5px 3px;text-align:center;font-family:var(--mono);font-size:9px;color:var(--muted)}
+.aq-day span{display:block;font-size:11px;color:var(--text);margin-top:1px}
+/* Toast */
+#toast{position:fixed;bottom:22px;right:22px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 18px;font-family:var(--mono);font-size:12px;transform:translateY(70px);opacity:0;transition:all .3s;z-index:999;max-width:340px}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.ok{border-color:var(--green);color:var(--green)}#toast.err{border-color:var(--red);color:var(--red)}
+/* Config status */
+.cfg-stat-badge{font-family:var(--mono);font-size:13px}
 </style>
 </head>
 <body>
@@ -134,7 +123,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   <button class="tab" onclick="showPage('relatorios',this)">Relatórios</button>
   <button class="tab" onclick="showPage('antiban',this)">🛡 Anti-ban</button>
   <button class="tab" onclick="showPage('logs',this)">📋 Logs</button>
-  <button class="tab" onclick="showPage('config',this)">⚙ Configurações</button>
+  <button class="tab" onclick="showPage('config',this)">⚙ Config</button>
 </nav>
 
 <!-- DASHBOARD -->
@@ -167,26 +156,21 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
     <button class="tab-mini active" onclick="showSection('sec-csv',this)">📂 CSV</button>
     <button class="tab-mini" onclick="showSection('sec-sheets',this)">📊 Google Sheets</button>
   </div>
-
   <div class="section active" id="sec-csv">
     <div class="card">
-      <div class="hint">Coluna obrigatória: <strong>numero</strong> (aceita: número, phone, telefone)<br>
-      Coluna recomendada: <strong>nome</strong> — demais colunas viram <strong>{variáveis}</strong> no template.<br>
-      Separador: <strong>vírgula</strong> ou <strong>ponto-e-vírgula</strong> — detectado automaticamente.</div>
+      <div class="hint">Coluna obrigatória: <strong>numero</strong> · Separador: vírgula ou ponto-e-vírgula</div>
       <label>Arquivo CSV</label>
       <div class="drop" id="drop-zone" onclick="document.getElementById('csv-file').click()">
         <input type="file" id="csv-file" accept=".csv,.txt" onchange="handleFile(this.files[0])">
-        <div id="drop-text">📂 Clique ou arraste o arquivo CSV aqui</div>
+        <div id="drop-text">📂 Clique ou arraste o CSV aqui</div>
       </div>
       <div id="import-result"></div>
     </div>
   </div>
-
   <div class="section" id="sec-sheets">
     <div class="card">
-      <div class="hint">As credenciais do Google devem ser configuradas na aba <strong>⚙ Configurações</strong>.<br>
-      A planilha deve ter <strong>numero</strong> na primeira linha como cabeçalho.</div>
-      <label>ID da planilha (opcional — usa o padrão das configurações)</label>
+      <div class="hint">Configure as credenciais Google em <strong>⚙ Config → Google Sheets</strong>.</div>
+      <label>ID da planilha (opcional)</label>
       <input type="text" id="sheets-id" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms">
       <label>Range (opcional)</label>
       <input type="text" id="sheets-range" placeholder="Sheet1!A:Z">
@@ -204,8 +188,24 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
     <label>Nome</label>
     <input type="text" id="camp-nome" placeholder="Promoção Junho">
     <label>Template da mensagem</label>
-    <div class="hint">Use <strong>{nome}</strong>, <strong>{numero}</strong> e qualquer coluna do CSV/Sheets entre chaves.</div>
-    <textarea id="camp-tpl" placeholder="Olá {nome}, temos uma oferta especial! 🎁"></textarea>
+    <div class="hint">Use <strong>{nome}</strong>, <strong>{numero}</strong> e colunas do CSV. Spintax: <strong>{Olá|Oi|Bom dia}</strong></div>
+    <textarea id="camp-tpl" placeholder="Olá {nome}, temos uma oferta! 🎁"></textarea>
+
+    <!-- IMAGEM DA CAMPANHA -->
+    <label>Imagem (opcional — PNG ou JPEG, máx. 5MB)</label>
+    <div class="hint">Quando definida, a mensagem é enviada como <strong>legenda</strong> da imagem. Caso contrário, é enviada como texto.</div>
+    <div id="img-drop-nova" class="img-drop" onclick="document.getElementById('img-file-nova').click()">
+      <input type="file" id="img-file-nova" accept="image/png,image/jpeg" onchange="previewImagem('nova', this.files[0])">
+      🖼 Clique para selecionar PNG ou JPEG
+    </div>
+    <div id="img-preview-nova" style="display:none" class="img-preview">
+      <img id="img-nova-src" src="">
+      <div class="img-preview-info">
+        <span id="img-nova-nome" style="color:var(--text)"></span>
+        <button class="bd sm" onclick="removerImagemNova()">✕ Remover</button>
+      </div>
+    </div>
+
     <div class="row">
       <div><label>Delay mínimo (segundos)</label><input type="number" id="camp-dmin" value="20" min="5"></div>
       <div><label>Delay máximo (segundos)</label><input type="number" id="camp-dmax" value="50" min="6"></div>
@@ -238,7 +238,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
     <h3>Adicionar chip</h3>
     <div class="row">
       <div><label>Nome</label><input type="text" id="chip-nome" placeholder="Chip 1"></div>
-      <div><label>Nome da instância (Evolution API)</label><input type="text" id="chip-inst" placeholder="instancia01"></div>
+      <div><label>Nome da instância</label><input type="text" id="chip-inst" placeholder="instancia01"></div>
     </div>
     <div class="bg">
       <button class="bp" onclick="addChip()">+ Adicionar</button>
@@ -248,7 +248,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   </div>
   <div class="card">
     <h3>Tabela de aquecimento</h3>
-    <div class="hint">Chips novos seguem esta tabela automaticamente. O limite sobe a cada dia de uso contínuo.</div>
     <div class="aq-grid" id="aq-grid"></div>
   </div>
   <div class="card">
@@ -262,12 +261,11 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   <h2>Blacklist</h2>
   <div class="card">
     <h3>Adicionar número</h3>
-    <div class="hint">Números na blacklist nunca receberão mensagens e são removidos dos contatos automaticamente.</div>
     <div class="row">
       <div><label>Número (com DDD)</label><input type="text" id="bl-num" placeholder="11999998888"></div>
       <div><label>Motivo (opcional)</label><input type="text" id="bl-mot" placeholder="Solicitou remoção"></div>
     </div>
-    <button class="bd" onclick="addBlacklist()">+ Adicionar à blacklist</button>
+    <button class="bd" onclick="addBlacklist()">+ Adicionar</button>
   </div>
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
@@ -285,7 +283,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   <div class="card">
     <h3>Selecionar campanha</h3>
     <select id="rel-camp" onchange="carregarRelatorio()">
-      <option value="">— Selecione uma campanha —</option>
+      <option value="">— Selecione —</option>
     </select>
   </div>
   <div id="relatorio-conteudo"></div>
@@ -294,59 +292,41 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
 <!-- ANTI-BAN -->
 <div class="page" id="page-antiban">
   <h2>🛡 Proteção Anti-ban</h2>
-
   <div class="card">
     <h3>Janela de horário</h3>
-    <div class="hint">Mensagens só são enviadas dentro do horário configurado. Fora dele, os jobs ficam na fila e disparam automaticamente quando a janela abre.</div>
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
-      <label style="margin:0;display:flex;align-items:center;gap:8px;cursor:pointer">
-        <input type="checkbox" id="ab-horario-ativo" style="width:auto;margin:0" onchange="toggleHorario()">
-        <span style="font-family:var(--mono);font-size:12px">Ativar janela de horário</span>
-      </label>
-    </div>
+    <div class="hint">Mensagens só são enviadas dentro do horário configurado. Fora do horário, os jobs aguardam na fila.</div>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:14px">
+      <input type="checkbox" id="ab-horario-ativo" style="width:auto;margin:0" onchange="toggleHorario()">
+      <span style="font-family:var(--mono);font-size:12px">Ativar janela de horário</span>
+    </label>
     <div id="ab-horario-campos" style="display:none">
       <div class="row">
         <div><label>Hora de início (0–23)</label><input type="number" id="ab-hinicio" min="0" max="23" value="8"></div>
         <div><label>Hora de fim (0–23)</label><input type="number" id="ab-hfim" min="0" max="23" value="20"></div>
       </div>
-      <div class="hint">Exemplo: início <strong>8</strong>, fim <strong>20</strong> → dispara das 8h às 19h59.</div>
     </div>
     <button class="bp" onclick="salvarAntiban('horario')">💾 Salvar janela</button>
   </div>
-
   <div class="card">
-    <h3>Spintax — variação automática de texto</h3>
-    <div class="hint">Use <strong>{opção1|opção2|opção3}</strong> no template para variar o texto a cada mensagem enviada.<br>
-    Suporta aninhamento: <strong>{Olá|{Oi|Ei}, tudo bem?}</strong><br><br>
-    Exemplo completo:<br>
-    <strong>{Olá|Oi|Bom dia}, {nome}! 👋</strong><br>
-    <strong>{Temos uma novidade|Preparamos algo especial} para você{!| hoje!| esta semana!}</strong></div>
-    <div class="card" style="background:var(--bg);margin-bottom:0">
-      <h3>Testar spintax</h3>
-      <textarea id="ab-spintax-teste" placeholder="{Olá|Oi|Bom dia}, {nome}! Temos {uma oferta|uma novidade|algo especial} para você." style="min-height:80px"></textarea>
-      <button class="bs" onclick="testarSpintax()">▶ Gerar 5 variações</button>
-      <div id="ab-spintax-result" style="margin-top:12px"></div>
-    </div>
+    <h3>Spintax — testar variação</h3>
+    <textarea id="ab-spintax-teste" placeholder="{Olá|Oi|Bom dia}, {nome}!" style="min-height:70px"></textarea>
+    <button class="bs" onclick="testarSpintax()">▶ Gerar 5 variações</button>
+    <div id="ab-spintax-result" style="margin-top:12px"></div>
   </div>
-
   <div class="card">
     <h3>Pausa automática por falhas</h3>
-    <div class="hint">Se um chip atingir o número de falhas consecutivas configurado em 30 minutos, ele é pausado automaticamente por 30 minutos. Erros que indicam ban pausam o chip por 24h.</div>
-    <label>Falhas consecutivas para pausa automática (em 30 min)</label>
+    <label>Falhas consecutivas para pausar chip (em 30 min)</label>
     <input type="number" id="ab-threshold" min="1" max="20" value="3">
     <button class="bp" onclick="salvarAntiban('threshold')">💾 Salvar</button>
   </div>
-
   <div class="card">
     <h3>Intervalo entre campanhas por chip</h3>
-    <div class="hint">Tempo mínimo de descanso (em minutos) entre campanhas para o mesmo chip. <strong>0</strong> = sem intervalo.</div>
-    <label>Intervalo mínimo (minutos)</label>
+    <label>Intervalo mínimo (minutos, 0 = desativado)</label>
     <input type="number" id="ab-intervalo" min="0" value="0">
     <button class="bp" onclick="salvarAntiban('intervalo')">💾 Salvar</button>
   </div>
-
   <div class="card">
-    <h3>Status atual de proteção</h3>
+    <h3>Status atual</h3>
     <div id="ab-status"><div class="empty">Carregando...</div></div>
     <button class="bs" style="margin-top:12px" onclick="carregarStatusAntiban()">↻ Atualizar</button>
   </div>
@@ -354,11 +334,11 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
 
 <!-- LOGS -->
 <div class="page" id="page-logs">
-  <h2>📋 Logs do sistema</h2>
+  <h2>📋 Logs</h2>
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
       <div class="bg">
-        <button class="bs sm" id="log-fil-todos" onclick="filtrarLogs('')" style="border-color:var(--green);color:var(--green)">Todos</button>
+        <button class="bs sm" onclick="filtrarLogs('')" style="border-color:var(--green);color:var(--green)">Todos</button>
         <button class="bs sm" onclick="filtrarLogs('erro')">❌ Erros</button>
         <button class="bs sm" onclick="filtrarLogs('alerta')">⚠ Alertas</button>
         <button class="bs sm" onclick="filtrarLogs('info')">ℹ Info</button>
@@ -370,191 +350,72 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
-<!-- CONFIGURAÇÕES -->
+<!-- CONFIG -->
 <div class="page" id="page-config">
   <h2>⚙ Configurações</h2>
-
-  <!-- Indicadores de status no topo -->
   <div class="row3" style="margin-bottom:18px">
-    <div class="stat" id="cfg-stat-evo" style="cursor:pointer" onclick="document.getElementById('sec-evo').scrollIntoView({behavior:'smooth'})">
-      <div class="stat-l">Evolution API</div>
-      <div id="cfg-evo-badge" style="font-family:var(--mono);font-size:13px;color:var(--muted)">Verificando...</div>
-    </div>
-    <div class="stat" id="cfg-stat-sheets" style="cursor:pointer" onclick="document.getElementById('sec-sheets').scrollIntoView({behavior:'smooth'})">
-      <div class="stat-l">Google Sheets</div>
-      <div id="cfg-sheets-badge" style="font-family:var(--mono);font-size:13px;color:var(--muted)">Verificando...</div>
-    </div>
-    <div class="stat" id="cfg-stat-db">
-      <div class="stat-l">Banco de dados</div>
-      <div id="cfg-db-badge" style="font-family:var(--mono);font-size:13px;color:var(--muted)">Verificando...</div>
-    </div>
+    <div class="stat"><div class="stat-l">Evolution API</div><div id="cfg-evo-badge" class="cfg-stat-badge" style="color:var(--muted)">—</div></div>
+    <div class="stat"><div class="stat-l">Google Sheets</div><div id="cfg-sheets-badge" class="cfg-stat-badge" style="color:var(--muted)">—</div></div>
+    <div class="stat"><div class="stat-l">Banco de dados</div><div id="cfg-db-badge" class="cfg-stat-badge" style="color:var(--muted)">—</div></div>
   </div>
-
-  <!-- Evolution API -->
   <div class="card" id="sec-evo">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
       <h3 style="margin:0">🔌 Evolution API</h3>
       <span id="evo-status-badge" class="badge bg-gray">não testado</span>
     </div>
-    <div class="hint">Configurações de conexão com a Evolution API. Salvas no banco — sem editar arquivos.</div>
     <div class="row">
+      <div><label>URL</label><input type="text" id="cfg-evo-url" placeholder="http://localhost:8080"></div>
       <div>
-        <label>URL da Evolution API</label>
-        <input type="text" id="cfg-evo-url" placeholder="http://localhost:8080">
-      </div>
-      <div>
-        <label>Chave de autenticação (API Key)</label>
+        <label>API Key</label>
         <input type="password" id="cfg-evo-key" placeholder="sua_chave_aqui">
-        <div style="display:flex;gap:4px;margin-top:-10px;margin-bottom:14px">
-          <button class="bs sm" onclick="toggleSenha('cfg-evo-key')">👁 Ver</button>
-        </div>
+        <button class="bs sm" onclick="toggleSenha('cfg-evo-key')" style="margin-top:-10px;margin-bottom:14px">👁 Ver</button>
       </div>
     </div>
     <div class="bg">
       <button class="bp" onclick="salvarConfig('evolution')">💾 Salvar</button>
-      <button class="bs" onclick="testarEvolution()">🔌 Testar conexão</button>
+      <button class="bs" onclick="testarEvolution()">🔌 Testar</button>
     </div>
     <div id="evo-test-result" style="margin-top:12px"></div>
   </div>
-
-  <!-- Delays -->
   <div class="card">
     <h3>⏱ Delays padrão</h3>
-    <div class="hint">Intervalo padrão entre mensagens. Campanhas podem ter delay próprio que substitui este.</div>
     <div class="row">
       <div><label>Mínimo (segundos)</label><input type="number" id="cfg-dmin" value="20" min="5"></div>
       <div><label>Máximo (segundos)</label><input type="number" id="cfg-dmax" value="50" min="6"></div>
     </div>
-    <button class="bp" onclick="salvarConfig('delays')">💾 Salvar delays</button>
+    <button class="bp" onclick="salvarConfig('delays')">💾 Salvar</button>
   </div>
-
-  <!-- Google Sheets -->
   <div class="card" id="sec-sheets">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
       <h3 style="margin:0">📊 Google Sheets</h3>
       <span id="sheets-status-badge" class="badge bg-gray">não configurado</span>
     </div>
-
-    <!-- Passo a passo -->
-    <div style="margin-bottom:18px">
-      <div style="font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Como configurar</div>
-      <div id="sheets-steps">
-        <div class="step" id="step-1">
-          <div class="step-header" onclick="toggleStep(1)">
-            <span class="step-num" id="snum-1">1</span>
-            <span class="step-title">Criar projeto no Google Cloud</span>
-            <span class="step-arrow">▼</span>
-          </div>
-          <div class="step-body" id="sbody-1">
-            <p>1. Acesse <a href="https://console.cloud.google.com" target="_blank" style="color:var(--blue)">console.cloud.google.com</a></p>
-            <p>2. Clique em <strong>Selecionar projeto → Novo projeto</strong></p>
-            <p>3. Dê um nome (ex: "disparador") e clique em <strong>Criar</strong></p>
-            <button class="bs sm" style="margin-top:8px" onclick="marcarStep(1)">✅ Feito</button>
-          </div>
-        </div>
-        <div class="step" id="step-2">
-          <div class="step-header" onclick="toggleStep(2)">
-            <span class="step-num" id="snum-2">2</span>
-            <span class="step-title">Ativar Google Sheets API</span>
-            <span class="step-arrow">▼</span>
-          </div>
-          <div class="step-body" id="sbody-2" style="display:none">
-            <p>1. No menu lateral, vá em <strong>APIs e serviços → Biblioteca</strong></p>
-            <p>2. Busque por <strong>Google Sheets API</strong></p>
-            <p>3. Clique em <strong>Ativar</strong></p>
-            <button class="bs sm" style="margin-top:8px" onclick="marcarStep(2)">✅ Feito</button>
-          </div>
-        </div>
-        <div class="step" id="step-3">
-          <div class="step-header" onclick="toggleStep(3)">
-            <span class="step-num" id="snum-3">3</span>
-            <span class="step-title">Criar Service Account e baixar JSON</span>
-            <span class="step-arrow">▼</span>
-          </div>
-          <div class="step-body" id="sbody-3" style="display:none">
-            <p>1. Vá em <strong>APIs e serviços → Credenciais</strong></p>
-            <p>2. Clique em <strong>Criar credenciais → Conta de serviço</strong></p>
-            <p>3. Preencha o nome e clique em <strong>Concluído</strong></p>
-            <p>4. Clique na conta criada → aba <strong>Chaves → Adicionar chave → JSON</strong></p>
-            <p>5. Um arquivo JSON será baixado — cole o conteúdo abaixo</p>
-            <button class="bs sm" style="margin-top:8px" onclick="marcarStep(3)">✅ Feito</button>
-          </div>
-        </div>
-        <div class="step" id="step-4">
-          <div class="step-header" onclick="toggleStep(4)">
-            <span class="step-num" id="snum-4">4</span>
-            <span class="step-title">Compartilhar planilha com a Service Account</span>
-            <span class="step-arrow">▼</span>
-          </div>
-          <div class="step-body" id="sbody-4" style="display:none">
-            <p>1. Abra sua planilha no Google Sheets</p>
-            <p>2. Clique em <strong>Compartilhar</strong> (botão verde, canto superior direito)</p>
-            <p>3. Cole o e-mail da service account (termina em <strong>@...iam.gserviceaccount.com</strong>)</p>
-            <p>4. Selecione permissão <strong>Visualizador</strong> e clique em <strong>Enviar</strong></p>
-            <div class="hint" style="margin-top:8px">💡 O e-mail da service account está dentro do JSON que você baixou, no campo <strong>"client_email"</strong></div>
-            <button class="bs sm" style="margin-top:8px" onclick="marcarStep(4)">✅ Feito</button>
-          </div>
-        </div>
-        <div class="step" id="step-5">
-          <div class="step-header" onclick="toggleStep(5)">
-            <span class="step-num" id="snum-5">5</span>
-            <span class="step-title">Formato da planilha</span>
-            <span class="step-arrow">▼</span>
-          </div>
-          <div class="step-body" id="sbody-5" style="display:none">
-            <p>A primeira linha deve ser o cabeçalho. A coluna <strong>numero</strong> é obrigatória:</p>
-            <div style="background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:10px;margin:8px 0;font-family:var(--mono);font-size:11px;overflow-x:auto">
-              <span style="color:var(--green)">numero</span> | nome | cidade | produto<br>
-              11999998888 | Maria | São Paulo | Plano A<br>
-              21988887777 | João | Rio | Plano B
-            </div>
-            <p>As colunas extras ficam disponíveis como <strong>{variáveis}</strong> no template da campanha.</p>
-            <button class="bs sm" style="margin-top:8px" onclick="marcarStep(5)">✅ Entendido</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Campos de configuração -->
     <label>ID da planilha</label>
     <div style="display:flex;gap:7px;margin-bottom:14px">
-      <input type="text" id="cfg-sheet-id" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms" style="margin:0;flex:1">
-      <button class="bs sm" onclick="extrairIdDaURL()">📋 Extrair da URL</button>
+      <input type="text" id="cfg-sheet-id" placeholder="ID da planilha" style="margin:0;flex:1">
+      <button class="bs sm" onclick="extrairIdDaURL()">📋 Da URL</button>
     </div>
-    <div class="hint">O ID está na URL da planilha: docs.google.com/spreadsheets/d/<strong style="color:var(--green)">ID_AQUI</strong>/edit</div>
-
-    <label>Range (aba e colunas)</label>
-    <input type="text" id="cfg-sheet-range" placeholder="Sheet1!A:Z" value="Sheet1!A:Z">
-
+    <label>Range</label>
+    <input type="text" id="cfg-sheet-range" placeholder="Sheet1!A:Z">
     <label>JSON da Service Account</label>
     <div style="position:relative;margin-bottom:14px">
-      <textarea id="cfg-sheet-creds" placeholder='Cole aqui o conteúdo completo do arquivo JSON baixado do Google Cloud...' style="min-height:100px;font-size:11px;margin:0;padding-right:80px"></textarea>
+      <textarea id="cfg-sheet-creds" placeholder="Cole o JSON da Service Account aqui..." style="min-height:90px;font-size:11px;margin:0;padding-right:80px"></textarea>
       <button class="bs sm" style="position:absolute;top:8px;right:8px" onclick="document.getElementById('creds-file').click()">📁 Arquivo</button>
       <input type="file" id="creds-file" accept=".json" style="display:none" onchange="lerArquivoCreds(this)">
     </div>
     <div id="creds-status" style="margin-bottom:14px"></div>
     <div id="client-email-info" style="margin-bottom:14px"></div>
-
     <div class="bg">
-      <button class="bp" onclick="salvarConfig('sheets')">💾 Salvar configurações</button>
-      <button class="bs" onclick="testarSheets()">📊 Testar conexão</button>
+      <button class="bp" onclick="salvarConfig('sheets')">💾 Salvar</button>
+      <button class="bs" onclick="testarSheets()">📊 Testar</button>
     </div>
     <div id="sheets-test-result" style="margin-top:12px"></div>
   </div>
-
-  <!-- Sincronização automática Sheets → Banco -->
   <div class="card">
-    <h3>🔄 Sincronização automática Sheets → Banco</h3>
-    <div class="hint">Configure para importar contatos do Sheets automaticamente em intervalos regulares. O banco sempre reflete a planilha.</div>
+    <h3>🔄 Sync automático Sheets → Banco</h3>
     <div class="row">
-      <div>
-        <label>Sincronizar a cada (horas, 0 = desativado)</label>
-        <input type="number" id="cfg-sync-intervalo" min="0" max="24" value="0" placeholder="0">
-      </div>
-      <div>
-        <label>Próxima sincronização</label>
-        <div id="cfg-sync-proxima" style="font-family:var(--mono);font-size:12px;color:var(--muted);padding:9px 0">—</div>
-      </div>
+      <div><label>A cada X horas (0 = desativado)</label><input type="number" id="cfg-sync-intervalo" min="0" max="24" value="0"></div>
+      <div><label>Próxima sincronização</label><div id="cfg-sync-proxima" style="font-family:var(--mono);font-size:12px;color:var(--muted);padding:9px 0">—</div></div>
     </div>
     <div class="bg">
       <button class="bp" onclick="salvarConfig('sync')">💾 Salvar</button>
@@ -562,57 +423,40 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
     </div>
     <div id="sync-result" style="margin-top:12px"></div>
   </div>
-
-  <!-- Webhook -->
   <div class="card" id="sec-webhook">
-    <h3>🔔 Webhook (notificações em tempo real)</h3>
-    <div class="hint">O webhook permite que a Evolution API notifique o sistema instantaneamente quando um chip conecta ou desconecta, sem precisar de polling. Recomendado para uso em produção.</div>
-    <label>URL do webhook (endereço público deste servidor)</label>
+    <h3>🔔 Webhook</h3>
+    <div class="hint">Recebe notificações em tempo real da Evolution API sobre conexão/desconexão de chips.</div>
     <div style="display:flex;gap:7px;margin-bottom:14px">
       <input type="text" id="cfg-webhook-url" placeholder="http://seu-servidor:3000/api/webhook/evolution" style="margin:0;flex:1">
       <button class="bs sm" onclick="preencherWebhookLocal()">🏠 Local</button>
     </div>
-    <div class="hint warn">⚠ Para uso local, o webhook só funciona se a Evolution API estiver na mesma máquina. Para acesso externo, use um serviço como ngrok ou hospede em um servidor público.</div>
-    <div class="bg">
-      <button class="bp" onclick="registrarWebhook()">🔔 Registrar webhook em todos os chips</button>
-    </div>
+    <button class="bp" onclick="registrarWebhook()">🔔 Registrar em todos os chips</button>
     <div id="webhook-result" style="margin-top:12px"></div>
   </div>
-
-  <!-- Notificações -->
   <div class="card">
-    <h3>🔔 Notificações via WhatsApp</h3>
-    <div class="hint">Receba alertas quando campanhas concluírem, chips forem banidos ou desconectarem.</div>
+    <h3>🔔 Notificações WhatsApp</h3>
+    <div class="hint">Receba alertas quando campanhas concluírem ou chips forem banidos.</div>
     <div class="row">
-      <div>
-        <label>Número para receber notificações (com DDD)</label>
-        <input type="text" id="cfg-admin-num" placeholder="11999998888">
-      </div>
-      <div>
-        <label>Instância do chip enviador</label>
-        <input type="text" id="cfg-admin-inst" placeholder="instancia01">
-      </div>
+      <div><label>Número admin (com DDD)</label><input type="text" id="cfg-admin-num" placeholder="11999998888"></div>
+      <div><label>Instância enviadora</label><input type="text" id="cfg-admin-inst" placeholder="instancia01"></div>
     </div>
     <div class="bg">
       <button class="bp" onclick="salvarNotifConfig()">💾 Salvar</button>
-      <button class="bs" onclick="testarNotificacao()">📨 Enviar teste</button>
+      <button class="bs" onclick="testarNotificacao()">📨 Testar</button>
     </div>
   </div>
-
-  <!-- Diagnóstico geral -->
   <div class="card">
     <h3>🔍 Diagnóstico</h3>
     <div class="bg" style="margin-bottom:12px">
-      <button class="bs" onclick="testarTudo()">▶ Testar tudo</button>
-      <button class="bs" onclick="testarEvolution()">🔌 Evolution API</button>
-      <button class="bs" onclick="testarSheets()">📊 Google Sheets</button>
-      <button class="bs" onclick="testarBanco()">🗄 Banco de dados</button>
+      <button class="bs" onclick="testarEvolution()">🔌 Evolution</button>
+      <button class="bs" onclick="testarSheets()">📊 Sheets</button>
+      <button class="bs" onclick="testarBanco()">🗄 Banco</button>
     </div>
     <div id="diag-result"></div>
   </div>
 </div>
 
-<!-- MODAL TEMPLATE -->
+<!-- MODAIS -->
 <div class="mb" id="m-tpl">
   <div class="modal">
     <h3>Editar template</h3>
@@ -621,11 +465,9 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
     <div class="mf"><button class="bs" onclick="fecharM('m-tpl')">Cancelar</button><button class="bp" onclick="salvarTpl()">Salvar</button></div>
   </div>
 </div>
-
-<!-- MODAL DELAY -->
 <div class="mb" id="m-delay">
   <div class="modal">
-    <h3>Editar delay da campanha</h3>
+    <h3>Editar delay</h3>
     <input type="hidden" id="e-delay-id">
     <div class="row">
       <div><label>Mínimo (s)</label><input type="number" id="e-dmin" min="5"></div>
@@ -634,20 +476,35 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
     <div class="mf"><button class="bs" onclick="fecharM('m-delay')">Cancelar</button><button class="bp" onclick="salvarDelay()">Salvar</button></div>
   </div>
 </div>
-
-<!-- MODAL LIMITE CHIP -->
+<div class="mb" id="m-imagem">
+  <div class="modal">
+    <h3>Imagem da campanha</h3>
+    <input type="hidden" id="e-img-camp-id">
+    <div id="e-img-preview" style="display:none" class="img-preview">
+      <img id="e-img-src" src="">
+      <div class="img-preview-info">
+        <span id="e-img-nome" style="color:var(--text)"></span>
+        <button class="bd sm" onclick="removerImagemCampanha()">✕ Remover imagem</button>
+      </div>
+    </div>
+    <div id="e-img-drop" class="img-drop" onclick="document.getElementById('e-img-file').click()">
+      <input type="file" id="e-img-file" accept="image/png,image/jpeg" onchange="uploadImagemCampanha(this.files[0])">
+      🖼 Clique para selecionar PNG ou JPEG (máx. 5MB)
+    </div>
+    <div id="e-img-result" style="margin-top:8px"></div>
+    <div class="mf"><button class="bs" onclick="fecharM('m-imagem')">Fechar</button></div>
+  </div>
+</div>
 <div class="mb" id="m-limite">
   <div class="modal">
     <h3>Editar limite diário</h3>
     <input type="hidden" id="e-lim-id">
     <label>Limite diário de mensagens</label>
     <input type="number" id="e-lim-val" min="1" max="500">
-    <div class="hint warn">⚠ Aumentar o limite acima da tabela de aquecimento aumenta risco de banimento.</div>
+    <div class="hint warn">⚠ Aumentar acima da tabela de aquecimento aumenta risco de ban.</div>
     <div class="mf"><button class="bs" onclick="fecharM('m-limite')">Cancelar</button><button class="bp" onclick="salvarLimite()">Salvar</button></div>
   </div>
 </div>
-
-<!-- MODAL QR -->
 <div class="mb" id="m-qr">
   <div class="modal" style="text-align:center">
     <h3 id="qr-titulo">QR Code</h3>
@@ -659,110 +516,15 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
-<!-- WIZARD PRIMEIRO ACESSO -->
-<div class="wizard-overlay" id="wizard" style="display:none">
-  <div class="wizard-box">
-    <div class="wizard-header">
-      <h2>👋 Bem-vindo ao WhatsApp Disparador</h2>
-      <p>Vamos configurar tudo em 4 passos simples</p>
-    </div>
-    <div class="wizard-steps">
-      <div class="wstep active" id="ws-1">1. Verificar sistema</div>
-      <div class="wstep" id="ws-2">2. Evolution API</div>
-      <div class="wstep" id="ws-3">3. Primeiro chip</div>
-      <div class="wstep" id="ws-4">4. Pronto!</div>
-    </div>
-    <div class="wizard-body">
-
-      <!-- Passo 1: Health check -->
-      <div id="wp-1">
-        <h3 style="margin-bottom:12px">Verificando serviços</h3>
-        <div class="health-grid">
-          <div class="health-item">
-            <div class="health-dot checking" id="hd-postgres"></div>
-            <div>
-              <div style="font-family:var(--mono);font-size:12px">PostgreSQL</div>
-              <div id="hs-postgres" style="font-size:10px;color:var(--muted);font-family:var(--mono)">verificando...</div>
-            </div>
-          </div>
-          <div class="health-item">
-            <div class="health-dot checking" id="hd-redis"></div>
-            <div>
-              <div style="font-family:var(--mono);font-size:12px">Redis</div>
-              <div id="hs-redis" style="font-size:10px;color:var(--muted);font-family:var(--mono)">verificando...</div>
-            </div>
-          </div>
-          <div class="health-item">
-            <div class="health-dot checking" id="hd-evolution"></div>
-            <div>
-              <div style="font-family:var(--mono);font-size:12px">Evolution API</div>
-              <div id="hs-evolution" style="font-size:10px;color:var(--muted);font-family:var(--mono)">verificando...</div>
-            </div>
-          </div>
-          <div class="health-item">
-            <div class="health-dot checking" id="hd-chips"></div>
-            <div>
-              <div style="font-family:var(--mono);font-size:12px">Chips</div>
-              <div id="hs-chips" style="font-size:10px;color:var(--muted);font-family:var(--mono)">verificando...</div>
-            </div>
-          </div>
-        </div>
-        <div id="health-msg" style="margin-top:10px"></div>
-      </div>
-
-      <!-- Passo 2: Evolution API -->
-      <div id="wp-2" style="display:none">
-        <h3 style="margin-bottom:6px">Configurar Evolution API</h3>
-        <p style="font-size:12px;color:var(--muted);font-family:var(--mono);margin-bottom:14px">Informe a URL e a chave da sua Evolution API</p>
-        <label>URL da Evolution API</label>
-        <input type="text" id="wiz-evo-url" placeholder="http://localhost:8080" value="http://localhost:8080">
-        <label>Chave de autenticação (API Key)</label>
-        <input type="password" id="wiz-evo-key" placeholder="sua_chave_aqui">
-        <div id="wiz-evo-result" style="margin-top:4px"></div>
-      </div>
-
-      <!-- Passo 3: Primeiro chip -->
-      <div id="wp-3" style="display:none">
-        <h3 style="margin-bottom:6px">Adicionar primeiro chip</h3>
-        <p style="font-size:12px;color:var(--muted);font-family:var(--mono);margin-bottom:14px">Adicione o número de WhatsApp que fará os envios</p>
-        <label>Nome do chip</label>
-        <input type="text" id="wiz-chip-nome" placeholder="Chip Principal">
-        <label>Nome da instância (sem espaços)</label>
-        <input type="text" id="wiz-chip-inst" placeholder="instancia01">
-        <div id="wiz-chip-result" style="margin-top:4px"></div>
-        <div id="wiz-qr-area" style="text-align:center;margin-top:14px"></div>
-      </div>
-
-      <!-- Passo 4: Concluído -->
-      <div id="wp-4" style="display:none;text-align:center;padding:20px 0">
-        <div style="font-size:48px;margin-bottom:14px">🎉</div>
-        <h3 style="font-size:16px;margin-bottom:10px">Tudo configurado!</h3>
-        <p style="font-size:12px;color:var(--muted);font-family:var(--mono);line-height:1.8">
-          Próximos passos:<br>
-          1. Importe seus contatos (aba Importar)<br>
-          2. Crie uma campanha com seu template<br>
-          3. Clique em ▶ Iniciar e acompanhe no Dashboard
-        </p>
-      </div>
-    </div>
-    <div class="wizard-footer">
-      <button class="bs" id="wiz-skip" onclick="fecharWizard()">Pular configuração</button>
-      <div class="bg">
-        <button class="bs" id="wiz-back" onclick="wizardBack()" style="display:none">← Voltar</button>
-        <button class="bp" id="wiz-next" onclick="wizardNext()">Verificar →</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <div id="toast"></div>
 
 <script>
 const API='/api';
-let cPage=1,blPage=1,bTimer,qrInst='';
+let cPage=1,blPage=1,bTimer,qrInst='',logsPage=1,logNivel='';
 const AQ=[20,30,40,50,60,80,100,120,150];
+let imgNovaPendente=null; // {file, base64, nome}
 
-// ─── Nav ─────────────────────────────────────────────────
+// ─── Nav ──────────────────────────────────────────────────────────────────────
 function showPage(n,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -775,8 +537,8 @@ function showPage(n,btn){
   if(n==='blacklist')loadBL();
   if(n==='relatorios')loadRelCamps();
   if(n==='config')loadConfig();
-  if(n==='antiban'){loadAntiban();}
-  if(n==='logs'){loadLogs();}
+  if(n==='antiban')loadAntiban();
+  if(n==='logs')loadLogs();
 }
 function showSection(n,btn){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
@@ -785,7 +547,7 @@ function showSection(n,btn){
   if(btn)btn.classList.add('active');
 }
 
-// ─── Toast / Log ─────────────────────────────────────────
+// ─── Toast / Log ──────────────────────────────────────────────────────────────
 function toast(msg,type='ok'){
   const el=document.getElementById('toast');
   el.textContent=msg;el.className='show '+type;
@@ -793,19 +555,18 @@ function toast(msg,type='ok'){
 }
 function log(msg,type='info'){
   const b=document.getElementById('log-box');
-  const s=document.createElement('span');
-  s.className='l'+type;
-  s.textContent=`» [${new Date().toLocaleTimeString()}] ${msg}`;
+  const s=document.createElement('span');s.className='l'+type;
+  s.textContent='» ['+new Date().toLocaleTimeString()+'] '+msg;
   b.appendChild(s);b.appendChild(document.createElement('br'));
   b.scrollTop=b.scrollHeight;
 }
 
-// ─── Modal ───────────────────────────────────────────────
+// ─── Modal ────────────────────────────────────────────────────────────────────
 function abrirM(id){document.getElementById(id).classList.add('open');}
 function fecharM(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.mb').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
 
-// ─── Dashboard ───────────────────────────────────────────
+// ─── Dashboard ────────────────────────────────────────────────────────────────
 async function loadDash(){
   try{
     const [cR,fR,campR,chR]=await Promise.all([
@@ -819,49 +580,39 @@ async function loadDash(){
     const camps=campR.data||[];
     document.getElementById('s-env').textContent=camps.reduce((s,c)=>s+(c.enviados||0),0);
     document.getElementById('s-falh').textContent=camps.reduce((s,c)=>s+(c.falhas||0),0);
-
     const ativas=camps.filter(c=>c.status==='em_andamento');
     const concluidas=camps.filter(c=>c.status==='concluido').slice(0,3);
-    const dc=document.getElementById('dash-camps');
-    let htmlCamps='';
-    if(ativas.length){
-      htmlCamps+=ativas.map(c=>{
-        const pct=c.total_contatos>0?Math.round(c.enviados/c.total_contatos*100):0;
-        return `<div style="margin-bottom:14px">
-          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-            <span style="font-family:var(--mono);font-size:12px">${c.nome} <span class="badge bg-y">em andamento</span></span>
-            <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${c.enviados}/${c.total_contatos} — ${pct}%</span>
-          </div>
-          <div class="bar"><div class="bar-f" style="width:${pct}%"></div></div>
-        </div>`;
-      }).join('');
-    }
-    if(concluidas.length){
-      htmlCamps+=concluidas.map(c=>{
-        const taxa=c.total_contatos>0?Math.round(c.enviados/c.total_contatos*100):0;
-        return `<div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
-          <span style="font-family:var(--mono);font-size:12px;color:var(--muted)">${c.nome} <span class="badge bg-g">concluída</span></span>
-          <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${c.enviados} enviados · ${taxa}% taxa</span>
-        </div>`;
-      }).join('');
-    }
-    dc.innerHTML=htmlCamps||'<div class="empty">Nenhuma campanha em andamento</div>';
-
+    let html='';
+    ativas.forEach(c=>{
+      const pct=c.total_contatos>0?Math.round(c.enviados/c.total_contatos*100):0;
+      html+=`<div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <span style="font-family:var(--mono);font-size:12px">${c.nome}${c.midia_mimetype?` 🖼`:''}  <span class="badge bg-y">em andamento</span></span>
+          <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${c.enviados}/${c.total_contatos} — ${pct}%</span>
+        </div>
+        <div class="bar"><div class="bar-f" style="width:${pct}%"></div></div>
+      </div>`;
+    });
+    concluidas.forEach(c=>{
+      const taxa=c.total_contatos>0?Math.round(c.enviados/c.total_contatos*100):0;
+      html+=`<div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-family:var(--mono);font-size:12px;color:var(--muted)">${c.nome}${c.midia_mimetype?' 🖼':''} <span class="badge bg-g">concluída</span></span>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${c.enviados} enviados · ${taxa}%</span>
+      </div>`;
+    });
+    document.getElementById('dash-camps').innerHTML=html||'<div class="empty">Nenhuma campanha em andamento</div>';
     const chips=chR.data||[];
     const con=chips.filter(c=>c.status==='open').length;
     const banidos=chips.filter(c=>c.status==='banido').length;
-    let badgeText=`${con}/${chips.length} chips`;
-    if(banidos>0)badgeText+=` · ⚠ ${banidos} banido(s)`;
-    document.getElementById('chips-badge').textContent=badgeText;
+    document.getElementById('chips-badge').textContent=`${con}/${chips.length} chips`+(banidos>0?` · ⚠ ${banidos} banido(s)`:'');
     document.getElementById('dash-chips').innerHTML=chips.length?chips.map(c=>{
       const pct=c.limite_diario>0?Math.round(c.enviados_hoje/c.limite_diario*100):0;
       const cor=pct>=90?'r':pct>=70?'y':'';
-      const psd=c.pausado_ate&&new Date(c.pausado_ate)>new Date();
       return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
         <div class="dot ${c.status}" style="flex-shrink:0"></div>
         <div style="flex:1">
           <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-            <span style="font-family:var(--mono);font-size:11px">${c.nome}${psd?` <span style="color:var(--yellow)">(pausado)</span>`:''}</span>
+            <span style="font-family:var(--mono);font-size:11px">${c.nome}</span>
             <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${c.enviados_hoje}/${c.limite_diario}</span>
           </div>
           <div class="bar"><div class="bar-f ${cor}" style="width:${Math.min(pct,100)}%"></div></div>
@@ -871,21 +622,18 @@ async function loadDash(){
   }catch(e){log(e.message,'err');}
 }
 
-// ─── Aquecimento ─────────────────────────────────────────
 function renderAQ(){
-  document.getElementById('aq-grid').innerHTML=AQ.map((l,i)=>`
-    <div class="aq-day">Dia ${i+1}${i===AQ.length-1?'+':''}<span>${l}</span></div>`).join('');
+  document.getElementById('aq-grid').innerHTML=AQ.map((l,i)=>`<div class="aq-day">Dia ${i+1}${i===AQ.length-1?'+':''}<span>${l}</span></div>`).join('');
 }
 
-// ─── CSV ─────────────────────────────────────────────────
+// ─── CSV ──────────────────────────────────────────────────────────────────────
 const dz=document.getElementById('drop-zone');
 dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dg');});
 dz.addEventListener('dragleave',()=>dz.classList.remove('dg'));
 dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dg');handleFile(e.dataTransfer.files[0]);});
-
 function handleFile(file){
   if(!file)return;
-  document.getElementById('drop-text').textContent=`📄 ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+  document.getElementById('drop-text').textContent='📄 '+file.name;
   uploadCSV(file);
 }
 async function uploadCSV(file){
@@ -894,39 +642,97 @@ async function uploadCSV(file){
   const fd=new FormData();fd.append('arquivo',file);
   try{
     const r=await fetch(`${API}/importar/csv`,{method:'POST',body:fd});
-    const data=await r.json();
-    if(!data.ok)throw new Error(data.error);
+    const data=await r.json();if(!data.ok)throw new Error(data.error);
     const d=data.data;
-    el.innerHTML=`<div class="hint">✅ <strong class="g">${d.importados}</strong> novos &nbsp;|&nbsp; 🔄 <strong class="y">${d.atualizados}</strong> atualizados &nbsp;|&nbsp; ⚠️ <strong class="r">${d.ignorados}</strong> ignorados &nbsp;|&nbsp; Total: <strong>${d.total}</strong></div>`;
+    el.innerHTML=`<div class="hint">✅ <strong class="g">${d.importados}</strong> novos · 🔄 <strong class="y">${d.atualizados}</strong> atualizados · ⚠ <strong class="r">${d.ignorados}</strong> ignorados</div>`;
     toast(`${d.importados} contatos importados!`);
-    log(`CSV: ${d.importados} novos, ${d.atualizados} atualizados`,'ok');
-  }catch(e){
-    el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;
-    toast(e.message,'err');
-  }
+  }catch(e){el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;toast(e.message,'err');}
 }
-
-// ─── Sheets ──────────────────────────────────────────────
 async function importarSheets(){
   const el=document.getElementById('sheets-result');
-  el.innerHTML='<span style="color:var(--muted);font-family:var(--mono);font-size:12px">⏳ Importando do Sheets...</span>';
+  el.innerHTML='<span style="color:var(--muted);font-family:var(--mono);font-size:12px">⏳ Importando...</span>';
   const sheetId=document.getElementById('sheets-id').value.trim();
   const range=document.getElementById('sheets-range').value.trim();
   try{
     const r=await fetch(`${API}/importar/sheets`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sheetId,range})});
-    const data=await r.json();
-    if(!data.ok)throw new Error(data.error);
+    const data=await r.json();if(!data.ok)throw new Error(data.error);
     const d=data.data;
-    el.innerHTML=`<div class="hint">✅ <strong class="g">${d.importados}</strong> novos &nbsp;|&nbsp; 🔄 <strong class="y">${d.atualizados}</strong> atualizados &nbsp;|&nbsp; ⚠️ <strong class="r">${d.ignorados}</strong> ignorados &nbsp;|&nbsp; Total: <strong>${d.total}</strong></div>`;
+    el.innerHTML=`<div class="hint">✅ ${d.importados} novos · ${d.atualizados} atualizados · ${d.ignorados} ignorados</div>`;
     toast(`${d.importados} contatos importados do Sheets!`);
-    log(`Sheets: ${d.importados} novos`,'ok');
-  }catch(e){
-    el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;
-    toast(e.message,'err');
-  }
+  }catch(e){el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;toast(e.message,'err');}
 }
 
-// ─── Campanhas ───────────────────────────────────────────
+// ─── Imagem ───────────────────────────────────────────────────────────────────
+function previewImagem(ctx, file){
+  if(!file)return;
+  if(!['image/jpeg','image/png'].includes(file.type)){toast('Apenas PNG e JPEG','err');return;}
+  if(file.size>5*1024*1024){toast('Imagem muito grande (máx. 5MB)','err');return;}
+  const reader=new FileReader();
+  reader.onload=e=>{
+    if(ctx==='nova'){
+      imgNovaPendente={file,base64:e.target.result,nome:file.name};
+      document.getElementById('img-drop-nova').style.display='none';
+      document.getElementById('img-preview-nova').style.display='block';
+      document.getElementById('img-nova-src').src=e.target.result;
+      document.getElementById('img-nova-nome').textContent=file.name+' ('+Math.round(file.size/1024)+'KB)';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+function removerImagemNova(){
+  imgNovaPendente=null;
+  document.getElementById('img-drop-nova').style.display='';
+  document.getElementById('img-preview-nova').style.display='none';
+  document.getElementById('img-file-nova').value='';
+}
+
+async function abrirModalImagem(id, nomeAtual){
+  document.getElementById('e-img-camp-id').value=id;
+  const el=document.getElementById('e-img-result');el.innerHTML='';
+  if(nomeAtual){
+    document.getElementById('e-img-drop').style.display='none';
+    document.getElementById('e-img-preview').style.display='block';
+    document.getElementById('e-img-nome').textContent=nomeAtual;
+    document.getElementById('e-img-src').src=''; // sem URL pública — mostra nome apenas
+  } else {
+    document.getElementById('e-img-drop').style.display='';
+    document.getElementById('e-img-preview').style.display='none';
+  }
+  abrirM('m-imagem');
+}
+
+async function uploadImagemCampanha(file){
+  if(!file)return;
+  if(!['image/jpeg','image/png'].includes(file.type)){toast('Apenas PNG e JPEG','err');return;}
+  const id=document.getElementById('e-img-camp-id').value;
+  const el=document.getElementById('e-img-result');
+  el.innerHTML='<span style="color:var(--muted);font-family:var(--mono);font-size:11px">⏳ Enviando...</span>';
+  const fd=new FormData();fd.append('imagem',file);
+  try{
+    const r=await fetch(`${API}/campanhas/${id}/midia`,{method:'POST',body:fd});
+    const data=await r.json();if(!data.ok)throw new Error(data.error);
+    el.innerHTML=`<div class="hint" style="border-color:var(--green)">✅ ${data.data.nome} (${Math.round(data.data.tamanho/1024)}KB)</div>`;
+    document.getElementById('e-img-drop').style.display='none';
+    document.getElementById('e-img-preview').style.display='block';
+    document.getElementById('e-img-nome').textContent=data.data.nome;
+    toast('Imagem salva na campanha!');
+    loadCamps();
+  }catch(e){el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;toast(e.message,'err');}
+}
+
+async function removerImagemCampanha(){
+  const id=document.getElementById('e-img-camp-id').value;
+  if(!confirm('Remover a imagem desta campanha?'))return;
+  try{
+    const r=await fetch(`${API}/campanhas/${id}/midia`,{method:'DELETE'});
+    const data=await r.json();if(!data.ok)throw new Error(data.error);
+    document.getElementById('e-img-drop').style.display='';
+    document.getElementById('e-img-preview').style.display='none';
+    toast('Imagem removida!');loadCamps();
+  }catch(e){toast(e.message,'err');}
+}
+
+// ─── Campanhas ────────────────────────────────────────────────────────────────
 const sBadge=s=>{const m={rascunho:'gray',em_andamento:'y',pausado:'b',concluido:'g'};return `<span class="badge bg-${m[s]||'gray'}">${s.replace('_',' ')}</span>`;};
 
 async function loadCamps(){
@@ -934,24 +740,27 @@ async function loadCamps(){
   const el=document.getElementById('lista-camps');
   const camps=data.data||[];
   if(!camps.length){el.innerHTML='<div class="empty">Nenhuma campanha</div>';return;}
-  el.innerHTML=`<table><thead><tr><th>Nome</th><th>Status</th><th>Progresso</th><th>Delay</th><th>Criado</th><th>Ações</th></tr></thead><tbody>
+  el.innerHTML=`<table><thead><tr><th>Nome</th><th>Status</th><th>Progresso</th><th>Mídia</th><th>Delay</th><th>Ações</th></tr></thead><tbody>
   ${camps.map(c=>{
     const pct=c.total_contatos>0?Math.round(c.enviados/c.total_contatos*100):0;
     const ed=c.status==='rascunho'||c.status==='pausado';
+    const temImg=!!c.midia_mimetype;
     return `<tr>
-      <td>${c.nome}</td><td>${sBadge(c.status)}</td>
-      <td style="min-width:150px">${c.enviados}/${c.total_contatos}
+      <td>${c.nome}</td>
+      <td>${sBadge(c.status)}</td>
+      <td style="min-width:130px">${c.enviados}/${c.total_contatos}
         <div class="bar"><div class="bar-f" style="width:${pct}%"></div></div></td>
+      <td>${temImg?`<span class="badge bg-b" title="${c.midia_nome||''}">🖼 PNG/JPEG</span>`:'<span style="color:var(--muted)">—</span>'}</td>
       <td style="color:var(--muted)">${c.delay_min||20}s–${c.delay_max||50}s</td>
-      <td>${new Date(c.criado_em).toLocaleDateString('pt-BR')}</td>
       <td><div class="bg">
-        ${ed?`<button class="bs sm" onclick="abrirTpl(${c.id},'${esc(c.template)}')">✏</button>`:''}
+        ${ed?`<button class="bs sm" onclick="abrirTpl(${c.id},'${esc(c.template||'')}')">✏ Texto</button>`:''}
+        ${ed?`<button class="bs sm" onclick="abrirModalImagem(${c.id},'${c.midia_nome||''}')">🖼 Imagem</button>`:''}
         ${ed?`<button class="bs sm" onclick="abrirDelay(${c.id},${c.delay_min||20},${c.delay_max||50})">⏱</button>`:''}
         ${ed?`<button class="bp sm" onclick="iniciar(${c.id})">▶</button>`:''}
         ${c.status==='em_andamento'?`<button class="bw sm" onclick="pausar(${c.id})">⏸</button>`:''}
         <button class="bs sm" onclick="verRel(${c.id})">📊</button>
-        <button class="bs sm" onclick="exportarCSV(${c.id},'${esc(c.nome)}')">⬇ CSV</button>
-        ${c.status==='rascunho'||c.status==='pausado'?`<button class="bs sm" onclick="removerDupls(${c.id})">🔁 Dupls</button>`:''}
+        <button class="bs sm" onclick="exportarCSV(${c.id},'${esc(c.nome)}')">⬇</button>
+        ${ed?`<button class="bs sm" onclick="removerDupls(${c.id})">🔁</button>`:''}
         <button class="bd sm" onclick="delCamp(${c.id})">✕</button>
       </div></td></tr>`;
   }).join('')}</tbody></table>`;
@@ -969,11 +778,24 @@ async function criarCampanha(){
   if(delay_max<=delay_min){toast('Delay máximo deve ser maior','err');return;}
   try{
     const r=await fetch(`${API}/campanhas`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,template,delay_min,delay_max})});
-    const data=await r.json();
-    if(!data.ok)throw new Error(data.error);
-    toast(`Campanha "${nome}" criada!`);
+    const data=await r.json();if(!data.ok)throw new Error(data.error);
+    const id=data.data.id;
+
+    // Se tem imagem pendente, faz upload agora
+    if(imgNovaPendente){
+      const fd=new FormData();fd.append('imagem',imgNovaPendente.file);
+      const r2=await fetch(`${API}/campanhas/${id}/midia`,{method:'POST',body:fd});
+      const d2=await r2.json();
+      if(d2.ok) toast(`Campanha "${nome}" criada com imagem!`);
+      else toast(`Campanha criada, mas falha ao salvar imagem: ${d2.error}`,'err');
+      removerImagemNova();
+    } else {
+      toast(`Campanha "${nome}" criada!`);
+    }
+
     log(`Campanha "${nome}" — ${data.data.total_contatos} contatos`,'ok');
-    document.getElementById('camp-nome').value='';document.getElementById('camp-tpl').value='';
+    document.getElementById('camp-nome').value='';
+    document.getElementById('camp-tpl').value='';
     loadCamps();
   }catch(e){toast(e.message,'err');}
 }
@@ -989,12 +811,7 @@ async function salvarTpl(){
     toast('Template atualizado!');fecharM('m-tpl');loadCamps();
   }catch(e){toast(e.message,'err');}
 }
-
-function abrirDelay(id,min,max){
-  document.getElementById('e-delay-id').value=id;
-  document.getElementById('e-dmin').value=min;document.getElementById('e-dmax').value=max;
-  abrirM('m-delay');
-}
+function abrirDelay(id,min,max){document.getElementById('e-delay-id').value=id;document.getElementById('e-dmin').value=min;document.getElementById('e-dmax').value=max;abrirM('m-delay');}
 async function salvarDelay(){
   const id=document.getElementById('e-delay-id').value;
   const delay_min=parseInt(document.getElementById('e-dmin').value);
@@ -1007,7 +824,6 @@ async function salvarDelay(){
     toast(`Delay: ${delay_min}s–${delay_max}s`);fecharM('m-delay');loadCamps();
   }catch(e){toast(e.message,'err');}
 }
-
 async function iniciar(id){
   try{
     const r=await fetch(`${API}/campanhas/${id}/iniciar`,{method:'POST'});
@@ -1019,14 +835,23 @@ async function pausar(id){await fetch(`${API}/campanhas/${id}/pausar`,{method:'P
 async function retomar(){
   try{
     const r=await fetch(`${API}/campanhas/retomar`,{method:'POST'});
-    const data=await r.json();
-    if(!data.ok)throw new Error(data.error);
-    toast('▶ Fila retomada');log('Fila retomada','ok');loadCamps();
-  }catch(e){toast(e.message,'err');log(e.message,'err');}
+    const data=await r.json();if(!data.ok)throw new Error(data.error);
+    toast('▶ Fila retomada');loadCamps();
+  }catch(e){toast(e.message,'err');}
 }
 async function delCamp(id){if(!confirm('Remover campanha?'))return;await fetch(`${API}/campanhas/${id}`,{method:'DELETE'});toast('Removida');loadCamps();}
+function exportarCSV(id,nome){const a=document.createElement('a');a.href=`${API}/campanhas/${id}/exportar`;a.download=`campanha-${id}.csv`;a.click();toast(`Exportando "${nome}"...`);}
+async function removerDupls(id){
+  const r=await fetch(`${API}/campanhas/${id}/duplicatas`);const data=await r.json();
+  if(!data.ok){toast(data.error,'err');return;}
+  if(!data.total){toast('Nenhuma duplicata encontrada');return;}
+  if(!confirm(`${data.total} duplicatas encontradas. Remover?`))return;
+  const r2=await fetch(`${API}/campanhas/${id}/remover-duplicatas`,{method:'POST'});
+  const d2=await r2.json();if(!d2.ok){toast(d2.error,'err');return;}
+  toast(`${d2.data.removidos} duplicatas removidas!`);loadCamps();
+}
 
-// ─── Contatos ────────────────────────────────────────────
+// ─── Contatos ────────────────────────────────────────────────────────────────
 function buscar(){clearTimeout(bTimer);bTimer=setTimeout(()=>{cPage=1;loadContatos();},400);}
 async function loadContatos(){
   const busca=document.getElementById('busca').value;
@@ -1035,7 +860,7 @@ async function loadContatos(){
   const el=document.getElementById('tab-contatos');
   const rows=data.data||[];
   if(!rows.length){el.innerHTML='<div class="empty">Nenhum contato</div>';return;}
-  el.innerHTML=`<table><thead><tr><th>Número</th><th>Nome</th><th>Campos extras</th><th>Importado em</th></tr></thead><tbody>
+  el.innerHTML=`<table><thead><tr><th>Número</th><th>Nome</th><th>Campos</th><th>Importado</th></tr></thead><tbody>
   ${rows.map(c=>`<tr><td>${c.numero}</td><td>${c.nome||'—'}</td><td style="color:var(--muted);font-size:10px">${Object.keys(c.dados||{}).filter(k=>k!=='nome').slice(0,4).join(', ')||'—'}</td><td>${new Date(c.criado_em).toLocaleDateString('pt-BR')}</td></tr>`).join('')}</tbody></table>`;
   const total=data.total||0,pages=Math.ceil(total/20);
   document.getElementById('pag-contatos').innerHTML=
@@ -1045,7 +870,7 @@ async function loadContatos(){
 }
 async function limparContatos(){if(!confirm('Remover TODOS os contatos?'))return;await fetch(`${API}/contatos`,{method:'DELETE'});toast('Contatos removidos');loadContatos();}
 
-// ─── Chips ───────────────────────────────────────────────
+// ─── Chips ────────────────────────────────────────────────────────────────────
 async function loadChips(){
   const r=await fetch(`${API}/chips`);const data=await r.json();
   const chips=data.data||[];
@@ -1057,21 +882,20 @@ async function loadChips(){
     const pct=c.limite_diario>0?Math.round(c.enviados_hoje/c.limite_diario*100):0;
     const cor=pct>=90?'r':pct>=70?'y':'';
     const psd=c.pausado_ate&&new Date(c.pausado_ate)>new Date();
-    const psdHora=psd?new Date(c.pausado_ate).toLocaleTimeString('pt-BR'):null;
     return `<div class="chip-card ${psd?'psd':''}">
       <div class="chip-top">
         <div class="chip-info">
           <div class="dot ${c.status}"></div>
           <div>
-            <div style="font-family:var(--mono);font-size:12px;font-weight:500">${c.nome}${psd?` <span style="color:var(--yellow);font-size:10px">pausado até ${psdHora}</span>`:''}</div>
-            <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">${c.instancia} · dia ${c.dias_ativo+1} de aquecimento</div>
+            <div style="font-family:var(--mono);font-size:12px;font-weight:500">${c.nome}${psd?` <span style="color:var(--yellow);font-size:10px">pausado</span>`:''}</div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">${c.instancia} · dia ${c.dias_ativo+1}</div>
           </div>
         </div>
         <div class="bg">
           <button class="bs sm" onclick="criarInst('${c.instancia}')">+ Criar</button>
           <button class="bs sm" onclick="verQR('${c.instancia}','${c.nome}')">📷 QR</button>
           <button class="bs sm" onclick="pingChip('${c.instancia}')">↻</button>
-          <button class="bs sm" onclick="abrirLim(${c.id},${c.limite_diario})">⚙ Limite</button>
+          <button class="bs sm" onclick="abrirLim(${c.id},${c.limite_diario})">⚙</button>
           <button class="bw sm" onclick="psdChip(${c.id})">⏸</button>
           <button class="bd sm" onclick="delChip(${c.id})">✕</button>
         </div>
@@ -1083,15 +907,14 @@ async function loadChips(){
         <div class="bar"><div class="bar-f ${cor}" style="width:${Math.min(pct,100)}%"></div></div>
       </div>
       <div class="chip-stats">
-        <div class="cstat"><div class="cstat-l">Total enviados</div><div class="cstat-v">${c.total_enviados||0}</div></div>
-        <div class="cstat"><div class="cstat-l">Dia de aquec.</div><div class="cstat-v">${c.dias_ativo+1}</div></div>
+        <div class="cstat"><div class="cstat-l">Total</div><div class="cstat-v">${c.total_enviados||0}</div></div>
+        <div class="cstat"><div class="cstat-l">Dia aquec.</div><div class="cstat-v">${c.dias_ativo+1}</div></div>
         <div class="cstat"><div class="cstat-l">Status</div><div class="cstat-v" style="color:${c.status==='open'?'var(--green)':c.status==='desconectado'?'var(--red)':'var(--yellow)'}">${c.status}</div></div>
         <div class="cstat"><div class="cstat-l">Último uso</div><div class="cstat-v" style="font-size:10px">${c.ultimo_uso?new Date(c.ultimo_uso).toLocaleTimeString('pt-BR'):'—'}</div></div>
       </div>
     </div>`;
   }).join('');
 }
-
 async function addChip(){
   const nome=document.getElementById('chip-nome').value.trim();
   const instancia=document.getElementById('chip-inst').value.trim().replace(/\s/g,'');
@@ -1099,140 +922,150 @@ async function addChip(){
   try{
     const r=await fetch(`${API}/chips`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,instancia})});
     const data=await r.json();if(!data.ok)throw new Error(data.error);
-    toast(`Chip "${nome}" adicionado! Limite inicial: ${data.data.limite_diario}/dia`);
+    toast(`Chip "${nome}" adicionado!`);
     document.getElementById('chip-nome').value='';document.getElementById('chip-inst').value='';
     loadChips();
   }catch(e){toast(e.message,'err');}
 }
 async function delChip(id){if(!confirm('Remover chip?'))return;await fetch(`${API}/chips/${id}`,{method:'DELETE'});toast('Removido');loadChips();}
-async function pingChip(inst){
-  try{const r=await fetch(`${API}/chips/${inst}/status`);const data=await r.json();toast(`${inst}: ${data.data?.state}`);loadChips();}
-  catch(e){toast(e.message,'err');}
-}
+async function pingChip(inst){try{const r=await fetch(`${API}/chips/${inst}/status`);const data=await r.json();toast(`${inst}: ${data.data?.state}`);loadChips();}catch(e){toast(e.message,'err');}}
 async function sincronizar(){toast('Sincronizando...');await fetch(`${API}/chips/sincronizar`,{method:'POST'});loadChips();loadDash();}
-async function criarInst(inst){try{await fetch(`${API}/chips/${inst}/criar`,{method:'POST'});toast(`Instância criada!`);}catch(e){toast(e.message,'err');}}
-async function psdChip(id){
-  const h=prompt('Pausar por quantas horas?','1');if(!h)return;
-  try{const r=await fetch(`${API}/chips/${id}/pausar`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({horas:parseFloat(h)})});
-  const data=await r.json();if(!data.ok)throw new Error(data.error);toast(`Pausado por ${h}h`);loadChips();}catch(e){toast(e.message,'err');}
-}
+async function criarInst(inst){try{await fetch(`${API}/chips/${inst}/criar`,{method:'POST'});toast('Instância criada!');}catch(e){toast(e.message,'err');}}
+async function psdChip(id){const h=prompt('Pausar por quantas horas?','1');if(!h)return;try{const r=await fetch(`${API}/chips/${id}/pausar`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({horas:parseFloat(h)})});const data=await r.json();if(!data.ok)throw new Error(data.error);toast(`Pausado por ${h}h`);loadChips();}catch(e){toast(e.message,'err');}}
 function abrirLim(id,lim){document.getElementById('e-lim-id').value=id;document.getElementById('e-lim-val').value=lim;abrirM('m-limite');}
-async function salvarLimite(){
-  const id=document.getElementById('e-lim-id').value;
-  const limite=parseInt(document.getElementById('e-lim-val').value);
-  if(!limite||limite<1){toast('Inválido','err');return;}
-  try{const r=await fetch(`${API}/chips/${id}/limite`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({limite})});
-  const data=await r.json();if(!data.ok)throw new Error(data.error);toast(`Limite: ${limite}/dia`);fecharM('m-limite');loadChips();}catch(e){toast(e.message,'err');}
-}
-async function verQR(inst,nome){
-  qrInst=inst;document.getElementById('qr-titulo').textContent=`QR Code — ${nome}`;
-  document.getElementById('qr-content').innerHTML='<div class="empty">Carregando...</div>';
-  abrirM('m-qr');await recarregarQR();
-}
-async function recarregarQR(){
-  if(!qrInst)return;
-  try{const r=await fetch(`${API}/chips/${qrInst}/qrcode`);const data=await r.json();
-  const qr=data.data?.qrcode?.base64||data.data?.base64;
-  document.getElementById('qr-content').innerHTML=qr
-    ?`<img class="qr-img" src="${qr}"><p style="color:var(--muted);font-family:var(--mono);font-size:11px;margin-top:7px">Escaneie com o WhatsApp</p>`
-    :`<div class="log-box" style="text-align:left">${JSON.stringify(data.data,null,2)}</div>`;}
-  catch(e){document.getElementById('qr-content').innerHTML=`<div style="color:var(--red);font-family:var(--mono)">${e.message}</div>`;}
-}
-async function limparFila(){if(!confirm('Limpar fila de mensagens?'))return;await fetch(`${API}/fila/limpar`,{method:'POST'});toast('Fila limpa');log('Fila limpa','info');}
+async function salvarLimite(){const id=document.getElementById('e-lim-id').value;const limite=parseInt(document.getElementById('e-lim-val').value);if(!limite||limite<1){toast('Inválido','err');return;}try{const r=await fetch(`${API}/chips/${id}/limite`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({limite})});const data=await r.json();if(!data.ok)throw new Error(data.error);toast(`Limite: ${limite}/dia`);fecharM('m-limite');loadChips();}catch(e){toast(e.message,'err');}}
+async function verQR(inst,nome){qrInst=inst;document.getElementById('qr-titulo').textContent=`QR Code — ${nome}`;document.getElementById('qr-content').innerHTML='<div class="empty">Carregando...</div>';abrirM('m-qr');await recarregarQR();}
+async function recarregarQR(){if(!qrInst)return;try{const r=await fetch(`${API}/chips/${qrInst}/qrcode`);const data=await r.json();const qr=data.data?.qrcode?.base64||data.data?.base64;document.getElementById('qr-content').innerHTML=qr?`<img class="qr-img" src="${qr}"><p style="color:var(--muted);font-family:var(--mono);font-size:11px;margin-top:7px">Escaneie com o WhatsApp</p>`:`<div class="log-box">${JSON.stringify(data.data,null,2)}</div>`;}catch(e){document.getElementById('qr-content').innerHTML=`<div style="color:var(--red);font-family:var(--mono)">${e.message}</div>`;}}
+async function limparFila(){if(!confirm('Limpar fila?'))return;await fetch(`${API}/fila/limpar`,{method:'POST'});toast('Fila limpa');}
 
-// ─── Blacklist ───────────────────────────────────────────
+// ─── Blacklist ────────────────────────────────────────────────────────────────
 async function loadBL(){
   const r=await fetch(`${API}/blacklist?page=${blPage}&limit=20`);const data=await r.json();
   const el=document.getElementById('tab-blacklist');
-  const rows=data.data||[];
   document.getElementById('bl-total').textContent=`${data.total||0} números`;
-  if(!rows.length){el.innerHTML='<div class="empty">Nenhum número bloqueado</div>';return;}
-  el.innerHTML=`<table><thead><tr><th>Número</th><th>Motivo</th><th>Data</th><th>Ação</th></tr></thead><tbody>
+  const rows=data.data||[];
+  if(!rows.length){el.innerHTML='<div class="empty">Nenhum</div>';return;}
+  el.innerHTML=`<table><thead><tr><th>Número</th><th>Motivo</th><th>Data</th><th></th></tr></thead><tbody>
   ${rows.map(b=>`<tr><td>${b.numero}</td><td style="color:var(--muted)">${b.motivo||'—'}</td><td>${new Date(b.criado_em).toLocaleDateString('pt-BR')}</td><td><button class="bd sm" onclick="delBL(${b.id})">✕</button></td></tr>`).join('')}</tbody></table>`;
-  const total=data.total||0,pages=Math.ceil(total/20);
+  const pages=Math.ceil((data.total||0)/20);
   document.getElementById('pag-bl').innerHTML=
-    `<span style="color:var(--muted);font-family:var(--mono);font-size:11px">${total} bloqueados</span>
-    ${blPage>1?`<button class="bs sm" onclick="blPage--;loadBL()">← Ant</button>`:''}
-    ${blPage<pages?`<button class="bs sm" onclick="blPage++;loadBL()">Próx →</button>`:''}`;
+    `<span style="color:var(--muted);font-family:var(--mono);font-size:11px">${data.total} bloqueados</span>
+    ${blPage>1?`<button class="bs sm" onclick="blPage--;loadBL()">←</button>`:''}
+    ${blPage<pages?`<button class="bs sm" onclick="blPage++;loadBL()">→</button>`:''}`;
 }
-async function addBlacklist(){
-  const numero=document.getElementById('bl-num').value.trim();
-  const motivo=document.getElementById('bl-mot').value.trim();
-  if(!numero){toast('Informe um número','err');return;}
-  try{const r=await fetch(`${API}/blacklist`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({numero,motivo})});
-  const data=await r.json();if(!data.ok)throw new Error(data.error);
-  toast('Adicionado à blacklist');document.getElementById('bl-num').value='';document.getElementById('bl-mot').value='';
-  loadBL();}catch(e){toast(e.message,'err');}
-}
-async function delBL(id){await fetch(`${API}/blacklist/${id}`,{method:'DELETE'});toast('Removido da blacklist');loadBL();}
+async function addBlacklist(){const numero=document.getElementById('bl-num').value.trim();const motivo=document.getElementById('bl-mot').value.trim();if(!numero){toast('Informe um número','err');return;}try{const r=await fetch(`${API}/blacklist`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({numero,motivo})});const data=await r.json();if(!data.ok)throw new Error(data.error);toast('Adicionado');document.getElementById('bl-num').value='';loadBL();}catch(e){toast(e.message,'err');}}
+async function delBL(id){await fetch(`${API}/blacklist/${id}`,{method:'DELETE'});toast('Removido');loadBL();}
 
-// ─── Relatórios ──────────────────────────────────────────
-async function loadRelCamps(){
-  const r=await fetch(`${API}/campanhas`);const data=await r.json();
-  const sel=document.getElementById('rel-camp');
-  const camps=data.data||[];
-  sel.innerHTML='<option value="">— Selecione uma campanha —</option>'+
-    camps.map(c=>`<option value="${c.id}">${c.nome} (${c.status})</option>`).join('');
-}
-
-async function verRel(id){
-  showPage('relatorios',document.querySelector('.tab:nth-child(7)'));
-  await loadRelCamps();
-  document.getElementById('rel-camp').value=id;
-  await carregarRelatorio();
-}
-
+// ─── Relatórios ───────────────────────────────────────────────────────────────
+async function loadRelCamps(){const r=await fetch(`${API}/campanhas`);const data=await r.json();const sel=document.getElementById('rel-camp');const camps=data.data||[];sel.innerHTML='<option value="">— Selecione —</option>'+camps.map(c=>`<option value="${c.id}">${c.nome} (${c.status})</option>`).join('');}
+async function verRel(id){showPage('relatorios',document.querySelector('.tab:nth-child(7)'));await loadRelCamps();document.getElementById('rel-camp').value=id;await carregarRelatorio();}
 async function carregarRelatorio(){
   const id=document.getElementById('rel-camp').value;
   const el=document.getElementById('relatorio-conteudo');
   if(!id){el.innerHTML='';return;}
   try{
-    const r=await fetch(`${API}/campanhas/${id}/relatorio`);const data=await r.json();
-    if(!data.ok)throw new Error(data.error);
-    const {campanha,stats,porChip,porHora}=data.data;
+    const r=await fetch(`${API}/campanhas/${id}/relatorio`);const data=await r.json();if(!data.ok)throw new Error(data.error);
+    const {campanha,stats,porChip}=data.data;
     const pct=campanha.total_contatos>0?Math.round(campanha.enviados/campanha.total_contatos*100):0;
-    const stMap={};stats.forEach(s=>stMap[s.status]=parseInt(s.count));
-
-    el.innerHTML=`
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-          <h3 style="margin:0">${campanha.nome}</h3>
-          <div class="bg">
-            <button class="bs sm" onclick="exportarCSV(${campanha.id},'${campanha.nome.replace(/'/g,"''")}')">⬇ Exportar CSV</button>
-            ${(campanha.status==='rascunho'||campanha.status==='pausado')?`<button class="bs sm" onclick="removerDupls(${campanha.id})">🔁 Remover duplicatas</button>`:''}
-          </div>
+    el.innerHTML=`<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h3 style="margin:0">${campanha.nome}${campanha.midia_mimetype?' 🖼':''}</h3>
+        <div class="bg">
+          <button class="bs sm" onclick="exportarCSV(${campanha.id},'${esc(campanha.nome)}')">⬇ CSV</button>
+          ${(campanha.status==='rascunho'||campanha.status==='pausado')?`<button class="bs sm" onclick="removerDupls(${campanha.id})">🔁 Duplicatas</button>`:''}
         </div>
-        <div class="grid4">
-          <div class="stat"><div class="stat-l">Total</div><div class="stat-v b">${campanha.total_contatos}</div></div>
-          <div class="stat"><div class="stat-l">Enviados</div><div class="stat-v g">${campanha.enviados}</div></div>
-          <div class="stat"><div class="stat-l">Falhas</div><div class="stat-v r">${campanha.falhas}</div></div>
-          <div class="stat"><div class="stat-l">Taxa</div><div class="stat-v y">${pct}%</div></div>
-        </div>
-        <div style="margin-bottom:6px;font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;justify-content:space-between">
-          <span>Progresso geral</span><span>${pct}%</span>
-        </div>
-        <div class="bar" style="height:8px"><div class="bar-f" style="width:${pct}%"></div></div>
       </div>
-      ${porChip.length?`<div class="card">
-        <h3>Envios por chip</h3>
-        <table><thead><tr><th>Chip</th><th>Enviados</th></tr></thead><tbody>
-        ${porChip.map(c=>`<tr><td>${c.nome}</td><td><strong class="g">${c.enviados}</strong></td></tr>`).join('')}
-        </tbody></table>
-      </div>`:''}
-      ${stMap.pendente?`<div class="card">
-        <h3>Status dos disparos</h3>
-        <table><thead><tr><th>Status</th><th>Quantidade</th></tr></thead><tbody>
-        ${stats.map(s=>`<tr><td>${s.status}</td><td>${s.count}</td></tr>`).join('')}
-        </tbody></table>
-      </div>`:''}`;
+      <div class="grid4">
+        <div class="stat"><div class="stat-l">Total</div><div class="stat-v b">${campanha.total_contatos}</div></div>
+        <div class="stat"><div class="stat-l">Enviados</div><div class="stat-v g">${campanha.enviados}</div></div>
+        <div class="stat"><div class="stat-l">Falhas</div><div class="stat-v r">${campanha.falhas}</div></div>
+        <div class="stat"><div class="stat-l">Taxa</div><div class="stat-v y">${pct}%</div></div>
+      </div>
+      <div class="bar" style="height:8px"><div class="bar-f" style="width:${pct}%"></div></div>
+      ${porChip&&porChip.length?`<div style="margin-top:14px"><h3>Por chip</h3><table><thead><tr><th>Chip</th><th>Enviados</th></tr></thead><tbody>${porChip.map(c=>`<tr><td>${c.nome}</td><td><strong class="g">${c.enviados}</strong></td></tr>`).join('')}</tbody></table></div>`:''}
+    </div>`;
   }catch(e){el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;}
 }
 
-// ─── Configurações ───────────────────────────────────────
+// ─── Anti-ban ────────────────────────────────────────────────────────────────
+async function loadAntiban(){
+  const r=await fetch(`${API}/config`);const data=await r.json();if(!data.ok)return;
+  const c=data.data;
+  document.getElementById('ab-horario-ativo').checked=c.horario_ativo==='true';
+  document.getElementById('ab-hinicio').value=c.horario_inicio||8;
+  document.getElementById('ab-hfim').value=c.horario_fim||20;
+  document.getElementById('ab-threshold').value=c.falhas_ban_threshold||3;
+  document.getElementById('ab-intervalo').value=c.intervalo_campanhas_min||0;
+  toggleHorario();
+  await carregarStatusAntiban();
+}
+function toggleHorario(){document.getElementById('ab-horario-campos').style.display=document.getElementById('ab-horario-ativo').checked?'block':'none';}
+async function salvarAntiban(tipo){
+  let payload={};
+  if(tipo==='horario'){const ativo=document.getElementById('ab-horario-ativo').checked;const inicio=parseInt(document.getElementById('ab-hinicio').value);const fim=parseInt(document.getElementById('ab-hfim').value);if(ativo&&fim<=inicio){toast('Hora fim deve ser maior','err');return;}payload={horario_ativo:String(ativo),horario_inicio:String(inicio),horario_fim:String(fim)};}
+  else if(tipo==='threshold'){payload={falhas_ban_threshold:String(parseInt(document.getElementById('ab-threshold').value))};}
+  else if(tipo==='intervalo'){payload={intervalo_campanhas_min:String(parseInt(document.getElementById('ab-intervalo').value))};}
+  try{const r=await fetch(`${API}/config`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await r.json();if(!data.ok)throw new Error(data.error);toast('Anti-ban atualizado!');}catch(e){toast(e.message,'err');}
+}
+async function carregarStatusAntiban(){
+  const el=document.getElementById('ab-status');
+  try{
+    const [cfgR,chipsR,filaR]=await Promise.all([fetch(`${API}/config`).then(r=>r.json()),fetch(`${API}/chips`).then(r=>r.json()),fetch(`${API}/fila/status`).then(r=>r.json())]);
+    const c=cfgR.data||{};const chips=chipsR.data||[];const fila=filaR.data||{};
+    const hora=new Date().getHours();
+    const naJanela=c.horario_ativo==='true'?(hora>=parseInt(c.horario_inicio||8)&&hora<parseInt(c.horario_fim||20)):true;
+    const banidos=chips.filter(ch=>ch.status==='banido');
+    const ativos=chips.filter(ch=>ch.status==='open');
+    el.innerHTML=`<div class="row3">
+      <div class="cstat"><div class="cstat-l">Janela</div><div class="cstat-v" style="color:${c.horario_ativo==='true'?(naJanela?'var(--green)':'var(--yellow)'):'var(--muted)'}">${c.horario_ativo==='true'?(naJanela?`✅ Aberta`:`⏰ Fechada`):'Desativada'}</div></div>
+      <div class="cstat"><div class="cstat-l">Chips ativos</div><div class="cstat-v g">${ativos.length}</div></div>
+      <div class="cstat"><div class="cstat-l">Chips banidos</div><div class="cstat-v r">${banidos.length}</div></div>
+    </div>`;
+    if(banidos.length)el.innerHTML+=`<div class="hint err" style="margin-top:10px">⚠ Chips banidos: ${banidos.map(ch=>ch.nome).join(', ')}</div>`;
+  }catch(e){el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;}
+}
+function testarSpintax(){
+  const input=document.getElementById('ab-spintax-teste').value;
+  if(!input.trim()){toast('Digite um texto com spintax','err');return;}
+  const el=document.getElementById('ab-spintax-result');
+  const vars=[];
+  for(let i=0;i<5;i++){
+    let r=input,ant;
+    do{ant=r;r=r.replace(/\{([^{}]+)\}/g,(_,o)=>{const l=o.split('|');return l[Math.floor(Math.random()*l.length)].trim();});}while(r!==ant);
+    vars.push(r);
+  }
+  el.innerHTML=vars.map((v,i)=>`<div style="background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:9px 13px;margin-bottom:6px;font-family:var(--mono);font-size:11px"><span style="color:var(--muted);font-size:9px">Variação ${i+1}</span><br>${v}</div>`).join('');
+}
+
+// ─── Logs ─────────────────────────────────────────────────────────────────────
+function filtrarLogs(nivel){logNivel=nivel;logsPage=1;loadLogs();}
+async function loadLogs(){
+  const el=document.getElementById('tab-logs');
+  const params=new URLSearchParams({page:logsPage,limit:50});
+  if(logNivel)params.set('nivel',logNivel);
+  try{
+    const r=await fetch(`${API}/logs?${params}`);const data=await r.json();
+    const rows=data.data||[];
+    if(!rows.length){el.innerHTML='<div class="empty">Nenhum log</div>';return;}
+    const cor={erro:'var(--red)',alerta:'var(--yellow)',info:'var(--blue)'};
+    el.innerHTML=`<table><thead><tr><th>Hora</th><th>Nível</th><th>Mensagem</th></tr></thead><tbody>
+    ${rows.map(l=>`<tr>
+      <td style="white-space:nowrap;color:var(--muted)">${new Date(l.criado_em).toLocaleString('pt-BR')}</td>
+      <td><span class="badge" style="background:${(cor[l.nivel]||'var(--muted)')}22;color:${cor[l.nivel]||'var(--muted)'}">${l.nivel}</span></td>
+      <td style="font-size:11px">${l.mensagem}</td>
+    </tr>`).join('')}</tbody></table>`;
+    const total=data.total||0,pages=Math.ceil(total/50);
+    document.getElementById('pag-logs').innerHTML=
+      `<span style="color:var(--muted);font-family:var(--mono);font-size:11px">${total} registros</span>
+      ${logsPage>1?`<button class="bs sm" onclick="logsPage--;loadLogs()">←</button>`:''}
+      ${logsPage<pages?`<button class="bs sm" onclick="logsPage++;loadLogs()">→</button>`:''}`;
+  }catch(e){el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;}
+}
+
+// ─── Configurações ────────────────────────────────────────────────────────────
 async function loadConfig(){
   try{
-    const r=await fetch(`${API}/config`);const data=await r.json();
-    if(!data.ok)return;
+    const r=await fetch(`${API}/config`);const data=await r.json();if(!data.ok)return;
     const c=data.data;
     document.getElementById('cfg-evo-url').value=c.evolution_url||'';
     document.getElementById('cfg-evo-key').value=c.evolution_key||'';
@@ -1241,26 +1074,13 @@ async function loadConfig(){
     document.getElementById('cfg-sheet-id').value=c.sheets_id||'';
     document.getElementById('cfg-sheet-range').value=c.sheets_range||'Sheet1!A:Z';
     document.getElementById('cfg-sync-intervalo').value=c.sync_intervalo||0;
-
-    // Status credenciais
-    const cs=document.getElementById('creds-status');
-    const ce=document.getElementById('client-email-info');
     if(c.sheets_credentials==='__configurado__'){
-      cs.innerHTML='<div class="hint" style="border-color:var(--green);color:var(--green)">✅ Credenciais salvas no banco</div>';
-      ce.innerHTML='';
+      document.getElementById('creds-status').innerHTML='<div class="hint" style="border-color:var(--green);color:var(--green)">✅ Credenciais salvas</div>';
     } else {
-      cs.innerHTML='<div class="hint warn">⚠ Credenciais não configuradas — cole o JSON abaixo</div>';
-      ce.innerHTML='';
+      document.getElementById('creds-status').innerHTML='<div class="hint warn">⚠ Credenciais não configuradas</div>';
     }
-
-    // Próxima sincronização
-    if(c.sync_proxima){
-      const d=new Date(c.sync_proxima);
-      document.getElementById('cfg-sync-proxima').textContent=d.toLocaleString('pt-BR');
-    }
-
-    // Status badges no topo
-    const evoOk=c.evolution_url&&c.evolution_key;
+    if(c.sync_proxima){document.getElementById('cfg-sync-proxima').textContent=new Date(c.sync_proxima).toLocaleString('pt-BR');}
+    const evoOk=!!(c.evolution_url&&c.evolution_key);
     const sheetsOk=c.sheets_credentials==='__configurado__';
     document.getElementById('cfg-evo-badge').textContent=evoOk?'✅ Configurada':'⚠ Não configurada';
     document.getElementById('cfg-evo-badge').style.color=evoOk?'var(--green)':'var(--yellow)';
@@ -1268,275 +1088,37 @@ async function loadConfig(){
     document.getElementById('cfg-sheets-badge').style.color=sheetsOk?'var(--green)':'var(--yellow)';
     document.getElementById('cfg-db-badge').textContent='✅ Conectado';
     document.getElementById('cfg-db-badge').style.color='var(--green)';
-
-    // Header status
     document.getElementById('cfg-status').textContent=evoOk?'API configurada':'⚠ Configure a API';
     document.getElementById('cfg-status').style.color=evoOk?'var(--green)':'var(--yellow)';
-    loadNotifConfig();
+    // Notif
+    if(document.getElementById('cfg-admin-num'))document.getElementById('cfg-admin-num').value=c.admin_numero||'';
+    if(document.getElementById('cfg-admin-inst'))document.getElementById('cfg-admin-inst').value=c.admin_chip_instancia||'';
   }catch(e){console.error(e);}
 }
-
-// Step-by-step para Sheets
-function toggleStep(n){
-  const body=document.getElementById('sbody-'+n);
-  body.style.display=body.style.display==='none'?'block':'none';
-}
-function marcarStep(n){
-  document.getElementById('snum-'+n).classList.add('done');
-  document.getElementById('sbody-'+n).style.display='none';
-  // Abre o próximo
-  const prox=document.getElementById('sbody-'+(n+1));
-  if(prox)prox.style.display='block';
-}
-
-function toggleSenha(id){
-  const el=document.getElementById(id);
-  el.type=el.type==='password'?'text':'password';
-}
-
-function extrairIdDaURL(){
-  const url=prompt('Cole a URL completa da planilha:');
-  if(!url)return;
-  const match=url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-  if(match){
-    document.getElementById('cfg-sheet-id').value=match[1];
-    toast('ID extraído com sucesso!');
-  } else {
-    toast('URL inválida — não foi possível extrair o ID','err');
-  }
-}
-
-function lerArquivoCreds(input){
-  const file=input.files[0];
-  if(!file)return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    try{
-      const json=JSON.parse(e.target.result);
-      document.getElementById('cfg-sheet-creds').value=e.target.result;
-      // Mostra o client_email para confirmar
-      if(json.client_email){
-        document.getElementById('client-email-info').innerHTML=
-          `<div class="hint" style="border-color:var(--blue)">📧 Service Account: <strong style="color:var(--blue)">${json.client_email}</strong><br>Compartilhe a planilha com este e-mail (permissão Visualizador).</div>`;
-      }
-      document.getElementById('creds-status').innerHTML=
-        '<div class="hint" style="border-color:var(--green);color:var(--green)">✅ Arquivo JSON carregado — clique em Salvar para confirmar</div>';
-      toast('JSON carregado! Salve para confirmar.');
-    }catch(ex){toast('Arquivo JSON inválido','err');}
-  };
-  reader.readAsText(file);
-}
-
+function toggleSenha(id){const el=document.getElementById(id);el.type=el.type==='password'?'text':'password';}
+function extrairIdDaURL(){const url=prompt('Cole a URL da planilha:');if(!url)return;const match=url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);if(match){document.getElementById('cfg-sheet-id').value=match[1];toast('ID extraído!');}else{toast('URL inválida','err');}}
+function lerArquivoCreds(input){const file=input.files[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{try{const json=JSON.parse(e.target.result);document.getElementById('cfg-sheet-creds').value=e.target.result;if(json.client_email){document.getElementById('client-email-info').innerHTML=`<div class="hint" style="border-color:var(--blue)">📧 <strong style="color:var(--blue)">${json.client_email}</strong><br>Compartilhe a planilha com este e-mail.</div>`;}document.getElementById('creds-status').innerHTML='<div class="hint" style="border-color:var(--green);color:var(--green)">✅ JSON carregado — clique em Salvar</div>';toast('JSON carregado!');}catch(ex){toast('JSON inválido','err');}};reader.readAsText(file);}
 async function salvarConfig(tipo){
   let payload={};
-  if(tipo==='evolution'){
-    payload={
-      evolution_url:document.getElementById('cfg-evo-url').value.trim(),
-      evolution_key:document.getElementById('cfg-evo-key').value.trim(),
-    };
-    if(!payload.evolution_url){toast('URL obrigatória','err');return;}
-  } else if(tipo==='delays'){
-    const dmin=parseInt(document.getElementById('cfg-dmin').value);
-    const dmax=parseInt(document.getElementById('cfg-dmax').value);
-    if(dmin<5){toast('Mínimo 5s','err');return;}
-    if(dmax<=dmin){toast('Máximo deve ser maior','err');return;}
-    payload={delay_min:String(dmin),delay_max:String(dmax)};
-  } else if(tipo==='sheets'){
-    const creds=document.getElementById('cfg-sheet-creds').value.trim();
-    payload={
-      sheets_id:document.getElementById('cfg-sheet-id').value.trim(),
-      sheets_range:document.getElementById('cfg-sheet-range').value.trim()||'Sheet1!A:Z',
-    };
-    if(creds&&creds.startsWith('{')){
-      try{JSON.parse(creds);}catch(e){toast('JSON inválido nas credenciais','err');return;}
-      payload.sheets_credentials=creds;
-    }
-  }
-  try{
-    const r=await fetch(`${API}/config`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    const data=await r.json();if(!data.ok)throw new Error(data.error);
-    toast('Configurações salvas!');log('Configurações atualizadas','ok');
-    loadConfig();
-  }catch(e){toast(e.message,'err');}
+  if(tipo==='evolution'){payload={evolution_url:document.getElementById('cfg-evo-url').value.trim(),evolution_key:document.getElementById('cfg-evo-key').value.trim()};if(!payload.evolution_url){toast('URL obrigatória','err');return;}}
+  else if(tipo==='delays'){const dmin=parseInt(document.getElementById('cfg-dmin').value);const dmax=parseInt(document.getElementById('cfg-dmax').value);if(dmin<5){toast('Mínimo 5s','err');return;}if(dmax<=dmin){toast('Máximo deve ser maior','err');return;}payload={delay_min:String(dmin),delay_max:String(dmax)};}
+  else if(tipo==='sheets'){const creds=document.getElementById('cfg-sheet-creds').value.trim();payload={sheets_id:document.getElementById('cfg-sheet-id').value.trim(),sheets_range:document.getElementById('cfg-sheet-range').value.trim()||'Sheet1!A:Z'};if(creds&&creds.startsWith('{')){try{JSON.parse(creds);}catch(e){toast('JSON inválido','err');return;}payload.sheets_credentials=creds;}}
+  else if(tipo==='sync'){const intervalo=parseInt(document.getElementById('cfg-sync-intervalo').value)||0;payload={sync_intervalo:String(intervalo)};if(intervalo>0){payload.sync_proxima=new Date(Date.now()+intervalo*3600000).toISOString();}}
+  try{const r=await fetch(`${API}/config`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await r.json();if(!data.ok)throw new Error(data.error);toast('Configurações salvas!');loadConfig();}catch(e){toast(e.message,'err');}
 }
+async function sincronizarAgora(){const el=document.getElementById('sync-result');el.innerHTML='<span style="color:var(--muted);font-family:var(--mono);font-size:12px">⏳ Sincronizando...</span>';try{const r=await fetch(`${API}/importar/sheets`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});const data=await r.json();if(!data.ok)throw new Error(data.error);const d=data.data;el.innerHTML=`<div class="hint" style="border-color:var(--green)">✅ ${d.importados} novos · ${d.atualizados} atualizados</div>`;toast(`Sheets sincronizado!`);}catch(e){el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;toast(e.message,'err');}}
+async function testarEvolution(){const el=document.getElementById('evo-test-result')||document.getElementById('diag-result');if(el)el.innerHTML='<span style="color:var(--muted);font-family:var(--mono);font-size:12px">🔌 Testando...</span>';try{const r=await fetch(`${API}/chips`);const data=await r.json();const chips=data.data||[];if(!chips.length){if(el)el.innerHTML='<div class="hint err">Nenhum chip cadastrado</div>';return;}const r2=await fetch(`${API}/chips/${chips[0].instancia}/status`);const d2=await r2.json();const ok=d2.data?.state==='open';if(el)el.innerHTML=`<div class="hint" style="border-color:${ok?'var(--green)':'var(--red)'}">${ok?'✅':'❌'} ${chips[0].nome}: ${d2.data?.state}</div>`;}catch(e){if(el)el.innerHTML=`<div class="hint err">❌ ${e.message}`;}}
+async function testarSheets(){const el=document.getElementById('sheets-test-result')||document.getElementById('diag-result');if(el)el.innerHTML='<span style="color:var(--muted);font-family:var(--mono);font-size:12px">📊 Testando...</span>';try{const r=await fetch(`${API}/importar/sheets`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});const data=await r.json();if(el)el.innerHTML=data.ok?`<div class="hint" style="border-color:var(--green)">✅ Sheets OK — ${data.data.total} linhas</div>`:`<div class="hint err">❌ ${data.error}</div>`;}catch(e){if(el)el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;}}
+async function testarBanco(){const el=document.getElementById('diag-result');try{const r=await fetch(`${API}/contatos?limit=1`);const data=await r.json();if(el)el.innerHTML=data.ok?`<div class="hint" style="border-color:var(--green)">✅ Banco OK — ${data.total} contatos</div>`:`<div class="hint err">❌ ${data.error}</div>`;}catch(e){if(el)el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;}}
+function preencherWebhookLocal(){document.getElementById('cfg-webhook-url').value=`http://localhost:${window.location.port||3000}/api/webhook/evolution`;}
+async function registrarWebhook(){const url=document.getElementById('cfg-webhook-url').value.trim();if(!url){toast('Informe a URL','err');return;}const el=document.getElementById('webhook-result');el.innerHTML='<span style="color:var(--muted);font-family:var(--mono);font-size:12px">🔔 Registrando...</span>';try{const r=await fetch(`${API}/webhook/registrar`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({webhookUrl:url})});const data=await r.json();if(!data.ok)throw new Error(data.error);el.innerHTML=data.data.map(r=>`<div class="hint" style="border-color:${r.ok?'var(--green)':'var(--red)'}">${r.ok?'✅':'❌'} ${r.instancia}: ${r.ok?'OK':r.erro}</div>`).join('');toast('Webhook registrado!');}catch(e){el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;toast(e.message,'err');}}
+async function salvarNotifConfig(){const numero=(document.getElementById('cfg-admin-num')?.value||'').trim().replace(/\D/g,'');const instancia=(document.getElementById('cfg-admin-inst')?.value||'').trim();try{const r=await fetch(`${API}/config`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_numero:numero,admin_chip_instancia:instancia})});const data=await r.json();if(!data.ok)throw new Error(data.error);toast('Notificações salvas!');}catch(e){toast(e.message,'err');}}
+async function testarNotificacao(){try{const r=await fetch(`${API}/config/notificacoes/testar`,{method:'POST'});const data=await r.json();if(!data.ok)throw new Error(data.error);toast('Notificação enviada!');}catch(e){toast(e.message,'err');}}
 
-async function testarEvolution(){
-  const el=document.getElementById('diag-result');
-  el.innerHTML='<span style="color:var(--muted);font-family:var(--mono);font-size:12px">Testando...</span>';
-  // Usa o primeiro chip disponível
-  try{
-    const r=await fetch(`${API}/chips`);const data=await r.json();
-    const chips=data.data||[];
-    if(!chips.length){el.innerHTML='<div class="hint err">Nenhum chip cadastrado para testar</div>';return;}
-    const r2=await fetch(`${API}/chips/${chips[0].instancia}/status`);
-    const d2=await r2.json();
-    const ok=d2.data?.state==='open';
-    el.innerHTML=`<div class="hint" style="border-color:${ok?'var(--green)':'var(--red)'}">
-      ${ok?'✅':'❌'} Evolution API: ${d2.data?.state||'sem resposta'} — chip "${chips[0].nome}"</div>`;
-  }catch(e){el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;}
-}
-
-async function testarSheets(){
-  const el=document.getElementById('diag-result');
-  el.innerHTML='<span style="color:var(--muted);font-family:var(--mono);font-size:12px">Testando Sheets...</span>';
-  try{
-    const r=await fetch(`${API}/importar/sheets`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
-    const data=await r.json();
-    if(data.ok){
-      el.innerHTML=`<div class="hint" style="border-color:var(--green)">✅ Google Sheets OK — ${data.data.total} linhas encontradas</div>`;
-    } else {
-      el.innerHTML=`<div class="hint err">❌ ${data.error}</div>`;
-    }
-  }catch(e){el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;}
-}
-
-// ─── Notificações ────────────────────────────────────────────────────────────
-async function loadNotifConfig() {
-  const r = await fetch(`${API}/config`); const data = await r.json();
-  if (!data.ok) return;
-  const c = data.data;
-  const numEl = document.getElementById('cfg-admin-num');
-  const instEl = document.getElementById('cfg-admin-inst');
-  if (numEl) numEl.value = c.admin_numero || '';
-  if (instEl) instEl.value = c.admin_chip_instancia || '';
-}
-async function salvarNotifConfig() {
-  const numero = (document.getElementById('cfg-admin-num').value || '').trim().replace(/\D/g,'');
-  const instancia = (document.getElementById('cfg-admin-inst').value || '').trim();
-  try {
-    const r = await fetch(`${API}/config`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_numero:numero,admin_chip_instancia:instancia})});
-    const data = await r.json(); if (!data.ok) throw new Error(data.error);
-    toast('Configurações de notificação salvas!');
-  } catch(e) { toast(e.message,'err'); }
-}
-async function testarNotificacao() {
-  try {
-    const r = await fetch(`${API}/config/notificacoes/testar`,{method:'POST'});
-    const data = await r.json(); if (!data.ok) throw new Error(data.error);
-    toast('Notificação de teste enviada!');
-  } catch(e) { toast(e.message,'err'); }
-}
-
-// ─── Wizard ───────────────────────────────────────────────────────────────────
-let wStep = 1;
-
-async function verificarPrimeiroAcesso() {
-  try {
-    const r = await fetch(`${API}/config`); const data = await r.json();
-    if (!data.ok) return;
-    if (!data.data.evolution_key) {
-      document.getElementById('wizard').style.display = 'flex';
-      await wizardHealth();
-    }
-  } catch(e) {}
-}
-
-async function wizardHealth() {
-  try {
-    const r = await fetch(`${API}/health`); const data = await r.json();
-    const s = data.data?.servicos || {};
-    const set = (id, ok, txt) => {
-      const d = document.getElementById('hd-'+id); const t = document.getElementById('hs-'+id);
-      if (d) d.className = 'health-dot '+(ok?'ok':'err');
-      if (t) t.textContent = txt;
-    };
-    set('postgres', s.postgres?.ok, s.postgres?.ok?`OK (${s.postgres.latencia})`:s.postgres?.erro||'offline');
-    set('redis', s.redis?.ok, s.redis?.ok?`OK (${s.redis.latencia})`:s.redis?.erro||'offline');
-    set('evolution', s.evolution?.ok, s.evolution?.ok?`OK (${s.evolution.latencia})`:'Não configurada');
-    const cOk = (s.chips?.conectados||0) > 0;
-    set('chips', cOk, cOk?`${s.chips.conectados} conectado(s)`:'Nenhum');
-    const tudo = s.postgres?.ok && s.redis?.ok;
-    const msg = document.getElementById('health-msg');
-    if (msg) msg.innerHTML = tudo
-      ? '<div class="hint" style="border-color:var(--green)">✅ Serviços OK — clique em Avançar</div>'
-      : '<div class="hint err">❌ PostgreSQL ou Redis offline</div>';
-    document.getElementById('wiz-next').disabled = !tudo;
-  } catch(e) { console.error(e); }
-}
-
-async function wizardNext() {
-  if (wStep === 1) {
-    wStep = 2;
-    document.getElementById('wp-1').style.display='none';
-    document.getElementById('wp-2').style.display='block';
-    document.getElementById('ws-1').className='wstep done';
-    document.getElementById('ws-2').className='wstep active';
-    document.getElementById('wiz-back').style.display='';
-    document.getElementById('wiz-next').textContent='Salvar e avançar →';
-    const r = await fetch(`${API}/config`); const d = await r.json();
-    if (d.ok) document.getElementById('wiz-evo-url').value = d.data.evolution_url||'http://localhost:8080';
-  } else if (wStep === 2) {
-    const url = document.getElementById('wiz-evo-url').value.trim();
-    const key = document.getElementById('wiz-evo-key').value.trim();
-    if (!url||!key) { toast('Preencha URL e chave','err'); return; }
-    const el = document.getElementById('wiz-evo-result');
-    el.innerHTML='<span style="color:var(--muted);font-size:11px;font-family:var(--mono)">Salvando...</span>';
-    try {
-      await fetch(`${API}/config`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({evolution_url:url,evolution_key:key})});
-      el.innerHTML='<div class="hint" style="border-color:var(--green);margin:0">✅ Salvo!</div>';
-      wStep = 3;
-      setTimeout(()=>{
-        document.getElementById('wp-2').style.display='none';
-        document.getElementById('wp-3').style.display='block';
-        document.getElementById('ws-2').className='wstep done';
-        document.getElementById('ws-3').className='wstep active';
-        document.getElementById('wiz-next').textContent='Criar chip →';
-      },600);
-    } catch(e) { el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`; }
-  } else if (wStep === 3 || wStep === 3.5) {
-    if (wStep === 3) {
-      const nome = document.getElementById('wiz-chip-nome').value.trim();
-      const inst = document.getElementById('wiz-chip-inst').value.trim().replace(/\s/g,'');
-      if (!nome||!inst) { toast('Preencha nome e instância','err'); return; }
-      const el = document.getElementById('wiz-chip-result');
-      try {
-        const r1 = await fetch(`${API}/chips`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,instancia:inst})});
-        const d1 = await r1.json(); if (!d1.ok) throw new Error(d1.error);
-        await fetch(`${API}/chips/${inst}/criar`,{method:'POST'});
-        const r2 = await fetch(`${API}/chips/${inst}/qrcode`);
-        const d2 = await r2.json();
-        const qr = d2.data?.qrcode?.base64||d2.data?.base64;
-        if (qr) {
-          document.getElementById('wiz-qr-area').innerHTML=`<img src="${qr}" style="max-width:180px;border:4px solid #fff;border-radius:8px"><br>
-            <p style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:8px">Escaneie com o WhatsApp</p>`;
-        }
-        el.innerHTML='<div class="hint" style="border-color:var(--green);margin:0">✅ Chip criado! Escaneie o QR acima.</div>';
-        wStep = 3.5;
-        document.getElementById('wiz-next').textContent='Concluir →';
-      } catch(e) { el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`; }
-    } else {
-      wStep = 4;
-      document.getElementById('wp-3').style.display='none';
-      document.getElementById('wp-4').style.display='block';
-      document.getElementById('ws-3').className='wstep done';
-      document.getElementById('ws-4').className='wstep active';
-      document.getElementById('wiz-next').textContent='Ir para o painel →';
-      document.getElementById('wiz-back').style.display='none';
-      document.getElementById('wiz-skip').style.display='none';
-      document.getElementById('wiz-next').onclick = fecharWizard;
-    }
-  }
-}
-
-function wizardBack() {
-  if (wStep <= 1) return;
-  wStep = Math.floor(wStep) - 1;
-  document.querySelectorAll('[id^="wp-"]').forEach(el=>el.style.display='none');
-  document.getElementById('wp-'+wStep).style.display='block';
-  if (wStep===1) document.getElementById('wiz-back').style.display='none';
-  document.getElementById('wiz-next').textContent = wStep===1?'Verificar →':'Salvar e avançar →';
-}
-
-function fecharWizard() {
-  document.getElementById('wizard').style.display='none';
-  localStorage.setItem('wizard_done','1');
-}
-
-// ─── Init ─────────────────────────────────────────────────
-loadDash();loadChips();
+// ─── Init ─────────────────────────────────────────────────────────────────────
+loadDash();loadChips();renderAQ();
 setInterval(loadDash,10000);
 setInterval(loadChips,30000);
-if (!localStorage.getItem('wizard_done')) verificarPrimeiroAcesso();
 </script>
 </body>
 </html>

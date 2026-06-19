@@ -1,12 +1,14 @@
 {
   "name": "whatsapp-disparador",
-  "version": "5.0.0",
+  "version": "6.0.0",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "setup": "node src/db/migrate.js",
-    "migrate-v4": "node src/db/migrate-v4.js"
+    "migrate-v4": "node src/db/migrate-v4.js",
+    "migrate-antiban": "node src/db/migrate-antiban.js",
+    "migrate-midia": "node src/db/migrate-midia.js"
   },
   "dependencies": {
     "express": "^4.18.2",

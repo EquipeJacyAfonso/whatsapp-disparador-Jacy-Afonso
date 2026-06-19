@@ -16,7 +16,6 @@ services:
       EVOLUTION_API_URL: http://evolution-api:8080
       EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-minhachave123}
       PORT: 3000
-      TZ: "America/Sao_Paulo"
     depends_on:
       postgres:
         condition: service_healthy
@@ -26,11 +25,6 @@ services:
       - ./credentials:/app/credentials
     networks:
       - disparador-net
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
   postgres:
     image: postgres:16-alpine
@@ -40,7 +34,6 @@ services:
       POSTGRES_DB: disparador
       POSTGRES_USER: disparador
       POSTGRES_PASSWORD: ${DB_PASSWORD:-disparador123}
-      TZ: "America/Sao_Paulo"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -50,11 +43,6 @@ services:
       retries: 5
     networks:
       - disparador-net
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
   redis:
     image: redis:7-alpine
@@ -69,11 +57,6 @@ services:
       retries: 5
     networks:
       - disparador-net
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
   evolution-api:
     image: atendai/evolution-api:v1.8.2
@@ -84,27 +67,10 @@ services:
     environment:
       AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:-minhachave123}
       DATABASE_ENABLED: "false"
-      # ─── OTIMIZAÇÃO ANTI-TRAVAMENTO (MODO LEVE) ───
-      DATABASE_SAVE_DATA_CONTACTS: "false"
-      DATABASE_SAVE_DATA_CHATS: "false"
-      DATABASE_SAVE_DATA_MESSAGES: "false"
-      DATABASE_SAVE_DATA_HISTORIC: "false"
-      SYNC_FULL_HISTORY: "false"
-      LOG_LEVEL: "INFO"
-      TZ: "America/Sao_Paulo"
     volumes:
       - evolution_instances:/evolution/instances
     networks:
       - disparador-net
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
 volumes:
   postgres_data:

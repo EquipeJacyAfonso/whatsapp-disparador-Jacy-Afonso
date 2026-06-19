@@ -6,7 +6,6 @@ async function migrate() {
   try {
     await client.query('BEGIN');
 
-    // Campanhas
     await client.query(`
       CREATE TABLE IF NOT EXISTS campanhas (
         id SERIAL PRIMARY KEY,
@@ -18,13 +17,15 @@ async function migrate() {
         falhas INTEGER DEFAULT 0,
         delay_min INTEGER DEFAULT 20,
         delay_max INTEGER DEFAULT 50,
+        midia_base64 TEXT,
+        midia_mimetype VARCHAR(50),
+        midia_nome VARCHAR(255),
         criado_em TIMESTAMP DEFAULT NOW(),
         iniciado_em TIMESTAMP,
         finalizado_em TIMESTAMP
       );
     `);
 
-    // Contatos
     await client.query(`
       CREATE TABLE IF NOT EXISTS contatos (
         id SERIAL PRIMARY KEY,
@@ -36,7 +37,6 @@ async function migrate() {
       );
     `);
 
-    // Blacklist
     await client.query(`
       CREATE TABLE IF NOT EXISTS blacklist (
         id SERIAL PRIMARY KEY,
@@ -46,7 +46,6 @@ async function migrate() {
       );
     `);
 
-    // Chips
     await client.query(`
       CREATE TABLE IF NOT EXISTS chips (
         id SERIAL PRIMARY KEY,
@@ -58,13 +57,13 @@ async function migrate() {
         limite_diario INTEGER DEFAULT 20,
         dias_ativo INTEGER DEFAULT 0,
         pausado_ate TIMESTAMP,
+        ultima_campanha_em TIMESTAMP,
         ultimo_uso TIMESTAMP,
         ultimo_ping TIMESTAMP,
         criado_em TIMESTAMP DEFAULT NOW()
       );
     `);
 
-    // Histórico diário dos chips
     await client.query(`
       CREATE TABLE IF NOT EXISTS chip_historico (
         id SERIAL PRIMARY KEY,
@@ -76,7 +75,6 @@ async function migrate() {
       );
     `);
 
-    // Disparos
     await client.query(`
       CREATE TABLE IF NOT EXISTS disparos (
         id SERIAL PRIMARY KEY,
@@ -92,7 +90,6 @@ async function migrate() {
       );
     `);
 
-    // Configurações do sistema (salvas no banco, editáveis via painel)
     await client.query(`
       CREATE TABLE IF NOT EXISTS configuracoes (
         chave VARCHAR(100) PRIMARY KEY,
@@ -102,7 +99,6 @@ async function migrate() {
       );
     `);
 
-    // Logs do sistema
     await client.query(`
       CREATE TABLE IF NOT EXISTS logs (
         id SERIAL PRIMARY KEY,
@@ -113,7 +109,6 @@ async function migrate() {
       );
     `);
 
-    // Índices de performance
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_disparos_campanha ON disparos(campanha_id);
       CREATE INDEX IF NOT EXISTS idx_disparos_status ON disparos(status);
@@ -126,7 +121,6 @@ async function migrate() {
       CREATE INDEX IF NOT EXISTS idx_logs_criado ON logs(criado_em DESC);
     `);
 
-    // Configurações padrão
     await client.query(`
       INSERT INTO configuracoes (chave, valor, descricao) VALUES
         ('evolution_url',      'http://localhost:8080',  'URL da Evolution API'),
@@ -137,8 +131,15 @@ async function migrate() {
         ('sheets_id',          '',                       'ID padrão da planilha Google Sheets'),
         ('sheets_range',       'Sheet1!A:Z',             'Range padrão da planilha'),
         ('sheets_credentials', '',                       'JSON da Service Account do Google (conteúdo completo)'),
-        ('admin_numero',       '',                       'Número para receber notificações (com DDD, ex: 11999998888)'),
-        ('admin_chip_instancia', '',                     'Instância do chip usado para enviar notificações')
+        ('admin_numero',       '',                       'Número para receber notificações (com DDD)'),
+        ('admin_chip_instancia', '',                     'Instância do chip usado para notificações'),
+        ('horario_ativo',          'true', 'Ativar janela de horário de disparo'),
+        ('horario_inicio',         '8',    'Hora de início do disparo (0-23)'),
+        ('horario_fim',            '20',   'Hora de fim do disparo (0-23)'),
+        ('intervalo_campanhas_min','0',    'Minutos de descanso entre campanhas por chip'),
+        ('falhas_ban_threshold',   '3',    'Falhas seguidas para pausar chip automaticamente'),
+        ('sync_intervalo', '0',  'Intervalo de sincronização automática com Sheets (horas)'),
+        ('sync_proxima',   '',   'Timestamp da próxima sincronização automática')
       ON CONFLICT (chave) DO NOTHING;
     `);
 

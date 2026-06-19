@@ -1,4 +1,3 @@
-// Serviço de configurações — lê e salva no banco, com cache em memória
 const pool = require('../db');
 
 let cache = {};
@@ -33,7 +32,6 @@ async function setMany(obj) {
   }
 }
 
-// Invalida o cache (forçar releitura do banco)
 function invalidarCache() { cache = {}; }
 
 module.exports = { get, getAll, set, setMany, invalidarCache };

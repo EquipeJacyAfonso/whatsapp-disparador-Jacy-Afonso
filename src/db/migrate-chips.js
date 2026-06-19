@@ -1,6 +1,4 @@
-// Rode este script se o banco já existia:
 // node src/db/migrate-chips.js
-
 require('dotenv').config();
 const pool = require('./index');
 
@@ -20,5 +18,4 @@ async function run() {
     await pool.end();
   }
 }
-
 run();
