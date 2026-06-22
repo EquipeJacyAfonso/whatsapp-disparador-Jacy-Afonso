@@ -46,6 +46,13 @@ function erroEhPermanente(err) {
 function formatarNumero(numero) {
   let limpo = String(numero).replace(/\D/g, '');
   if (!limpo.startsWith('55')) limpo = '55' + limpo;
+  
+  // Remove o 9 extra de celulares brasileiros (13 dígitos → 12)
+  // Formato esperado pela Evolution API: 55 + DDD (2) + número (8) = 12 dígitos
+  if (limpo.length === 13 && limpo.startsWith('55')) {
+    limpo = limpo.slice(0, 4) + limpo.slice(5); // remove o 9 após o DDD
+  }
+  
   return limpo;
 }
 
