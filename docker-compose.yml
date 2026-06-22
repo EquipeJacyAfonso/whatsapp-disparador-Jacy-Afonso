@@ -80,7 +80,7 @@ services:
       - disparador-net
 
   evolution-manager:
-    image: evolutionapi/evolution-manager:latest
+    image: gabrielpastori1/evolution-manager:latest
     container_name: disparador-manager
     restart: always
     ports:
