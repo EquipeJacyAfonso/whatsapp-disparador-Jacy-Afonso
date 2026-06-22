@@ -74,6 +74,8 @@ services:
       - CORS_ORIGIN=*
       - CORS_METHODS=POST,GET,PUT,DELETE,PATCH,OPTIONS
       - CORS_CREDENTIALS=true
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://redis:6379/0
     volumes:
       - evolution_instances:/evolution/instances
     networks:
