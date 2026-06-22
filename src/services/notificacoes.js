@@ -46,7 +46,17 @@ async function notificarSyncSheets(resultado) {
   await enviarNotificacao(msg);
 }
 
+// Disparado pelo "circuit breaker" da fila quando uma campanha acumula falhas
+// seguidas SEM nenhum envio bem-sucedido — sinal forte de bug sistêmico
+// (formato de payload errado, API fora do ar, credencial inválida etc.),
+// e não de números ruins isolados. A campanha já foi pausada automaticamente
+// antes desta função ser chamada.
+async function notificarFalhaSistemica(campanhaId, erro) {
+  const msg = `🛑 *Campanha pausada automaticamente!*\n\n📋 Campanha #${campanhaId}\n⚠️ Várias falhas seguidas sem nenhum envio confirmado.\n\n🔍 Último erro:\n${erro}\n\nVerifique a Evolution API (Configurações → Testar conexão) antes de retomar.`;
+  await enviarNotificacao(msg);
+}
+
 module.exports = {
   enviarNotificacao, notificarCampanhaConcluida, notificarChipBanido,
-  notificarChipDesconectado, notificarSyncSheets,
+  notificarChipDesconectado, notificarSyncSheets, notificarFalhaSistemica,
 };

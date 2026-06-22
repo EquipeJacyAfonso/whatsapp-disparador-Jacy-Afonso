@@ -19,6 +19,28 @@ async function getApi() {
   });
 }
 
+// ─── Diagnóstico de erros da Evolution API ────────────────────────────────────
+// Em vez de propagar só "Request failed with status code 400" (genérico do axios),
+// extrai a mensagem real que a API devolveu — isso é o que aparece nos logs do
+// painel a partir de agora, sem precisar ir direto no docker logs toda vez.
+function extrairErroAPI(err) {
+  if (err.response && err.response.data) {
+    const d = err.response.data;
+    const msgs = d.message || (d.response && d.response.message) || d.error || d;
+    const detalhe = Array.isArray(msgs) ? msgs.join('; ') : (typeof msgs === 'string' ? msgs : JSON.stringify(msgs));
+    return 'HTTP ' + err.response.status + ' — ' + detalhe;
+  }
+  if (err.request) return 'Sem resposta da Evolution API (timeout/rede): ' + err.message;
+  return err.message;
+}
+
+// Erros 4xx (exceto 429, rate-limit) são de configuração/formato — tentar de novo
+// não resolve. Usado para a fila não ficar re-tentando (e atrasando tudo) à toa.
+function erroEhPermanente(err) {
+  const status = err.response && err.response.status;
+  return !!status && status >= 400 && status < 500 && status !== 429;
+}
+
 // ─── Formatação ───────────────────────────────────────────────────────────────
 
 function formatarNumero(numero) {
@@ -27,10 +49,8 @@ function formatarNumero(numero) {
   return limpo;
 }
 
-// 🐛 BUG 1 CORRIGIDO: Extrai APENAS os dígitos puros, eliminando completamente 
-// problemas com sufixos @s.whatsapp.net ou @c.us duplicados.
 function limparJid(jid) {
-  return String(jid).split('@')[0].replace(/\D/g, '');
+  return String(jid).replace(/@s\.whatsapp\.net$/, '').replace(/@c\.us$/, '');
 }
 
 async function verificarNumero(numero, instancia) {
@@ -44,7 +64,7 @@ async function verificarNumero(numero, instancia) {
     }
     return null;
   } catch (erro) {
-    console.warn('[VERIFY] Falha na verificação de ' + numeroLimpo + ': ' + erro.message);
+    console.warn('[VERIFY] Falha na verificação de ' + numeroLimpo + ': ' + extrairErroAPI(erro));
     return numeroLimpo;
   }
 }
@@ -74,7 +94,7 @@ async function removerChip(id) {
       await api.delete('/instance/delete/' + instanciaNome);
       console.log('[CHIP] Sessão ' + instanciaNome + ' destruída.');
     } catch (e) {
-      console.log('[CHIP] Aviso ao deletar: ' + e.message);
+      console.log('[CHIP] Aviso ao deletar: ' + extrairErroAPI(e));
     }
   }
   await pool.query('DELETE FROM chips WHERE id = $1', [id]);
@@ -93,6 +113,7 @@ async function statusChip(instancia) {
     await pool.query('UPDATE chips SET status = $1, ultimo_ping = NOW() WHERE instancia = $2', [state, instancia]);
     return state;
   } catch (e) {
+    console.warn('[CHIP] Erro ao checar status de ' + instancia + ': ' + extrairErroAPI(e));
     await pool.query("UPDATE chips SET status = 'erro' WHERE instancia = $1", [instancia]);
     return 'erro';
   }
@@ -193,20 +214,42 @@ async function enviarMensagem(numero, mensagem, instancia) {
 
   console.log('[SEND] → ' + numeroLimpo + ' via ' + instancia);
 
-  // 🐛 BUG 3: Presence fire-and-forget (já estava correto no seu código, mantido intacto)
-  api.post('/chat/sendPresence/' + instancia, { number: numeroLimpo, presence: 'composing', delay: 1000 }).catch(() => {});
+  // Presence fire-and-forget (não bloqueia, mas agora loga o motivo se falhar)
+  api.post('/chat/sendPresence/' + instancia, {
+    number: numeroLimpo,
+    options: { delay: 1000, presence: 'composing' }
+  }).catch(e => console.warn('[PRESENCE] Aviso (' + instancia + '): ' + extrairErroAPI(e)));
   await new Promise(r => setTimeout(r, 1000));
 
-  const r = await api.post('/message/sendText/' + instancia, {
-    number: numeroLimpo,
-    textMessage: { text: mensagem }
-  });
+  let r;
+  try {
+    r = await api.post('/message/sendText/' + instancia, {
+      number: numeroLimpo,
+      textMessage: { text: mensagem }
+    });
+  } catch (err) {
+    const detalhe = extrairErroAPI(err);
+    console.error('[SEND] ❌ ' + numeroLimpo + ': ' + detalhe);
+    const erroFinal = new Error(detalhe);
+    erroFinal.semRetry = erroEhPermanente(err);
+    throw erroFinal;
+  }
+
+  // Verificação extra: resposta 200 mas sem corpo reconhecível costuma indicar
+  // "sucesso fantasma" (a API aceitou a requisição mas não confirmou o envio).
+  if (!r.data || (typeof r.data === 'object' && Object.keys(r.data).length === 0)) {
+    console.warn('[SEND] ⚠ Resposta vazia/suspeita da API para ' + numeroLimpo + ' — confirme manualmente se chegou.');
+  }
 
   console.log('[SEND] ✅ ' + numeroLimpo);
   return r.data;
 }
 
 // ─── Envio de Imagem PNG/JPEG ─────────────────────────────────────────────────
+// midiaBase64 : conteúdo do arquivo em base64 (aceita com ou sem prefixo data:)
+// mimetype    : 'image/png' ou 'image/jpeg'
+// midiaNome   : nome original do arquivo (ex: 'promo.jpg')
+// mensagem    : texto vai como legenda embaixo da imagem
 async function enviarImagem(numero, mensagem, instancia, midiaBase64, mimetype, midiaNome) {
   const api = await getApi();
   const numeroLimpo = await verificarNumero(numero, instancia);
@@ -214,21 +257,40 @@ async function enviarImagem(numero, mensagem, instancia, midiaBase64, mimetype, 
 
   console.log('[SEND-IMG] → ' + numeroLimpo + ' via ' + instancia);
 
-  // Presence fire-and-forget 
-  api.post('/chat/sendPresence/' + instancia, { number: numeroLimpo, presence: 'composing', delay: 1000 }).catch(() => {});
+  // Presence fire-and-forget (não bloqueia, mas agora loga o motivo se falhar)
+  api.post('/chat/sendPresence/' + instancia, {
+    number: numeroLimpo,
+    options: { delay: 1000, presence: 'composing' }
+  }).catch(e => console.warn('[PRESENCE] Aviso (' + instancia + '): ' + extrairErroAPI(e)));
   await new Promise(r => setTimeout(r, 1000));
 
   // Remove prefixo data URI se presente
   const base64Limpo = midiaBase64.replace(/^data:image\/\w+;base64,/, '');
 
-  const r = await api.post('/message/sendMedia/' + instancia, {
-    number: numeroLimpo,
-    mediatype: 'image',
-    mimetype: mimetype || 'image/jpeg',
-    caption: mensagem || '',
-    media: base64Limpo,
-    fileName: midiaNome || 'imagem.jpg',
-  });
+  let r;
+  try {
+    r = await api.post('/message/sendMedia/' + instancia, {
+      number: numeroLimpo,
+      options: { delay: 1200, presence: 'composing' },
+      mediaMessage: {
+        mediatype: 'image',
+        mimetype: mimetype || 'image/jpeg',
+        caption: mensagem || '',
+        media: base64Limpo,
+        fileName: midiaNome || 'imagem.jpg',
+      }
+    });
+  } catch (err) {
+    const detalhe = extrairErroAPI(err);
+    console.error('[SEND-IMG] ❌ ' + numeroLimpo + ': ' + detalhe);
+    const erroFinal = new Error(detalhe);
+    erroFinal.semRetry = erroEhPermanente(err);
+    throw erroFinal;
+  }
+
+  if (!r.data || (typeof r.data === 'object' && Object.keys(r.data).length === 0)) {
+    console.warn('[SEND-IMG] ⚠ Resposta vazia/suspeita da API para ' + numeroLimpo + ' — confirme manualmente se chegou.');
+  }
 
   console.log('[SEND-IMG] ✅ ' + numeroLimpo);
   return r.data;
@@ -282,4 +344,6 @@ module.exports = {
   verificarNumero,
   marcarComoLida,
   aquecerChipsInternamente,
+  extrairErroAPI,
+  erroEhPermanente,
 };
