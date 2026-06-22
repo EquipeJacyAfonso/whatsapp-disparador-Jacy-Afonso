@@ -47,7 +47,6 @@ function formatarNumero(numero) {
   let limpo = String(numero).replace(/\D/g, '');
   if (!limpo.startsWith('55')) limpo = '55' + limpo;
   return limpo;
-  // NÃO remova o 9 extra — celulares BR pós-2012 precisam dele
 }
 
 function limparJid(jid) {
