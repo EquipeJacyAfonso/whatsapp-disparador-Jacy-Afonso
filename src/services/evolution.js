@@ -46,14 +46,8 @@ function erroEhPermanente(err) {
 function formatarNumero(numero) {
   let limpo = String(numero).replace(/\D/g, '');
   if (!limpo.startsWith('55')) limpo = '55' + limpo;
-  
-  // Remove o 9 extra de celulares brasileiros (13 dígitos → 12)
-  // Formato esperado pela Evolution API: 55 + DDD (2) + número (8) = 12 dígitos
-  if (limpo.length === 13 && limpo.startsWith('55')) {
-    limpo = limpo.slice(0, 4) + limpo.slice(5); // remove o 9 após o DDD
-  }
-  
   return limpo;
+  // NÃO remova o 9 extra — celulares BR pós-2012 precisam dele
 }
 
 function limparJid(jid) {
@@ -61,19 +55,9 @@ function limparJid(jid) {
 }
 
 async function verificarNumero(numero, instancia) {
-  const api = await getApi();
-  const numeroLimpo = formatarNumero(numero);
-  try {
-    const r = await api.post('/chat/whatsappNumbers/' + instancia, { numbers: [numeroLimpo] });
-    if (r.data && r.data.length > 0 && r.data[0].exists) {
-      const jidBruto = r.data[0].jid || r.data[0].number || numeroLimpo;
-      return limparJid(jidBruto);
-    }
-    return null;
-  } catch (erro) {
-    console.warn('[VERIFY] Falha na verificação de ' + numeroLimpo + ': ' + extrairErroAPI(erro));
-    return numeroLimpo;
-  }
+  // Com DATABASE_ENABLED=false na v1.8.2, a verificação não é confiável.
+  // Retorna o número formatado diretamente.
+  return formatarNumero(numero);
 }
 
 // ─── Gestão de Chips ─────────────────────────────────────────────────────────
