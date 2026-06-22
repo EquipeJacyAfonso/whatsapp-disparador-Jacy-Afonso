@@ -65,12 +65,9 @@ services:
     ports:
       - "8080:8080"
     environment:
-      # Configurações básicas exigidas na V2
       - SERVER_URL=http://localhost:8080
       - AUTHENTICATION_TYPE=apikey
-      - AUTHENTICATION_API_KEY=minhachave123
-      
-      # Conectando a Evolution ao seu Postgres já existente
+      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY:-minhachave123}
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
       - DATABASE_CONNECTION_URI=postgresql://disparador:${DB_PASSWORD:-disparador123}@postgres:5432/disparador?schema=evolution
@@ -82,7 +79,7 @@ services:
     networks:
       - disparador-net
 
-evolution-manager:
+  evolution-manager:
     image: evolutionapi/evolution-manager:latest
     container_name: disparador-manager
     restart: always
