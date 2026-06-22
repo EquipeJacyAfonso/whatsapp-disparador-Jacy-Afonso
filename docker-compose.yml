@@ -74,6 +74,9 @@ services:
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
       - DATABASE_CONNECTION_URI=postgresql://disparador:${DB_PASSWORD:-disparador123}@postgres:5432/disparador?schema=evolution
+      - CORS_ORIGIN=*
+      - CORS_METHODS=POST,GET,PUT,DELETE,PATCH,OPTIONS
+      - CORS_CREDENTIALS=true
     volumes:
       - evolution_instances:/evolution/instances
     networks:
