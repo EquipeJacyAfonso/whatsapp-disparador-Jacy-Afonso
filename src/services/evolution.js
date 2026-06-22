@@ -129,16 +129,24 @@ async function qrcodeChip(instancia) {
 async function criarInstancia(instancia) {
   const api = await getApi();
   const r = await api.post('/instance/create', { instanceName: instancia, qrcode: true, integration: 'WHATSAPP-BAILEYS' });
+  // Registra TODOS os eventos num único webhook — CONNECTION_UPDATE/QRCODE_UPDATED
+  // para auto-pause/retomada, e MESSAGES_UPSERT para opt-out.
+  // A Evolution API só guarda 1 webhook por instância; registrar duas vezes
+  // (aqui e no botão do painel) sobreescrevia metade dos eventos.
   try {
+    const serverUrl = await require('./config').get('evolution_url', 'http://app:3000');
+    // Usa /api/webhook/evolution como destino — independente de onde o servidor está hospedado
+    const webhookBase = serverUrl.replace(/\/evolution.*$/, '').replace(':8080', ':3000').replace('evolution-api', 'app');
     await api.post('/webhook/set/' + instancia, {
       enabled: true,
-      url: 'http://app:3000/webhook/evolution',
+      url: webhookBase + '/webhook/evolution',
       webhookByEvents: false,
-      events: ['MESSAGES_UPSERT']
+      events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE', 'QRCODE_UPDATED']
     });
-    console.log('[OPT-OUT] Webhook ativado para: ' + instancia);
+    console.log('[WEBHOOK] Registrado para ' + instancia + ' (3 eventos)');
   } catch(e) {
-    console.log('[OPT-OUT] Erro webhook ' + instancia + ': ' + e.message);
+    console.warn('[WEBHOOK] Erro ao registrar webhook em ' + instancia + ': ' + e.message);
+    console.warn('[WEBHOOK] → Configure manualmente em Configurações → Webhook');
   }
   return r.data;
 }

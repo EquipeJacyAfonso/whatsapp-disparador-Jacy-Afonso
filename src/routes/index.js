@@ -42,11 +42,16 @@ router.post('/auth/alterar-senha', requireAuth, async (req, res) => {
 
 // ─── Configurações ────────────────────────────────────────────────────────────
 
+// Chaves sensíveis nunca devem chegar ao browser (jwt_secret permite forjar tokens de admin).
+const CHAVES_SENSIVEIS = ['jwt_secret', 'sheets_credentials', 'evolution_key'];
+
 router.get('/config', requireAuth, async (req, res) => {
   try {
     const all = await cfgGetAll();
     const safe = { ...all };
-    if (safe.sheets_credentials) safe.sheets_credentials = '__configurado__';
+    for (const chave of CHAVES_SENSIVEIS) {
+      if (safe[chave]) safe[chave] = '__configurado__';
+    }
     res.json({ ok: true, data: safe });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
@@ -394,7 +399,7 @@ router.post('/webhook/evolution', async (req, res) => {
   }
 });
 
-router.post('/webhook/registrar', async (req, res) => {
+router.post('/webhook/registrar', requireAuth, async (req, res) => {
   try {
     const axios = require('axios');
     const baseUrl = await cfgGet('evolution_url', process.env.EVOLUTION_API_URL);
@@ -405,8 +410,13 @@ router.post('/webhook/registrar', async (req, res) => {
     const resultados = [];
     for (const chip of chips) {
       try {
+        // Todos os eventos num único registro — sobreescrever com eventos parciais
+        // apagava os outros (a Evolution API só guarda 1 webhook por instância).
         await axios.post(baseUrl + '/webhook/set/' + chip.instancia, {
-          webhook: { enabled: true, url: webhookUrl, events: ['CONNECTION_UPDATE', 'QRCODE_UPDATED'] }
+          enabled: true,
+          url: webhookUrl,
+          webhookByEvents: false,
+          events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE', 'QRCODE_UPDATED']
         }, { headers: { apikey: apiKey } });
         resultados.push({ instancia: chip.instancia, ok: true });
       } catch(e) {

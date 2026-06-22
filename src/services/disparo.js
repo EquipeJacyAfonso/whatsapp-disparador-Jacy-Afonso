@@ -3,7 +3,7 @@ const Bull = require('bull');
 const pool = require('../db');
 const { enviarMensagem, enviarImagem, proximoChip, registrarUso, registrarFalha, statusChip } = require('../services/evolution');
 const { renderTemplate } = require('../services/csv');
-const { processarSpintax, verificarCondicoes, processarErroBan, chipEmDescanso, msAteJanelaAbrir } = require('../services/antiban');
+const { processarSpintax, verificarCondicoes, processarErroBan, chipEmDescanso, msAteJanelaAbrir, registrarFimCampanhaChip } = require('../services/antiban');
 const config = require('../services/config');
 
 function delayAleatorio(minMs, maxMs) {
@@ -240,11 +240,30 @@ async function verificarConclusaoCampanha(campanhaId) {
       "UPDATE campanhas SET status='concluido', finalizado_em=NOW() WHERE id=$1 AND status='em_andamento'",
       [campanhaId]
     );
+
+    // Registra fim de campanha em cada chip usado — habilita o descanso inter-campanha (Anti-ban)
+    try {
+      const chipsUsados = await pool.query(
+        "SELECT DISTINCT chip_id FROM disparos WHERE campanha_id=$1 AND chip_id IS NOT NULL",
+        [campanhaId]
+      );
+      for (const row of chipsUsados.rows) {
+        await registrarFimCampanhaChip(row.chip_id);
+      }
+    } catch(e2) { /* não bloqueia a conclusão da campanha */ }
+
     const stats = await pool.query('SELECT enviados, falhas, total_contatos FROM campanhas WHERE id=$1', [campanhaId]);
     const s = stats.rows[0];
     const msg = 'Campanha #' + campanhaId + ' concluída — ' + s.enviados + ' enviados, ' + s.falhas + ' falhas de ' + s.total_contatos + ' contatos.';
     await addLog('info', msg);
     console.log('[CAMPANHA] ✅ ' + msg);
+
+    // Notificação WhatsApp (best-effort)
+    try {
+      const { notificarCampanhaConcluida } = require('../services/notificacoes');
+      await notificarCampanhaConcluida(campanhaId);
+    } catch(e2) { /* notificação é best-effort */ }
+
   } catch(e) {
     console.error('[CAMPANHA] Erro ao verificar conclusão:', e.message);
   }
