@@ -226,9 +226,11 @@ async function enviarMensagem(numero, mensagem, instancia) {
 
   let r;
   try {
+    // Evolution API v2: payload flat { number, text }
+    // (v1 usava { number, textMessage: { text } })
     r = await api.post('/message/sendText/' + instancia, {
       number: numeroLimpo,
-      textMessage: { text: mensagem }
+      text: mensagem
     });
   } catch (err) {
     const detalhe = extrairErroAPI(err);
@@ -295,16 +297,14 @@ async function enviarImagem(numero, mensagem, instancia, midiaBase64, mimetype, 
 
   let r;
   try {
+    // Evolution API v2: campos de mídia no nível raiz (não aninhados em mediaMessage)
     r = await api.post('/message/sendMedia/' + instancia, {
       number: numeroLimpo,
-      options: { delay: 1200, presence: 'composing' },
-      mediaMessage: {
-        mediatype: 'image',
-        mimetype: mimetype || 'image/jpeg',
-        caption: mensagem || '',
-        media: base64Limpo,
-        fileName: midiaNome || 'imagem.jpg',
-      }
+      mediatype: 'image',
+      mimetype: mimetype || 'image/jpeg',
+      caption: mensagem || '',
+      media: base64Limpo,
+      fileName: midiaNome || 'imagem.jpg',
     });
   } catch (err) {
     const detalhe = extrairErroAPI(err);
