@@ -13,13 +13,9 @@ done
 echo "[ENTRYPOINT] ✅ PostgreSQL pronto"
 
 echo "[ENTRYPOINT] Rodando migrações..."
-node src/db/migrate.js
-echo "[ENTRYPOINT] ✅ Migrações concluídas"
-
-echo "[ENTRYPOINT] Rodando migrações..."
 # Executar todas as migrações em lote
 node src/db/run-all-migrations.js
-echo "[ENTRYPOINT] ✅ Todas as Migrações concluídas"
+echo "[ENTRYPOINT] ✅ Migrações concluídas"
 
 echo "[ENTRYPOINT] Iniciando servidor..."
 exec node src/server.js
