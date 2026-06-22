@@ -68,7 +68,7 @@ services:
       # Configurações básicas exigidas na V2
       - SERVER_URL=http://localhost:8080
       - AUTHENTICATION_TYPE=apikey
-      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY:-minhachave123}
+      - AUTHENTICATION_API_KEY=minhachave123
       
       # Conectando a Evolution ao seu Postgres já existente
       - DATABASE_ENABLED=true
