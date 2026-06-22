@@ -82,6 +82,17 @@ services:
     networks:
       - disparador-net
 
+evolution-manager:
+    image: evolutionapi/evolution-manager:latest
+    container_name: disparador-manager
+    restart: always
+    ports:
+      - "8081:80"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - disparador-net
+
 volumes:
   postgres_data:
   redis_data:
