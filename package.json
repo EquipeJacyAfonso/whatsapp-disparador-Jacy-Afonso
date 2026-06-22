@@ -10,11 +10,8 @@
     "migrate-antiban": "node src/db/migrate-antiban.js",
     "migrate-midia": "node src/db/migrate-midia.js",
     "migrate-auth": "node src/db/migrate-auth.js",
+    "migrate": "node src/db/run-all-migrations.js",
     "criar-admin": "node src/db/criar-admin.js"
-  },
-  "scripts": {
-    "start": "node src/server.js",
-    "migrate": "node src/db/run-all-migrations.js"
   },
   "dependencies": {
     "express": "^4.18.2",
