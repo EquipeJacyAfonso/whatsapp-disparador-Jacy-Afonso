@@ -47,6 +47,7 @@ function formatarNumero(numero) {
   let limpo = String(numero).replace(/\D/g, '');
   if (!limpo.startsWith('55')) limpo = '55' + limpo;
   return limpo;
+  // NÃO remova o 9 extra — celulares BR pós-2012 precisam dele
 }
 
 function limparJid(jid) {
@@ -64,8 +65,13 @@ async function verificarNumero(numero, instancia) {
     }
     return null;
   } catch (erro) {
-    console.warn('[VERIFY] Falha na verificação de ' + numeroLimpo + ': ' + extrairErroAPI(erro));
-    return numeroLimpo;
+    const msgErro = extrairErroAPI(erro);
+    console.warn('[VERIFY] Falha na verificação de ' + numeroLimpo + ': ' + msgErro);
+    // Se a API estiver offline/desconectada, repassa o erro para a fila parar!
+    if (msgErro.includes('Connection Closed') || msgErro.includes('disconnected')) {
+      throw new Error(msgErro); 
+    }
+    return numeroLimpo; // Só aceita forçar o envio se for outro erro menor
   }
 }
 
@@ -245,8 +251,10 @@ async function enviarMensagem(numero, mensagem, instancia) {
 
   // Verificação extra: resposta 200 mas sem corpo reconhecível costuma indicar
   // "sucesso fantasma" (a API aceitou a requisição mas não confirmou o envio).
+  // Impede o envio fantasma de registrar sucesso
   if (!r.data || (typeof r.data === 'object' && Object.keys(r.data).length === 0)) {
-    console.warn('[SEND] ⚠ Resposta vazia/suspeita da API para ' + numeroLimpo + ' — confirme manualmente se chegou.');
+    console.warn('[SEND] ⚠ Sucesso fantasma detectado para ' + numeroLimpo);
+    throw new Error('Falha fantasma: A API aceitou, mas o WhatsApp não confirmou o despacho.');
   }
 
   console.log('[SEND] ✅ ' + numeroLimpo);
@@ -295,6 +303,14 @@ async function enviarImagem(numero, mensagem, instancia, midiaBase64, mimetype, 
     erroFinal.semRetry = erroEhPermanente(err);
     throw erroFinal;
   }
+
+  if (!r.data || (typeof r.data === 'object' && Object.keys(r.data).length === 0)) {
+    console.warn('[SEND-MEDIA] ⚠ Sucesso fantasma detectado para ' + numeroLimpo);
+    throw new Error('Falha fantasma de mídia: API aceitou, mas WhatsApp falhou.');
+  }
+
+  console.log('[SEND] ✅ ' + numeroLimpo + ' (com mídia)');
+  return r.data;
 
   if (!r.data || (typeof r.data === 'object' && Object.keys(r.data).length === 0)) {
     console.warn('[SEND-IMG] ⚠ Resposta vazia/suspeita da API para ' + numeroLimpo + ' — confirme manualmente se chegou.');
