@@ -40,29 +40,29 @@ function erroEhPermanente(err) {
 function formatarNumero(numeroBruto) {
   let limpo = String(numeroBruto).replace(/\D/g, '');
 
-  if (limpo.startsWith('0') && limpo.length >= 11) {
+  // Remove zero à esquerda (ex: 011999... → 11999...)
+  if (limpo.startsWith('0')) {
     limpo = limpo.substring(1);
   }
 
-  if (!limpo.startsWith('55') && limpo.length <= 11) {
+  // Adiciona DDI do Brasil se não tiver
+  if (!limpo.startsWith('55')) {
     limpo = '55' + limpo;
   }
 
-  if (!limpo.startsWith('55')) return limpo;
-
+  // A partir daqui, limpo começa com 55 + DDD (2 dígitos) + número
   const ddd = parseInt(limpo.substring(2, 4));
   const telefone = limpo.substring(4);
 
-  if (ddd >= 11 && ddd <= 28) {
-    if (telefone.length === 9 && telefone.startsWith('9')) {
-      return '55' + ddd + telefone.substring(1);
-    }
-  } else if (ddd > 28 && ddd <= 99) {
-    if (telefone.length === 8) {
-      return '55' + ddd + '9' + telefone;
-    }
+  // Números brasileiros no WhatsApp: todos os celulares têm 9 dígitos (com o nono dígito).
+  // Se o número vier com 8 dígitos (sem o nono), adiciona o 9.
+  // Isso vale para QUALQUER DDD — o nono dígito é obrigatório em todo o Brasil desde 2016.
+  if (telefone.length === 8 && (telefone.startsWith('6') || telefone.startsWith('7') ||
+      telefone.startsWith('8') || telefone.startsWith('9'))) {
+    return '55' + ddd + '9' + telefone;
   }
 
+  // Se já tem 9 dígitos (formato correto), retorna como está
   return limpo;
 }
 
