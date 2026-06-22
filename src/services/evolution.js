@@ -55,9 +55,19 @@ function limparJid(jid) {
 }
 
 async function verificarNumero(numero, instancia) {
-  // Com DATABASE_ENABLED=false na v1.8.2, a verificação não é confiável.
-  // Retorna o número formatado diretamente.
-  return formatarNumero(numero);
+  const api = await getApi();
+  const numeroLimpo = formatarNumero(numero);
+  try {
+    const r = await api.post('/chat/whatsappNumbers/' + instancia, { numbers: [numeroLimpo] });
+    if (r.data && r.data.length > 0 && r.data[0].exists) {
+      const jidBruto = r.data[0].jid || r.data[0].number || numeroLimpo;
+      return limparJid(jidBruto);
+    }
+    return null;
+  } catch (erro) {
+    console.warn('[VERIFY] Falha na verificação de ' + numeroLimpo + ': ' + extrairErroAPI(erro));
+    return numeroLimpo;
+  }
 }
 
 // ─── Gestão de Chips ─────────────────────────────────────────────────────────
