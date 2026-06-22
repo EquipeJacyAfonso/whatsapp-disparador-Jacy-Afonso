@@ -19,10 +19,6 @@ async function getApi() {
   });
 }
 
-// ─── Diagnóstico de erros da Evolution API ────────────────────────────────────
-// Em vez de propagar só "Request failed with status code 400" (genérico do axios),
-// extrai a mensagem real que a API devolveu — isso é o que aparece nos logs do
-// painel a partir de agora, sem precisar ir direto no docker logs toda vez.
 function extrairErroAPI(err) {
   if (err.response && err.response.data) {
     const d = err.response.data;
@@ -34,8 +30,6 @@ function extrairErroAPI(err) {
   return err.message;
 }
 
-// Erros 4xx (exceto 429, rate-limit) são de configuração/formato — tentar de novo
-// não resolve. Usado para a fila não ficar re-tentando (e atrasando tudo) à toa.
 function erroEhPermanente(err) {
   const status = err.response && err.response.status;
   return !!status && status >= 400 && status < 500 && status !== 429;
@@ -43,36 +37,37 @@ function erroEhPermanente(err) {
 
 // ─── Formatação ───────────────────────────────────────────────────────────────
 
-function formatarNumero(numero) {
-  let limpo = String(numero).replace(/\D/g, '');
-  if (!limpo.startsWith('55')) limpo = '55' + limpo;
+function formatarNumero(numeroBruto) {
+  let limpo = String(numeroBruto).replace(/\D/g, '');
+
+  if (limpo.startsWith('0') && limpo.length >= 11) {
+    limpo = limpo.substring(1);
+  }
+
+  if (!limpo.startsWith('55') && limpo.length <= 11) {
+    limpo = '55' + limpo;
+  }
+
+  if (!limpo.startsWith('55')) return limpo;
+
+  const ddd = parseInt(limpo.substring(2, 4));
+  const telefone = limpo.substring(4);
+
+  if (ddd >= 11 && ddd <= 28) {
+    if (telefone.length === 9 && telefone.startsWith('9')) {
+      return '55' + ddd + telefone.substring(1);
+    }
+  } else if (ddd > 28 && ddd <= 99) {
+    if (telefone.length === 8) {
+      return '55' + ddd + '9' + telefone;
+    }
+  }
+
   return limpo;
-  // NÃO remova o 9 extra — celulares BR pós-2012 precisam dele
 }
 
 function limparJid(jid) {
   return String(jid).replace(/@s\.whatsapp\.net$/, '').replace(/@c\.us$/, '');
-}
-
-async function verificarNumero(numero, instancia) {
-  const api = await getApi();
-  const numeroLimpo = formatarNumero(numero);
-  try {
-    const r = await api.post('/chat/whatsappNumbers/' + instancia, { numbers: [numeroLimpo] });
-    if (r.data && r.data.length > 0 && r.data[0].exists) {
-      const jidBruto = r.data[0].jid || r.data[0].number || numeroLimpo;
-      return limparJid(jidBruto);
-    }
-    return null;
-  } catch (erro) {
-    const msgErro = extrairErroAPI(erro);
-    console.warn('[VERIFY] Falha na verificação de ' + numeroLimpo + ': ' + msgErro);
-    // Se a API estiver offline/desconectada, repassa o erro para a fila parar!
-    if (msgErro.includes('Connection Closed') || msgErro.includes('disconnected')) {
-      throw new Error(msgErro); 
-    }
-    return numeroLimpo; // Só aceita forçar o envio se for outro erro menor
-  }
 }
 
 // ─── Gestão de Chips ─────────────────────────────────────────────────────────
@@ -135,13 +130,8 @@ async function qrcodeChip(instancia) {
 async function criarInstancia(instancia) {
   const api = await getApi();
   const r = await api.post('/instance/create', { instanceName: instancia, qrcode: true, integration: 'WHATSAPP-BAILEYS' });
-  // Registra TODOS os eventos num único webhook — CONNECTION_UPDATE/QRCODE_UPDATED
-  // para auto-pause/retomada, e MESSAGES_UPSERT para opt-out.
-  // A Evolution API só guarda 1 webhook por instância; registrar duas vezes
-  // (aqui e no botão do painel) sobreescrevia metade dos eventos.
   try {
     const serverUrl = await require('./config').get('evolution_url', 'http://app:3000');
-    // Usa /api/webhook/evolution como destino — independente de onde o servidor está hospedado
     const webhookBase = serverUrl.replace(/\/evolution.*$/, '').replace(':8080', ':3000').replace('evolution-api', 'app');
     await api.post('/webhook/set/' + instancia, {
       enabled: true,
@@ -224,11 +214,10 @@ async function marcarComoLida(instancia, messageKey) {
 async function enviarMensagem(numero, mensagem, instancia) {
   const api = await getApi();
   const numeroLimpo = await verificarNumero(numero, instancia);
-  if (!numeroLimpo) throw new Error('Número ' + numero + ' não possui WhatsApp registrado.');
+  if (!numeroLimpo) throw new Error('Número ' + numero + ' não possui WhatsApp registado.');
 
   console.log('[SEND] → ' + numeroLimpo + ' via ' + instancia);
 
-  // Presence fire-and-forget (não bloqueia, mas agora loga o motivo se falhar)
   api.post('/chat/sendPresence/' + instancia, {
     number: numeroLimpo,
     options: { delay: 1000, presence: 'composing' }
@@ -249,38 +238,59 @@ async function enviarMensagem(numero, mensagem, instancia) {
     throw erroFinal;
   }
 
-  // Verificação extra: resposta 200 mas sem corpo reconhecível costuma indicar
-  // "sucesso fantasma" (a API aceitou a requisição mas não confirmou o envio).
-  // Impede o envio fantasma de registrar sucesso
+  // BLOQUEIO DO SUCESSO FANTASMA
   if (!r.data || (typeof r.data === 'object' && Object.keys(r.data).length === 0)) {
-    console.warn('[SEND] ⚠ Sucesso fantasma detectado para ' + numeroLimpo);
-    throw new Error('Falha fantasma: A API aceitou, mas o WhatsApp não confirmou o despacho.');
+    console.warn('[SEND] ⚠ Sucesso fantasma detetado para ' + numeroLimpo);
+    throw new Error('Falha fantasma: A API aceitou, mas o WhatsApp não confirmou o envio.');
   }
 
   console.log('[SEND] ✅ ' + numeroLimpo);
   return r.data;
 }
 
+async function verificarNumero(numero, instancia) {
+  const api = await getApi();
+  const numeroCorrigidoLocal = formatarNumero(numero);
+
+  try {
+    const r = await api.post('/chat/whatsappNumbers/' + instancia, { numbers: [numeroCorrigidoLocal] });
+    
+    if (r.data && r.data.length > 0 && r.data[0].exists) {
+      const jidBruto = r.data[0].jid || r.data[0].number || numeroCorrigidoLocal;
+      return limparJid(jidBruto);
+    }
+    
+    return null; 
+    
+  } catch (erro) {
+    const msgErro = extrairErroAPI(erro);
+    console.warn('[VERIFY] Falha na verificação de rede para ' + numeroCorrigidoLocal + ': ' + msgErro);
+    
+    // A TRAVA DE SEGURANÇA
+    if (msgErro.includes('Connection Closed') || msgErro.includes('disconnected') || msgErro.includes('timeout')) {
+      throw new Error('Sessão do WhatsApp desconectada ou inacessível: ' + msgErro); 
+    }
+
+    // FALLBACK
+    console.log('[VERIFY] A usar formatação local (fallback) para: ' + numeroCorrigidoLocal);
+    return numeroCorrigidoLocal;
+  }
+}
+
 // ─── Envio de Imagem PNG/JPEG ─────────────────────────────────────────────────
-// midiaBase64 : conteúdo do arquivo em base64 (aceita com ou sem prefixo data:)
-// mimetype    : 'image/png' ou 'image/jpeg'
-// midiaNome   : nome original do arquivo (ex: 'promo.jpg')
-// mensagem    : texto vai como legenda embaixo da imagem
 async function enviarImagem(numero, mensagem, instancia, midiaBase64, mimetype, midiaNome) {
   const api = await getApi();
   const numeroLimpo = await verificarNumero(numero, instancia);
-  if (!numeroLimpo) throw new Error('Número ' + numero + ' não possui WhatsApp registrado.');
+  if (!numeroLimpo) throw new Error('Número ' + numero + ' não possui WhatsApp registado.');
 
   console.log('[SEND-IMG] → ' + numeroLimpo + ' via ' + instancia);
 
-  // Presence fire-and-forget (não bloqueia, mas agora loga o motivo se falhar)
   api.post('/chat/sendPresence/' + instancia, {
     number: numeroLimpo,
     options: { delay: 1000, presence: 'composing' }
   }).catch(e => console.warn('[PRESENCE] Aviso (' + instancia + '): ' + extrairErroAPI(e)));
   await new Promise(r => setTimeout(r, 1000));
 
-  // Remove prefixo data URI se presente
   const base64Limpo = midiaBase64.replace(/^data:image\/\w+;base64,/, '');
 
   let r;
@@ -304,16 +314,10 @@ async function enviarImagem(numero, mensagem, instancia, midiaBase64, mimetype, 
     throw erroFinal;
   }
 
+  // BLOQUEIO DO SUCESSO FANTASMA (Mídia)
   if (!r.data || (typeof r.data === 'object' && Object.keys(r.data).length === 0)) {
-    console.warn('[SEND-MEDIA] ⚠ Sucesso fantasma detectado para ' + numeroLimpo);
+    console.warn('[SEND-MEDIA] ⚠ Sucesso fantasma detetado para ' + numeroLimpo);
     throw new Error('Falha fantasma de mídia: API aceitou, mas WhatsApp falhou.');
-  }
-
-  console.log('[SEND] ✅ ' + numeroLimpo + ' (com mídia)');
-  return r.data;
-
-  if (!r.data || (typeof r.data === 'object' && Object.keys(r.data).length === 0)) {
-    console.warn('[SEND-IMG] ⚠ Resposta vazia/suspeita da API para ' + numeroLimpo + ' — confirme manualmente se chegou.');
   }
 
   console.log('[SEND-IMG] ✅ ' + numeroLimpo);
@@ -327,47 +331,4 @@ async function obterNumeroDaInstancia(instancia) {
     const r = await api.get('/instance/connectionState/' + instancia);
     const jid = r.data?.instance?.user?.id || r.data?.user?.id || r.data?.instance?.ownerJid;
     if (jid) return limparJid(jid);
-    return null;
-  } catch (e) { return null; }
-}
-
-async function aquecerChipsInternamente() {
-  try {
-    const res = await pool.query("SELECT * FROM chips WHERE status = 'open'");
-    const ativos = res.rows;
-    if (ativos.length < 2) return;
-    const rem = ativos[Math.floor(Math.random() * ativos.length)];
-    let dest = ativos[Math.floor(Math.random() * ativos.length)];
-    while (dest.id === rem.id) dest = ativos[Math.floor(Math.random() * ativos.length)];
-    const numDest = await obterNumeroDaInstancia(dest.instancia);
-    if (!numDest) return;
-    const frases = ['Oi, tudo bem?', 'Teste de sinal, recebido?', 'Olá, tudo ok?'];
-    await enviarMensagem(numDest, frases[Math.floor(Math.random() * frases.length)], rem.instancia);
-  } catch (e) { /* silencioso */ }
-}
-
-module.exports = {
-  enviarMensagem,
-  enviarImagem,
-  formatarNumero,
-  limparJid,
-  limitePorDia,
-  AQUECIMENTO,
-  listarChips,
-  adicionarChip,
-  removerChip,
-  statusChip,
-  qrcodeChip,
-  criarInstancia,
-  proximoChip,
-  registrarUso,
-  registrarFalha,
-  resetarContadoresDiarios,
-  pausarChip,
-  atualizarLimiteDiario,
-  verificarNumero,
-  marcarComoLida,
-  aquecerChipsInternamente,
-  extrairErroAPI,
-  erroEhPermanente,
-};
+    return null
