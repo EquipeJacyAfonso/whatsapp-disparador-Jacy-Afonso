@@ -331,4 +331,47 @@ async function obterNumeroDaInstancia(instancia) {
     const r = await api.get('/instance/connectionState/' + instancia);
     const jid = r.data?.instance?.user?.id || r.data?.user?.id || r.data?.instance?.ownerJid;
     if (jid) return limparJid(jid);
-    return null
+    return null;
+  } catch (e) { return null; }
+}
+
+async function aquecerChipsInternamente() {
+  try {
+    const res = await pool.query("SELECT * FROM chips WHERE status = 'open'");
+    const ativos = res.rows;
+    if (ativos.length < 2) return;
+    const rem = ativos[Math.floor(Math.random() * ativos.length)];
+    let dest = ativos[Math.floor(Math.random() * ativos.length)];
+    while (dest.id === rem.id) dest = ativos[Math.floor(Math.random() * ativos.length)];
+    const numDest = await obterNumeroDaInstancia(dest.instancia);
+    if (!numDest) return;
+    const frases = ['Oi, tudo bem?', 'Teste de sinal, recebido?', 'Olá, tudo ok?'];
+    await enviarMensagem(numDest, frases[Math.floor(Math.random() * frases.length)], rem.instancia);
+  } catch (e) { /* silencioso */ }
+}
+
+module.exports = {
+  enviarMensagem,
+  enviarImagem,
+  formatarNumero,
+  limparJid,
+  limitePorDia,
+  AQUECIMENTO,
+  listarChips,
+  adicionarChip,
+  removerChip,
+  statusChip,
+  qrcodeChip,
+  criarInstancia,
+  proximoChip,
+  registrarUso,
+  registrarFalha,
+  resetarContadoresDiarios,
+  pausarChip,
+  atualizarLimiteDiario,
+  verificarNumero,
+  marcarComoLida,
+  aquecerChipsInternamente,
+  extrairErroAPI,
+  erroEhPermanente,
+};
