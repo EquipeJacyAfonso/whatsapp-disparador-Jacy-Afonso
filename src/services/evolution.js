@@ -19,10 +19,6 @@ async function getApi() {
   });
 }
 
-// ─── Diagnóstico de erros da Evolution API ────────────────────────────────────
-// Em vez de propagar só "Request failed with status code 400" (genérico do axios),
-// extrai a mensagem real que a API devolveu — isso é o que aparece nos logs do
-// painel a partir de agora, sem precisar ir direto no docker logs toda vez.
 function extrairErroAPI(err) {
   if (err.response && err.response.data) {
     const d = err.response.data;
@@ -34,8 +30,6 @@ function extrairErroAPI(err) {
   return err.message;
 }
 
-// Erros 4xx (exceto 429, rate-limit) são de configuração/formato — tentar de novo
-// não resolve. Usado para a fila não ficar re-tentando (e atrasando tudo) à toa.
 function erroEhPermanente(err) {
   const status = err.response && err.response.status;
   return !!status && status >= 400 && status < 500 && status !== 429;
@@ -43,30 +37,37 @@ function erroEhPermanente(err) {
 
 // ─── Formatação ───────────────────────────────────────────────────────────────
 
-function formatarNumero(numero) {
-  let limpo = String(numero).replace(/\D/g, '');
-  if (!limpo.startsWith('55')) limpo = '55' + limpo;
+function formatarNumero(numeroBruto) {
+  let limpo = String(numeroBruto).replace(/\D/g, '');
+
+  // Remove zero à esquerda (ex: 011999... → 11999...)
+  if (limpo.startsWith('0')) {
+    limpo = limpo.substring(1);
+  }
+
+  // Adiciona DDI do Brasil se não tiver
+  if (!limpo.startsWith('55')) {
+    limpo = '55' + limpo;
+  }
+
+  // A partir daqui, limpo começa com 55 + DDD (2 dígitos) + número
+  const ddd = parseInt(limpo.substring(2, 4));
+  const telefone = limpo.substring(4);
+
+  // Números brasileiros no WhatsApp: todos os celulares têm 9 dígitos (com o nono dígito).
+  // Se o número vier com 8 dígitos (sem o nono), adiciona o 9.
+  // Isso vale para QUALQUER DDD — o nono dígito é obrigatório em todo o Brasil desde 2016.
+  if (telefone.length === 8 && (telefone.startsWith('6') || telefone.startsWith('7') ||
+      telefone.startsWith('8') || telefone.startsWith('9'))) {
+    return '55' + ddd + '9' + telefone;
+  }
+
+  // Se já tem 9 dígitos (formato correto), retorna como está
   return limpo;
 }
 
 function limparJid(jid) {
   return String(jid).replace(/@s\.whatsapp\.net$/, '').replace(/@c\.us$/, '');
-}
-
-async function verificarNumero(numero, instancia) {
-  const api = await getApi();
-  const numeroLimpo = formatarNumero(numero);
-  try {
-    const r = await api.post('/chat/whatsappNumbers/' + instancia, { numbers: [numeroLimpo] });
-    if (r.data && r.data.length > 0 && r.data[0].exists) {
-      const jidBruto = r.data[0].jid || r.data[0].number || numeroLimpo;
-      return limparJid(jidBruto);
-    }
-    return null;
-  } catch (erro) {
-    console.warn('[VERIFY] Falha na verificação de ' + numeroLimpo + ': ' + extrairErroAPI(erro));
-    return numeroLimpo;
-  }
 }
 
 // ─── Gestão de Chips ─────────────────────────────────────────────────────────
@@ -130,15 +131,18 @@ async function criarInstancia(instancia) {
   const api = await getApi();
   const r = await api.post('/instance/create', { instanceName: instancia, qrcode: true, integration: 'WHATSAPP-BAILEYS' });
   try {
+    const serverUrl = await require('./config').get('evolution_url', 'http://app:3000');
+    const webhookBase = serverUrl.replace(/\/evolution.*$/, '').replace(':8080', ':3000').replace('evolution-api', 'app');
     await api.post('/webhook/set/' + instancia, {
       enabled: true,
-      url: 'http://app:3000/webhook/evolution',
+      url: webhookBase + '/webhook/evolution',
       webhookByEvents: false,
-      events: ['MESSAGES_UPSERT']
+      events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE', 'QRCODE_UPDATED']
     });
-    console.log('[OPT-OUT] Webhook ativado para: ' + instancia);
+    console.log('[WEBHOOK] Registrado para ' + instancia + ' (3 eventos)');
   } catch(e) {
-    console.log('[OPT-OUT] Erro webhook ' + instancia + ': ' + e.message);
+    console.warn('[WEBHOOK] Erro ao registrar webhook em ' + instancia + ': ' + e.message);
+    console.warn('[WEBHOOK] → Configure manualmente em Configurações → Webhook');
   }
   return r.data;
 }
@@ -210,11 +214,10 @@ async function marcarComoLida(instancia, messageKey) {
 async function enviarMensagem(numero, mensagem, instancia) {
   const api = await getApi();
   const numeroLimpo = await verificarNumero(numero, instancia);
-  if (!numeroLimpo) throw new Error('Número ' + numero + ' não possui WhatsApp registrado.');
+  if (!numeroLimpo) throw new Error('Número ' + numero + ' não possui WhatsApp registado.');
 
   console.log('[SEND] → ' + numeroLimpo + ' via ' + instancia);
 
-  // Presence fire-and-forget (não bloqueia, mas agora loga o motivo se falhar)
   api.post('/chat/sendPresence/' + instancia, {
     number: numeroLimpo,
     options: { delay: 1000, presence: 'composing' }
@@ -235,36 +238,59 @@ async function enviarMensagem(numero, mensagem, instancia) {
     throw erroFinal;
   }
 
-  // Verificação extra: resposta 200 mas sem corpo reconhecível costuma indicar
-  // "sucesso fantasma" (a API aceitou a requisição mas não confirmou o envio).
+  // BLOQUEIO DO SUCESSO FANTASMA
   if (!r.data || (typeof r.data === 'object' && Object.keys(r.data).length === 0)) {
-    console.warn('[SEND] ⚠ Resposta vazia/suspeita da API para ' + numeroLimpo + ' — confirme manualmente se chegou.');
+    console.warn('[SEND] ⚠ Sucesso fantasma detetado para ' + numeroLimpo);
+    throw new Error('Falha fantasma: A API aceitou, mas o WhatsApp não confirmou o envio.');
   }
 
   console.log('[SEND] ✅ ' + numeroLimpo);
   return r.data;
 }
 
+async function verificarNumero(numero, instancia) {
+  const api = await getApi();
+  const numeroCorrigidoLocal = formatarNumero(numero);
+
+  try {
+    const r = await api.post('/chat/whatsappNumbers/' + instancia, { numbers: [numeroCorrigidoLocal] });
+    
+    if (r.data && r.data.length > 0 && r.data[0].exists) {
+      const jidBruto = r.data[0].jid || r.data[0].number || numeroCorrigidoLocal;
+      return limparJid(jidBruto);
+    }
+    
+    return null; 
+    
+  } catch (erro) {
+    const msgErro = extrairErroAPI(erro);
+    console.warn('[VERIFY] Falha na verificação de rede para ' + numeroCorrigidoLocal + ': ' + msgErro);
+    
+    // A TRAVA DE SEGURANÇA
+    if (msgErro.includes('Connection Closed') || msgErro.includes('disconnected') || msgErro.includes('timeout')) {
+      throw new Error('Sessão do WhatsApp desconectada ou inacessível: ' + msgErro); 
+    }
+
+    // FALLBACK
+    console.log('[VERIFY] A usar formatação local (fallback) para: ' + numeroCorrigidoLocal);
+    return numeroCorrigidoLocal;
+  }
+}
+
 // ─── Envio de Imagem PNG/JPEG ─────────────────────────────────────────────────
-// midiaBase64 : conteúdo do arquivo em base64 (aceita com ou sem prefixo data:)
-// mimetype    : 'image/png' ou 'image/jpeg'
-// midiaNome   : nome original do arquivo (ex: 'promo.jpg')
-// mensagem    : texto vai como legenda embaixo da imagem
 async function enviarImagem(numero, mensagem, instancia, midiaBase64, mimetype, midiaNome) {
   const api = await getApi();
   const numeroLimpo = await verificarNumero(numero, instancia);
-  if (!numeroLimpo) throw new Error('Número ' + numero + ' não possui WhatsApp registrado.');
+  if (!numeroLimpo) throw new Error('Número ' + numero + ' não possui WhatsApp registado.');
 
   console.log('[SEND-IMG] → ' + numeroLimpo + ' via ' + instancia);
 
-  // Presence fire-and-forget (não bloqueia, mas agora loga o motivo se falhar)
   api.post('/chat/sendPresence/' + instancia, {
     number: numeroLimpo,
     options: { delay: 1000, presence: 'composing' }
   }).catch(e => console.warn('[PRESENCE] Aviso (' + instancia + '): ' + extrairErroAPI(e)));
   await new Promise(r => setTimeout(r, 1000));
 
-  // Remove prefixo data URI se presente
   const base64Limpo = midiaBase64.replace(/^data:image\/\w+;base64,/, '');
 
   let r;
@@ -288,8 +314,10 @@ async function enviarImagem(numero, mensagem, instancia, midiaBase64, mimetype, 
     throw erroFinal;
   }
 
+  // BLOQUEIO DO SUCESSO FANTASMA (Mídia)
   if (!r.data || (typeof r.data === 'object' && Object.keys(r.data).length === 0)) {
-    console.warn('[SEND-IMG] ⚠ Resposta vazia/suspeita da API para ' + numeroLimpo + ' — confirme manualmente se chegou.');
+    console.warn('[SEND-MEDIA] ⚠ Sucesso fantasma detetado para ' + numeroLimpo);
+    throw new Error('Falha fantasma de mídia: API aceitou, mas WhatsApp falhou.');
   }
 
   console.log('[SEND-IMG] ✅ ' + numeroLimpo);
