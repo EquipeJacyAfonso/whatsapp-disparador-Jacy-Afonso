@@ -222,15 +222,13 @@ async function enviarMensagem(numero, mensagem, instancia) {
     number: numeroLimpo,
     options: { delay: 1000, presence: 'composing' }
   }).catch(e => console.warn('[PRESENCE] Aviso (' + instancia + '): ' + extrairErroAPI(e)));
-  await new Promise(r => setTimeout(r, 1000));
+  await new Promise(r => setTimeout(r, 500));
 
   let r;
   try {
-    // Evolution API v2: payload flat { number, text }
-    // (v1 usava { number, textMessage: { text } })
     r = await api.post('/message/sendText/' + instancia, {
       number: numeroLimpo,
-      text: mensagem
+      textMessage: { text: mensagem }
     });
   } catch (err) {
     const detalhe = extrairErroAPI(err);
@@ -252,30 +250,28 @@ async function enviarMensagem(numero, mensagem, instancia) {
 
 async function verificarNumero(numero, instancia) {
   const api = await getApi();
-  const numeroCorrigidoLocal = formatarNumero(numero);
+  // Sempre usa o número formatado localmente — não confiamos no JID retornado
+  // pela Evolution API v1.x com storage em arquivo, que pode remover o 9º dígito
+  // dos celulares brasileiros e gerar um número inexistente.
+  const numeroFormatado = formatarNumero(numero);
 
   try {
-    const r = await api.post('/chat/whatsappNumbers/' + instancia, { numbers: [numeroCorrigidoLocal] });
-    
+    const r = await api.post('/chat/whatsappNumbers/' + instancia, { numbers: [numeroFormatado] });
     if (r.data && r.data.length > 0 && r.data[0].exists) {
-      const jidBruto = r.data[0].jid || r.data[0].number || numeroCorrigidoLocal;
-      return limparJid(jidBruto);
+      // Confirma que tem WhatsApp, mas usa nosso número formatado (não o JID da API)
+      return numeroFormatado;
     }
-    
-    return null; 
-    
+    // Número não tem WhatsApp registrado
+    return null;
   } catch (erro) {
     const msgErro = extrairErroAPI(erro);
-    console.warn('[VERIFY] Falha na verificação de rede para ' + numeroCorrigidoLocal + ': ' + msgErro);
-    
-    // A TRAVA DE SEGURANÇA
+    // Erros de sessão desconectada: propaga para o caller tratar
     if (msgErro.includes('Connection Closed') || msgErro.includes('disconnected') || msgErro.includes('timeout')) {
-      throw new Error('Sessão do WhatsApp desconectada ou inacessível: ' + msgErro); 
+      throw new Error('Sessão do WhatsApp desconectada ou inacessível: ' + msgErro);
     }
-
-    // FALLBACK
-    console.log('[VERIFY] A usar formatação local (fallback) para: ' + numeroCorrigidoLocal);
-    return numeroCorrigidoLocal;
+    // Outros erros de rede: fallback para enviar mesmo sem confirmar
+    console.warn('[VERIFY] Falha na verificação de ' + numeroFormatado + ' (' + msgErro + ') — usando fallback local');
+    return numeroFormatado;
   }
 }
 
@@ -291,20 +287,22 @@ async function enviarImagem(numero, mensagem, instancia, midiaBase64, mimetype, 
     number: numeroLimpo,
     options: { delay: 1000, presence: 'composing' }
   }).catch(e => console.warn('[PRESENCE] Aviso (' + instancia + '): ' + extrairErroAPI(e)));
-  await new Promise(r => setTimeout(r, 1000));
+  await new Promise(r => setTimeout(r, 500));
 
   const base64Limpo = midiaBase64.replace(/^data:image\/\w+;base64,/, '');
 
   let r;
   try {
-    // Evolution API v2: campos de mídia no nível raiz (não aninhados em mediaMessage)
     r = await api.post('/message/sendMedia/' + instancia, {
       number: numeroLimpo,
-      mediatype: 'image',
-      mimetype: mimetype || 'image/jpeg',
-      caption: mensagem || '',
-      media: base64Limpo,
-      fileName: midiaNome || 'imagem.jpg',
+      options: { delay: 1200, presence: 'composing' },
+      mediaMessage: {
+        mediatype: 'image',
+        mimetype: mimetype || 'image/jpeg',
+        caption: mensagem || '',
+        media: base64Limpo,
+        fileName: midiaNome || 'imagem.jpg',
+      }
     });
   } catch (err) {
     const detalhe = extrairErroAPI(err);
@@ -347,7 +345,9 @@ async function aquecerChipsInternamente() {
     if (!numDest) return;
     const frases = ['Oi, tudo bem?', 'Teste de sinal, recebido?', 'Olá, tudo ok?'];
     await enviarMensagem(numDest, frases[Math.floor(Math.random() * frases.length)], rem.instancia);
-  } catch (e) { /* silencioso */ }
+  } catch (e) {
+    console.warn('[AQUECIMENTO] Erro ao aquecer chips: ' + (e.message || e));
+  }
 }
 
 module.exports = {

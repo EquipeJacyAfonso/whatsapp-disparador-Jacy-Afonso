@@ -24,39 +24,87 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
-// ─── Webhook da Evolution API (Opt-Out + Marcação de Leitura) ────────────────
+// ─── Webhook da Evolution API (Único ponto de entrada para todos os eventos) ──
+// Trata: connection.update (status chip), qrcode.updated, messages.upsert (opt-out)
+// IMPORTANTE: a Evolution API só suporta 1 webhook por instância — tudo aqui.
 const evolutionService = require('./services/evolution');
 
 app.post('/webhook/evolution', async (req, res) => {
-  res.status(200).send('OK');
+  res.status(200).send('OK'); // responde imediatamente antes de processar
   try {
     const payload = req.body;
-    const instancia = payload.instance;
+    const instancia = payload.instance || payload.data?.instance;
+    const event = payload.event;
+    const data = payload.data;
 
-    if (payload.event === 'messages.upsert') {
+    // ── Atualização de status de conexão ──────────────────────────────────────
+    if (event === 'connection.update') {
+      const state = (data && (data.state || data.status)) || 'desconhecido';
+      const pool = require('./db');
+      await pool.query('UPDATE chips SET status=$1, ultimo_ping=NOW() WHERE instancia=$2', [state, instancia]);
+      await pool.query("INSERT INTO logs (nivel, mensagem, dados) VALUES ('info',$1,$2)",
+        ['Webhook: chip ' + instancia + ' → ' + state, JSON.stringify({ instancia, state })]);
+      console.log('[WEBHOOK] ' + instancia + ' → ' + state);
+
+      const { disparoQueue } = require('./queue/disparo');
+      if (state === 'open') {
+        // Chip reconectou — retoma fila se estava pausada por falta de chips
+        const pausado = await disparoQueue.isPaused();
+        if (pausado && await disparoQueue.getWaitingCount() > 0) {
+          await disparoQueue.resume();
+          console.log('[WEBHOOK] ✅ Fila retomada após reconexão de ' + instancia);
+        }
+      } else if (['close', 'connecting', 'disconnected'].includes(state)) {
+        // Chip desconectou — pausa fila se não houver outros chips online
+        const outros = await pool.query(
+          "SELECT COUNT(*) FROM chips WHERE status='open' AND instancia!=$1", [instancia]
+        );
+        const filaAtiva = !(await disparoQueue.isPaused());
+        const temMensagens = (await disparoQueue.getWaitingCount() + await disparoQueue.getActiveCount()) > 0;
+        if (parseInt(outros.rows[0].count) === 0 && filaAtiva && temMensagens) {
+          await disparoQueue.pause();
+          console.warn('[WEBHOOK] ⚠ ' + instancia + ' desconectou. Fila pausada.');
+        }
+      }
+      return;
+    }
+
+    // ── QR Code atualizado ────────────────────────────────────────────────────
+    if (event === 'qrcode.updated') {
+      const pool = require('./db');
+      await pool.query("UPDATE chips SET status='qr_code', ultimo_ping=NOW() WHERE instancia=$1", [instancia]);
+      return;
+    }
+
+    // ── Mensagem recebida (opt-out + marcação como lida) ──────────────────────
+    if (event === 'messages.upsert') {
       const msg = payload.data;
-      if (msg.key.fromMe) return;
+      if (!msg || msg.key?.fromMe) return;
 
+      // Marca como lida
       if (instancia && msg.key) {
         await evolutionService.marcarComoLida(instancia, msg.key);
       }
 
+      // Detecta opt-out (SAIR, STOP, etc.)
       const texto = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
       if (!texto) return;
 
       const textoLimpo = texto.trim().toUpperCase();
       const palavrasChave = ['SAIR', 'PARAR', 'STOP', 'CANCELAR', 'REMOVER'];
-
       if (palavrasChave.includes(textoLimpo)) {
-        const numeroRemetente = msg.key.remoteJid.replace('@s.whatsapp.net', '');
         const pool = require('./db');
+        const { formatarNumero } = require('./services/evolution');
+        const numeroRemetente = formatarNumero(msg.key.remoteJid.replace('@s.whatsapp.net', ''));
         await pool.query(
-          `INSERT INTO blacklist (numero, motivo) VALUES ($1, $2) ON CONFLICT (numero) DO NOTHING`,
-          [numeroRemetente, 'Opt-Out: Solicitado pelo utilizador (Webhook)']
+          'INSERT INTO blacklist (numero, motivo) VALUES ($1, $2) ON CONFLICT (numero) DO NOTHING',
+          [numeroRemetente, 'Opt-Out automático via WhatsApp']
         );
-        console.log(`[OPT-OUT] O número ${numeroRemetente} enviou '${textoLimpo}' e foi bloqueado.`);
+        console.log('[OPT-OUT] ' + numeroRemetente + ' bloqueado (' + textoLimpo + ')');
       }
+      return;
     }
+
   } catch (erro) {
     console.error('[WEBHOOK] Erro ao processar:', erro.message);
   }
@@ -65,6 +113,15 @@ app.post('/webhook/evolution', async (req, res) => {
 // ─── Startup ──────────────────────────────────────────────────────────────────
 async function startup() {
   console.log('\n🚀 Servidor: http://localhost:' + PORT);
+
+  // Bug 12: verifica se as tabelas existem antes de tentar usar o banco
+  try {
+    await pool.query('SELECT 1 FROM configuracoes LIMIT 1');
+  } catch (e) {
+    console.error('[STARTUP] ❌ Tabelas não encontradas. Execute: node src/db/migrate.js');
+    console.error('[STARTUP] → Se estiver usando Docker: docker compose run --rm app node src/db/migrate.js');
+    process.exit(1);
+  }
 
   await verificarStartup();
 

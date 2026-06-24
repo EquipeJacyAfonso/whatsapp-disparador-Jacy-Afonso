@@ -819,7 +819,15 @@ async function loadCamps(){
   }).join('')}</tbody></table>`;
 }
 
-function esc(s){return(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n');}
+function esc(s){
+  return(s||'')
+    .replace(/\\/g,'\\\\')
+    .replace(/'/g,"\\'")
+    .replace(/"/g,'&quot;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/\n/g,'\\n');
+}
 
 async function criarCampanha(){
   const nome=document.getElementById('camp-nome').value.trim();

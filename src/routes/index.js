@@ -173,7 +173,8 @@ router.post('/importar/sheets', requireAuth, async (req, res) => {
 
 router.get('/blacklist', requireAuth, async (req, res) => {
   try {
-    const { page = 1, limit = 50 } = req.query;
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 200);
+    const page  = Math.max(parseInt(req.query.page)  || 1, 1);
     const offset = (page - 1) * limit;
     const result = await pool.query('SELECT * FROM blacklist ORDER BY criado_em DESC LIMIT $1 OFFSET $2', [limit, offset]);
     const count = await pool.query('SELECT COUNT(*) FROM blacklist');
@@ -184,8 +185,11 @@ router.get('/blacklist', requireAuth, async (req, res) => {
 router.post('/blacklist', requireAuth, async (req, res) => {
   try {
     const { numero, motivo } = req.body;
-    const limpo = String(numero).replace(/\D/g, '');
-    if (!limpo) return res.status(400).json({ ok: false, error: 'número inválido' });
+    const { formatarNumero } = require('../services/evolution');
+    // Bug 8: normaliza com formatarNumero (garante DDI 55 + DDD + número com 9)
+    // para que a verificação na fila encontre o mesmo formato
+    const limpo = formatarNumero(String(numero).replace(/\D/g, ''));
+    if (!limpo || limpo.length < 12) return res.status(400).json({ ok: false, error: 'número inválido' });
     await pool.query('INSERT INTO blacklist (numero, motivo) VALUES ($1,$2) ON CONFLICT DO NOTHING', [limpo, motivo]);
     await pool.query('DELETE FROM contatos WHERE numero=$1', [limpo]);
     res.json({ ok: true });
@@ -203,12 +207,15 @@ router.delete('/blacklist/:id', requireAuth, async (req, res) => {
 
 router.get('/contatos', requireAuth, async (req, res) => {
   try {
-    const { page = 1, limit = 50, busca } = req.query;
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 200);
+    const page  = Math.max(parseInt(req.query.page)  || 1, 1);
     const offset = (page - 1) * limit;
+    const busca = req.query.busca;
     let where = '', params = [];
     if (busca) { params.push('%' + busca + '%'); where = ' WHERE nome ILIKE $1 OR numero ILIKE $1'; }
-    const result = await pool.query('SELECT * FROM contatos' + where + ' ORDER BY id DESC LIMIT ' + limit + ' OFFSET ' + offset, params);
-    const count = await pool.query('SELECT COUNT(*) FROM contatos' + where, params);
+    const countParams = busca ? params : [];
+    const result = await pool.query('SELECT * FROM contatos' + where + ' ORDER BY id DESC LIMIT $' + (params.length+1) + ' OFFSET $' + (params.length+2), [...params, limit, offset]);
+    const count = await pool.query('SELECT COUNT(*) FROM contatos' + where, countParams);
     res.json({ ok: true, data: result.rows, total: parseInt(count.rows[0].count) });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
@@ -222,7 +229,7 @@ router.delete('/contatos', requireAuth, async (req, res) => {
 
 router.get('/campanhas', requireAuth, async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, nome, status, total_contatos, enviados, falhas, delay_min, delay_max, criado_em, iniciado_em, finalizado_em, midia_mimetype, midia_nome FROM campanhas ORDER BY criado_em DESC');
+    const result = await pool.query('SELECT id, nome, status, template, total_contatos, enviados, falhas, delay_min, delay_max, criado_em, iniciado_em, finalizado_em, midia_mimetype, midia_nome FROM campanhas ORDER BY criado_em DESC');
     res.json({ ok: true, data: result.rows });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
@@ -363,41 +370,7 @@ router.post('/fila/limpar', requireAuth, async (req, res) => {
 
 // ─── Webhook Evolution API ────────────────────────────────────────────────────
 
-router.post('/webhook/evolution', async (req, res) => {
-  try {
-    const { event, instance, data } = req.body;
-    if (!event || !instance) return res.json({ ok: true });
-    console.log('[WEBHOOK] ' + event + ' — ' + instance);
-    if (event === 'connection.update') {
-      const state = (data && (data.state || data.status)) || 'desconhecido';
-      await pool.query('UPDATE chips SET status=$1, ultimo_ping=NOW() WHERE instancia=$2', [state, instance]);
-      await pool.query("INSERT INTO logs (nivel, mensagem, dados) VALUES ('info',$1,$2)",
-        ['Webhook: chip ' + instance + ' → ' + state, JSON.stringify({ instance, state })]);
-      const { disparoQueue } = require('../queue/disparo');
-      if (state === 'open') {
-        const pausado = await disparoQueue.isPaused();
-        if (pausado && await disparoQueue.getWaitingCount() > 0) {
-          await disparoQueue.resume();
-          console.log('[WEBHOOK] ✅ Fila retomada após reconexão de ' + instance);
-        }
-      }
-      if (['close', 'connecting', 'disconnected'].includes(state)) {
-        const outros = await pool.query("SELECT COUNT(*) FROM chips WHERE status='open' AND instancia!=$1", [instance]);
-        if (parseInt(outros.rows[0].count) === 0 && !(await disparoQueue.isPaused())) {
-          await disparoQueue.pause();
-          console.warn('[WEBHOOK] ⚠ ' + instance + ' desconectou. Fila pausada.');
-        }
-      }
-    }
-    if (event === 'qrcode.updated') {
-      await pool.query("UPDATE chips SET status='qr_code', ultimo_ping=NOW() WHERE instancia=$1", [instance]);
-    }
-    res.json({ ok: true });
-  } catch (err) {
-    console.error('[WEBHOOK] Erro:', err.message);
-    res.json({ ok: true });
-  }
-});
+;
 
 router.post('/webhook/registrar', requireAuth, async (req, res) => {
   try {
@@ -483,11 +456,13 @@ router.post('/campanhas/:id/remover-duplicatas', requireAuth, async (req, res) =
 
 router.get('/logs', requireAuth, async (req, res) => {
   try {
-    const { page = 1, limit = 50, nivel } = req.query;
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 50, 1), 200);
+    const page  = Math.max(parseInt(req.query.page)  || 1, 1);
     const offset = (page - 1) * limit;
+    const { nivel } = req.query;
     const where = nivel ? 'WHERE nivel=$1' : '';
     const params = nivel ? [nivel] : [];
-    const result = await pool.query('SELECT * FROM logs ' + where + ' ORDER BY criado_em DESC LIMIT ' + limit + ' OFFSET ' + offset, params);
+    const result = await pool.query('SELECT * FROM logs ' + where + ' ORDER BY criado_em DESC LIMIT $' + (params.length+1) + ' OFFSET $' + (params.length+2), [...params, limit, offset]);
     const count = await pool.query('SELECT COUNT(*) FROM logs ' + where, params);
     res.json({ ok: true, data: result.rows, total: parseInt(count.rows[0].count) });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }

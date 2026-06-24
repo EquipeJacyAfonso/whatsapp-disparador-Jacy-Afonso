@@ -3,7 +3,7 @@ const Bull = require('bull');
 const pool = require('../db');
 const { enviarMensagem, enviarImagem, proximoChip, registrarUso, registrarFalha, statusChip } = require('../services/evolution');
 const { renderTemplate } = require('../services/csv');
-const { processarSpintax, verificarCondicoes, processarErroBan, chipEmDescanso, msAteJanelaAbrir } = require('../services/antiban');
+const { processarSpintax, verificarCondicoes, processarErroBan, chipEmDescanso, msAteJanelaAbrir, registrarFimCampanhaChip } = require('../services/antiban');
 const config = require('../services/config');
 
 function delayAleatorio(minMs, maxMs) {
@@ -34,7 +34,13 @@ const disparoQueue = new Bull('disparos', {
 
 disparoQueue.on('error', err => console.error('[FILA] Erro:', err.message));
 disparoQueue.on('active', job => console.log('[FILA] Processando #' + job.id + ' → ' + job.data.numero));
-disparoQueue.on('completed', (job, r) => console.log('[FILA] ✅ #' + job.id + ' via ' + (r && r.chip || '?')));
+disparoQueue.on('completed', (job, r) => {
+  if (r && r.ok === false) {
+    console.log('[FILA] ⚠ #' + job.id + ' finalizado sem sucesso (' + (r.motivo || '?') + ')');
+  } else {
+    console.log('[FILA] ✅ #' + job.id + ' via ' + (r && r.chip || '?'));
+  }
+});
 disparoQueue.on('failed', (job, err) => console.error('[FILA] ❌ #' + job.id + ': ' + err.message));
 
 // ─── Cleanup de jobs travados no startup ──────────────────────────────────────
@@ -75,6 +81,39 @@ async function verificarChipConectado(chip) {
   }
 }
 
+// ─── Circuit breaker — desliga campanha sozinha se detectar falha sistêmica ───
+// Diferente do controle de "falhas por chip" (antiban): aqui o sinal é
+// "N falhas seguidas SEM nenhum envio confirmado" numa campanha — isso indica
+// bug de configuração/payload/API fora do ar, não números ruins isolados.
+// Evita queimar a lista inteira de contatos com o mesmo erro repetido.
+const CIRCUIT_BREAKER_MIN_FALHAS = 3;
+
+async function verificarCircuitBreaker(campanhaId, erroDetalhe) {
+  try {
+    const camp = await pool.query('SELECT status, enviados, falhas FROM campanhas WHERE id=$1', [campanhaId]);
+    if (!camp.rows.length) return;
+    const c = camp.rows[0];
+    if (c.status !== 'em_andamento') return; // já pausada/concluída — nada a fazer
+    if (c.enviados > 0) return; // já teve pelo menos 1 sucesso — não é falha sistêmica
+    if (c.falhas < CIRCUIT_BREAKER_MIN_FALHAS) return;
+
+    await disparoQueue.pause();
+    await pool.query("UPDATE campanhas SET status='pausado' WHERE id=$1", [campanhaId]);
+
+    const msg = 'Campanha #' + campanhaId + ' pausada automaticamente: ' + c.falhas +
+      ' falhas seguidas sem nenhum envio confirmado. Último erro: ' + erroDetalhe;
+    await addLog('alerta', msg);
+    console.error('[CIRCUIT-BREAKER] ⚠ ' + msg);
+
+    try {
+      const { notificarFalhaSistemica } = require('../services/notificacoes');
+      await notificarFalhaSistemica(campanhaId, erroDetalhe);
+    } catch (e) { /* notificação é best-effort */ }
+  } catch (e) {
+    console.error('[CIRCUIT-BREAKER] Erro ao verificar:', e.message);
+  }
+}
+
 // ─── Processador principal ────────────────────────────────────────────────────
 
 disparoQueue.process(1, async (job) => {
@@ -91,8 +130,10 @@ disparoQueue.process(1, async (job) => {
     return { ok: false, motivo: 'fora_janela' };
   }
 
-  // 2. Blacklist
-  const bl = await pool.query('SELECT 1 FROM blacklist WHERE numero = $1', [numero]);
+  // 2. Blacklist — normaliza o número para garantir mesmo formato do cadastro
+  const { formatarNumero } = require('../services/evolution');
+  const numeroNorm = formatarNumero(numero);
+  const bl = await pool.query('SELECT 1 FROM blacklist WHERE numero = $1', [numeroNorm]);
   if (bl.rows.length) {
     await pool.query("UPDATE disparos SET status='bloqueado', erro='Na blacklist' WHERE id=$1", [disparoId]);
     return { ok: false, motivo: 'blacklist' };
@@ -152,6 +193,21 @@ disparoQueue.process(1, async (job) => {
     }
 
     await registrarFalha(chip.id);
+
+    if (err.semRetry) {
+      // Erro permanente (ex: 400 de formato de payload) — tentar de novo não resolve.
+      // Marca como falha definitiva direto, sem gastar os 3 reenvios com backoff.
+      await pool.query(
+        "UPDATE disparos SET status='falha', tentativas=tentativas+1, erro=$1 WHERE id=$2",
+        [err.message, disparoId]
+      );
+      await pool.query('UPDATE campanhas SET falhas=falhas+1 WHERE id=$1', [campanhaId]);
+      await addLog('erro', 'Falha definitiva (sem retry) ' + numero + ': ' + err.message);
+      await verificarConclusaoCampanha(campanhaId);
+      await verificarCircuitBreaker(campanhaId, err.message);
+      return { ok: false, motivo: 'erro_permanente', erro: err.message };
+    }
+
     await pool.query('UPDATE disparos SET tentativas=tentativas+1, erro=$1 WHERE id=$2', [err.message, disparoId]);
     await addLog('erro', 'Falha ' + numero + ': ' + err.message);
     throw err;
@@ -164,6 +220,7 @@ disparoQueue.on('failed', async (job, err) => {
     await pool.query("UPDATE disparos SET status='falha', erro=$1 WHERE id=$2", [err.message, disparoId]);
     await pool.query('UPDATE campanhas SET falhas=falhas+1 WHERE id=$1', [campanhaId]);
     await verificarConclusaoCampanha(campanhaId);
+    await verificarCircuitBreaker(campanhaId, err.message);
   }
 });
 
@@ -185,11 +242,30 @@ async function verificarConclusaoCampanha(campanhaId) {
       "UPDATE campanhas SET status='concluido', finalizado_em=NOW() WHERE id=$1 AND status='em_andamento'",
       [campanhaId]
     );
+
+    // Registra fim de campanha em cada chip usado — habilita o descanso inter-campanha (Anti-ban)
+    try {
+      const chipsUsados = await pool.query(
+        "SELECT DISTINCT chip_id FROM disparos WHERE campanha_id=$1 AND chip_id IS NOT NULL",
+        [campanhaId]
+      );
+      for (const row of chipsUsados.rows) {
+        await registrarFimCampanhaChip(row.chip_id);
+      }
+    } catch(e2) { /* não bloqueia a conclusão da campanha */ }
+
     const stats = await pool.query('SELECT enviados, falhas, total_contatos FROM campanhas WHERE id=$1', [campanhaId]);
     const s = stats.rows[0];
     const msg = 'Campanha #' + campanhaId + ' concluída — ' + s.enviados + ' enviados, ' + s.falhas + ' falhas de ' + s.total_contatos + ' contatos.';
     await addLog('info', msg);
     console.log('[CAMPANHA] ✅ ' + msg);
+
+    // Notificação WhatsApp (best-effort)
+    try {
+      const { notificarCampanhaConcluida } = require('../services/notificacoes');
+      await notificarCampanhaConcluida(campanhaId);
+    } catch(e2) { /* notificação é best-effort */ }
+
   } catch(e) {
     console.error('[CAMPANHA] Erro ao verificar conclusão:', e.message);
   }
@@ -254,6 +330,14 @@ async function enfileirarCampanha(campanhaId) {
     [campanhaId]
   );
   if (!disparos.rows.length) throw new Error('Nenhum disparo pendente.');
+
+  // Bug 6: bloqueia re-enfileiramento se já houver jobs aguardando para esta campanha
+  // (evita envio duplicado ao clicar Iniciar numa campanha que foi pausada)
+  const jobsEsperando = await disparoQueue.getWaiting();
+  const jobsDaCampanha = jobsEsperando.filter(j => j.data && j.data.campanhaId === campanhaId);
+  if (jobsDaCampanha.length > 0) {
+    throw new Error('Campanha já tem ' + jobsDaCampanha.length + ' mensagens na fila. Use o botão Retomar em vez de Iniciar.');
+  }
 
   console.log('[CAMPANHA] Enfileirando ' + disparos.rows.length + ' mensagens...');
   for (const row of disparos.rows) {
