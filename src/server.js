@@ -117,10 +117,10 @@ async function startup() {
   // Bug 12: verifica se as tabelas existem antes de tentar usar o banco
   try {
     await pool.query('SELECT 1 FROM configuracoes LIMIT 1');
-  } catch (e) {
-    console.error('[STARTUP] ❌ Tabelas não encontradas. Execute: node src/db/migrate.js');
-    console.error('[STARTUP] → Se estiver usando Docker: docker compose run --rm app node src/db/migrate.js');
-    process.exit(1);
+  } catch (error) {
+    console.error("[STARTUP] ❌ Erro REAL ao verificar o banco:", error); // Adicione o 'error' aqui
+    console.error("[STARTUP] ❌ Tabelas não encontradas. Execute: node src/db/migrate.js");
+    // ...
   }
 
   await verificarStartup();
