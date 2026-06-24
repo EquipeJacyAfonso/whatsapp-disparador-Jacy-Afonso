@@ -79,7 +79,7 @@ services:
       - SERVER_URL=${EVOLUTION_SERVER_URL:-http://localhost:8080}
       - AUTHENTICATION_TYPE=apikey
       - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY:-minhachave123}
-      - DATABASE_ENABLED=true
+      - DATABASE_ENABLED=false
       - DATABASE_PROVIDER=postgresql
       - DATABASE_CONNECTION_URI=postgresql://disparador:${DB_PASSWORD:-disparador123}@postgres:5432/disparador?schema=evolution
       - CORS_ORIGIN=*
