@@ -116,6 +116,8 @@ app.post('/webhook/evolution', async (req, res) => {
 async function startup() {
   console.log('\n🚀 Servidor: http://localhost:' + PORT);
 
+  const pool = require('./db'); // <--- ADICIONE ESTA LINHA AQUI!
+
   // Bug 12: verifica se as tabelas existem antes de tentar usar o banco
   try {
     await pool.query('SELECT 1 FROM configuracoes LIMIT 1');
