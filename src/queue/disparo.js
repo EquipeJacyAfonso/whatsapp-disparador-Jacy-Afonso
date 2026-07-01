@@ -158,9 +158,18 @@ disparoQueue.process(1, async (job) => {
     await pool.query('UPDATE campanhas SET enviados=enviados+1 WHERE id=$1', [campanhaId]);
     await verificarConclusaoCampanha(campanhaId);
 
-    const delay = delayAleatorio(delayMin, delayMax);
-    console.log('[DISPARO] ✅ ' + numero + ' — próxima em ' + Math.round(delay/1000) + 's');
-    await new Promise(r => setTimeout(r, delay));
+    // Lógica de fadiga: 10% de chance de fazer uma "pausa para o café" de 2 a 5 minutos
+    const delayNormal = delayAleatorio(delayMin, delayMax);
+    let delayAplicado = delayNormal;
+
+    if (Math.random() < 0.10) {
+        const pausaCafe = delayAleatorio(120000, 300000); // 2 a 5 minutos em ms
+        delayAplicado += pausaCafe;
+        console.log('[ANTIBAN] ☕ Pausa longa de ' + Math.round(pausaCafe/1000) + 's no chip ' + chip.instancia);
+    }
+
+    console.log('[DISPARO] ✅ ' + numero + ' — próxima em ' + Math.round(delayAplicado/1000) + 's');
+    await new Promise(r => setTimeout(r, delayAplicado));
     return { ok: true, chip: chip.instancia };
 
   } catch (err) {

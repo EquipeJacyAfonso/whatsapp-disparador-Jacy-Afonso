@@ -40,45 +40,38 @@ async function processarMensagem(instancia, msg, session) {
     if (!texto.trim()) return;
 
     const textoLimpo = texto.trim().toUpperCase();
-    if (!PALAVRAS_OPTOUT.has(textoLimpo)) return;
-
-    // 3. Opt-out detectado — extrai e normaliza o número remetente
-    const jidRemetente = msg.key.remoteJid || '';
-    const numero = jidRemetente
-      .replace(/@s\.whatsapp\.net$/, '')
-      .replace(/@c\.us$/, '')
-      .replace(/[^0-9]/g, '');
-
-    if (!numero || numero.length < 10) return;
-
-    // 4. Adiciona à blacklist e remove dos contatos
-    await pool.query(
-      `INSERT INTO blacklist (numero, motivo)
-       VALUES ($1, $2)
-       ON CONFLICT (numero) DO NOTHING`,
-      [numero, 'Opt-out automático: "' + textoLimpo + '" via WhatsApp']
-    );
-    await pool.query('DELETE FROM contatos WHERE numero = $1', [numero]);
-
-    await _log('info', '[OPT-OUT] ' + numero + ' bloqueado após "' + textoLimpo + '" via ' + instancia);
-    console.log('[EVENTS] 🚫 Opt-out: ' + numero + ' (' + textoLimpo + ')');
-
-  } catch (e) {
-    console.error('[EVENTS] Erro ao processar mensagem de ' + instancia + ': ' + e.message);
-  }
-
-  // Código existente: Extrai texto da mensagem...
-    const textoLimpo = texto.trim().toUpperCase();
-
-    // 1. Lógica do Opt-Out existente...
-    if (PALAVRAS_OPTOUT.has(textoLimpo)) { /* ... */ return; }
-
-    // 2. NOVA LÓGICA: Auto-resposta de aquecimento
-    // Verifica se quem enviou a mensagem é outro chip nosso
-    const remetenteInterno = await pool.query('SELECT instancia FROM chips WHERE instancia != $1', [instancia]);
     
-    // Simplificação lógica: se o sistema detectar que a mensagem foi recebida de um número amigo
-    const eMensagemDeAquecimento = remetenteInterno.rows.some(r => r.instancia); // Adapte para checar o número exato
+    // 3. Lógica de Opt-out
+    if (PALAVRAS_OPTOUT.has(textoLimpo)) {
+      const jidRemetente = msg.key.remoteJid || '';
+      const numero = jidRemetente
+        .replace(/@s\.whatsapp\.net$/, '')
+        .replace(/@c\.us$/, '')
+        .replace(/[^0-9]/g, '');
+
+      if (!numero || numero.length < 10) return;
+
+      await pool.query(
+        `INSERT INTO blacklist (numero, motivo)
+         VALUES ($1, $2)
+         ON CONFLICT (numero) DO NOTHING`,
+        [numero, 'Opt-out automático: "' + textoLimpo + '" via WhatsApp']
+      );
+      await pool.query('DELETE FROM contatos WHERE numero = $1', [numero]);
+
+      await _log('info', '[OPT-OUT] ' + numero + ' bloqueado após "' + textoLimpo + '" via ' + instancia);
+      console.log('[EVENTS] 🚫 Opt-out: ' + numero + ' (' + textoLimpo + ')');
+      return; // Sai da função após o opt-out
+    }
+
+    // 4. NOVA LÓGICA: Auto-resposta de aquecimento
+    // Se não for um Opt-Out, verifica se a mensagem veio de outro chip do sistema
+    const remetenteInterno = await pool.query('SELECT instancia FROM chips WHERE instancia != $1', [instancia]);
+    const jidLimpo = msg.key.remoteJid.replace(/[^0-9]/g, ''); // Pega apenas os números de quem enviou
+    
+    // Verifica se o número que enviou está na nossa base de chips
+    const eMensagemDeAquecimento = remetenteInterno.rows.some(r => r.instancia.includes(jidLimpo)); 
+    
     if (eMensagemDeAquecimento) {
        const respostas = [
          '{Tudo ótimo|Tudo bem}, e por aí?', 
@@ -93,6 +86,10 @@ async function processarMensagem(instancia, msg, session) {
          await session.enviarTexto(msg.key.remoteJid, resposta);
        }, Math.floor(Math.random() * 10000) + 5000);
     }
+
+  } catch (e) {
+    console.error('[EVENTS] Erro ao processar mensagem de ' + instancia + ': ' + e.message);
+  }
 }
 
 // ─── Status de conexão ────────────────────────────────────────────────────────
