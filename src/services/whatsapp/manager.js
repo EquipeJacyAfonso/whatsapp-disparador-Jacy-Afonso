@@ -116,10 +116,10 @@ async function verificarNumero(numero, instancia) {
   }
 
   try {
-    const [resultado] = await session.socket.onWhatsApp(numeroFormatado);
-    if (resultado?.exists) return numeroFormatado;
-    // Número não tem WhatsApp
-    return null;
+      const [resultado] = await session.socket.onWhatsApp(numeroFormatado);
+      if (resultado?.exists) return resultado.jid; // <-- USE O JID OFICIAL DO WHATSAPP!
+      // Número não tem WhatsApp
+      return null;
   } catch (e) {
     console.warn('[MGR] onWhatsApp falhou para ' + numeroFormatado + ': ' + e.message + ' — usando fallback');
     return numeroFormatado;
