@@ -372,29 +372,9 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
 <!-- CONFIG -->
 <div class="page" id="page-config">
   <h2>⚙ Configurações</h2>
-  <div class="row3" style="margin-bottom:18px">
-    <div class="stat"><div class="stat-l">Evolution API</div><div id="cfg-evo-badge" class="cfg-stat-badge" style="color:var(--muted)">—</div></div>
+  <div class="row" style="margin-bottom:18px">
     <div class="stat"><div class="stat-l">Google Sheets</div><div id="cfg-sheets-badge" class="cfg-stat-badge" style="color:var(--muted)">—</div></div>
     <div class="stat"><div class="stat-l">Banco de dados</div><div id="cfg-db-badge" class="cfg-stat-badge" style="color:var(--muted)">—</div></div>
-  </div>
-  <div class="card" id="sec-evo">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <h3 style="margin:0">🔌 Evolution API</h3>
-      <span id="evo-status-badge" class="badge bg-gray">não testado</span>
-    </div>
-    <div class="row">
-      <div><label>URL</label><input type="text" id="cfg-evo-url" placeholder="http://localhost:8080"></div>
-      <div>
-        <label>API Key</label>
-        <input type="password" id="cfg-evo-key" placeholder="sua_chave_aqui">
-        <button class="bs sm" onclick="toggleSenha('cfg-evo-key')" style="margin-top:-10px;margin-bottom:14px">👁 Ver</button>
-      </div>
-    </div>
-    <div class="bg">
-      <button class="bp" onclick="salvarConfig('evolution')">💾 Salvar</button>
-      <button class="bs" onclick="testarEvolution()">🔌 Testar</button>
-    </div>
-    <div id="evo-test-result" style="margin-top:12px"></div>
   </div>
   <div class="card">
     <h3>⏱ Delays padrão</h3>
@@ -442,16 +422,6 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
     </div>
     <div id="sync-result" style="margin-top:12px"></div>
   </div>
-  <div class="card" id="sec-webhook">
-    <h3>🔔 Webhook</h3>
-    <div class="hint">Recebe notificações em tempo real da Evolution API sobre conexão/desconexão de chips.</div>
-    <div style="display:flex;gap:7px;margin-bottom:14px">
-      <input type="text" id="cfg-webhook-url" placeholder="http://seu-servidor:3000/api/webhook/evolution" style="margin:0;flex:1">
-      <button class="bs sm" onclick="preencherWebhookLocal()">🏠 Local</button>
-    </div>
-    <button class="bp" onclick="registrarWebhook()">🔔 Registrar em todos os chips</button>
-    <div id="webhook-result" style="margin-top:12px"></div>
-  </div>
   <div class="card">
     <h3>🔔 Notificações WhatsApp</h3>
     <div class="hint">Receba alertas quando campanhas concluírem ou chips forem banidos.</div>
@@ -467,7 +437,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   <div class="card">
     <h3>🔍 Diagnóstico</h3>
     <div class="bg" style="margin-bottom:12px">
-      <button class="bs" onclick="testarEvolution()">🔌 Evolution</button>
+      <button class="bs" onclick="testarConexaoChip()">📱 Chip</button>
       <button class="bs" onclick="testarSheets()">📊 Sheets</button>
       <button class="bs" onclick="testarBanco()">🗄 Banco</button>
     </div>
@@ -819,7 +789,15 @@ async function loadCamps(){
   }).join('')}</tbody></table>`;
 }
 
-function esc(s){return(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n');}
+function esc(s){
+  return(s||'')
+    .replace(/\\/g,'\\\\')
+    .replace(/'/g,"\\'")
+    .replace(/"/g,'&quot;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/\n/g,'\\n');
+}
 
 async function criarCampanha(){
   const nome=document.getElementById('camp-nome').value.trim();
@@ -1120,8 +1098,6 @@ async function loadConfig(){
   try{
     const r=await fetch(`${API}/config`);const data=await r.json();if(!data.ok)return;
     const c=data.data;
-    document.getElementById('cfg-evo-url').value=c.evolution_url||'';
-    document.getElementById('cfg-evo-key').value=c.evolution_key||'';
     document.getElementById('cfg-dmin').value=c.delay_min||20;
     document.getElementById('cfg-dmax').value=c.delay_max||50;
     document.getElementById('cfg-sheet-id').value=c.sheets_id||'';
@@ -1133,16 +1109,13 @@ async function loadConfig(){
       document.getElementById('creds-status').innerHTML='<div class="hint warn">⚠ Credenciais não configuradas</div>';
     }
     if(c.sync_proxima){document.getElementById('cfg-sync-proxima').textContent=new Date(c.sync_proxima).toLocaleString('pt-BR');}
-    const evoOk=!!(c.evolution_url&&c.evolution_key);
     const sheetsOk=c.sheets_credentials==='__configurado__';
-    document.getElementById('cfg-evo-badge').textContent=evoOk?'✅ Configurada':'⚠ Não configurada';
-    document.getElementById('cfg-evo-badge').style.color=evoOk?'var(--green)':'var(--yellow)';
     document.getElementById('cfg-sheets-badge').textContent=sheetsOk?'✅ Configurado':'⚠ Não configurado';
     document.getElementById('cfg-sheets-badge').style.color=sheetsOk?'var(--green)':'var(--yellow)';
     document.getElementById('cfg-db-badge').textContent='✅ Conectado';
     document.getElementById('cfg-db-badge').style.color='var(--green)';
-    document.getElementById('cfg-status').textContent=evoOk?'API configurada':'⚠ Configure a API';
-    document.getElementById('cfg-status').style.color=evoOk?'var(--green)':'var(--yellow)';
+    document.getElementById('cfg-status').textContent=sheetsOk?'Sheets configurado':'';
+    document.getElementById('cfg-status').style.color='var(--green)';
     // Notif
     if(document.getElementById('cfg-admin-num'))document.getElementById('cfg-admin-num').value=c.admin_numero||'';
     if(document.getElementById('cfg-admin-inst'))document.getElementById('cfg-admin-inst').value=c.admin_chip_instancia||'';
@@ -1153,18 +1126,16 @@ function extrairIdDaURL(){const url=prompt('Cole a URL da planilha:');if(!url)re
 function lerArquivoCreds(input){const file=input.files[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{try{const json=JSON.parse(e.target.result);document.getElementById('cfg-sheet-creds').value=e.target.result;if(json.client_email){document.getElementById('client-email-info').innerHTML=`<div class="hint" style="border-color:var(--blue)">📧 <strong style="color:var(--blue)">${json.client_email}</strong><br>Compartilhe a planilha com este e-mail.</div>`;}document.getElementById('creds-status').innerHTML='<div class="hint" style="border-color:var(--green);color:var(--green)">✅ JSON carregado — clique em Salvar</div>';toast('JSON carregado!');}catch(ex){toast('JSON inválido','err');}};reader.readAsText(file);}
 async function salvarConfig(tipo){
   let payload={};
-  if(tipo==='evolution'){payload={evolution_url:document.getElementById('cfg-evo-url').value.trim(),evolution_key:document.getElementById('cfg-evo-key').value.trim()};if(!payload.evolution_url){toast('URL obrigatória','err');return;}}
-  else if(tipo==='delays'){const dmin=parseInt(document.getElementById('cfg-dmin').value);const dmax=parseInt(document.getElementById('cfg-dmax').value);if(dmin<5){toast('Mínimo 5s','err');return;}if(dmax<=dmin){toast('Máximo deve ser maior','err');return;}payload={delay_min:String(dmin),delay_max:String(dmax)};}
+  if(tipo==='delays'){const dmin=parseInt(document.getElementById('cfg-dmin').value);const dmax=parseInt(document.getElementById('cfg-dmax').value);if(dmin<5){toast('Mínimo 5s','err');return;}if(dmax<=dmin){toast('Máximo deve ser maior','err');return;}payload={delay_min:String(dmin),delay_max:String(dmax)};}
   else if(tipo==='sheets'){const creds=document.getElementById('cfg-sheet-creds').value.trim();payload={sheets_id:document.getElementById('cfg-sheet-id').value.trim(),sheets_range:document.getElementById('cfg-sheet-range').value.trim()||'Sheet1!A:Z'};if(creds&&creds.startsWith('{')){try{JSON.parse(creds);}catch(e){toast('JSON inválido','err');return;}payload.sheets_credentials=creds;}}
   else if(tipo==='sync'){const intervalo=parseInt(document.getElementById('cfg-sync-intervalo').value)||0;payload={sync_intervalo:String(intervalo)};if(intervalo>0){payload.sync_proxima=new Date(Date.now()+intervalo*3600000).toISOString();}}
   try{const r=await fetch(`${API}/config`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await r.json();if(!data.ok)throw new Error(data.error);toast('Configurações salvas!');loadConfig();}catch(e){toast(e.message,'err');}
 }
 async function sincronizarAgora(){const el=document.getElementById('sync-result');el.innerHTML='<span style="color:var(--muted);font-family:var(--mono);font-size:12px">⏳ Sincronizando...</span>';try{const r=await fetch(`${API}/importar/sheets`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});const data=await r.json();if(!data.ok)throw new Error(data.error);const d=data.data;el.innerHTML=`<div class="hint" style="border-color:var(--green)">✅ ${d.importados} novos · ${d.atualizados} atualizados</div>`;toast(`Sheets sincronizado!`);}catch(e){el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;toast(e.message,'err');}}
-async function testarEvolution(){const el=document.getElementById('evo-test-result')||document.getElementById('diag-result');if(el)el.innerHTML='<span style="color:var(--muted);font-family:var(--mono);font-size:12px">🔌 Testando...</span>';try{const r=await fetch(`${API}/chips`);const data=await r.json();const chips=data.data||[];if(!chips.length){if(el)el.innerHTML='<div class="hint err">Nenhum chip cadastrado</div>';return;}const r2=await fetch(`${API}/chips/${chips[0].instancia}/status`);const d2=await r2.json();const ok=d2.data?.state==='open';if(el)el.innerHTML=`<div class="hint" style="border-color:${ok?'var(--green)':'var(--red)'}">${ok?'✅':'❌'} ${chips[0].nome}: ${d2.data?.state}</div>`;}catch(e){if(el)el.innerHTML=`<div class="hint err">❌ ${e.message}`;}}
+async function testarConexaoChip(){const el=document.getElementById('diag-result');if(el)el.innerHTML='<span style="color:var(--muted);font-family:var(--mono);font-size:12px">📱 Testando...</span>';try{const r=await fetch(`${API}/chips`);const data=await r.json();const chips=data.data||[];if(!chips.length){if(el)el.innerHTML='<div class="hint err">Nenhum chip cadastrado</div>';return;}const r2=await fetch(`${API}/chips/${chips[0].instancia}/status`);const d2=await r2.json();const ok=d2.data?.state==='open';if(el)el.innerHTML=`<div class="hint" style="border-color:${ok?'var(--green)':'var(--red)'}">${ok?'✅':'❌'} ${chips[0].nome}: ${d2.data?.state}</div>`;}catch(e){if(el)el.innerHTML=`<div class="hint err">❌ ${e.message}`;}}
 async function testarSheets(){const el=document.getElementById('sheets-test-result')||document.getElementById('diag-result');if(el)el.innerHTML='<span style="color:var(--muted);font-family:var(--mono);font-size:12px">📊 Testando...</span>';try{const r=await fetch(`${API}/importar/sheets`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});const data=await r.json();if(el)el.innerHTML=data.ok?`<div class="hint" style="border-color:var(--green)">✅ Sheets OK — ${data.data.total} linhas</div>`:`<div class="hint err">❌ ${data.error}</div>`;}catch(e){if(el)el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;}}
 async function testarBanco(){const el=document.getElementById('diag-result');try{const r=await fetch(`${API}/contatos?limit=1`);const data=await r.json();if(el)el.innerHTML=data.ok?`<div class="hint" style="border-color:var(--green)">✅ Banco OK — ${data.total} contatos</div>`:`<div class="hint err">❌ ${data.error}</div>`;}catch(e){if(el)el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;}}
-function preencherWebhookLocal(){document.getElementById('cfg-webhook-url').value=`http://localhost:${window.location.port||3000}/api/webhook/evolution`;}
-async function registrarWebhook(){const url=document.getElementById('cfg-webhook-url').value.trim();if(!url){toast('Informe a URL','err');return;}const el=document.getElementById('webhook-result');el.innerHTML='<span style="color:var(--muted);font-family:var(--mono);font-size:12px">🔔 Registrando...</span>';try{const r=await fetch(`${API}/webhook/registrar`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({webhookUrl:url})});const data=await r.json();if(!data.ok)throw new Error(data.error);el.innerHTML=data.data.map(r=>`<div class="hint" style="border-color:${r.ok?'var(--green)':'var(--red)'}">${r.ok?'✅':'❌'} ${r.instancia}: ${r.ok?'OK':r.erro}</div>`).join('');toast('Webhook registrado!');}catch(e){el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;toast(e.message,'err');}}
+
 async function salvarNotifConfig(){const numero=(document.getElementById('cfg-admin-num')?.value||'').trim().replace(/\D/g,'');const instancia=(document.getElementById('cfg-admin-inst')?.value||'').trim();try{const r=await fetch(`${API}/config`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_numero:numero,admin_chip_instancia:instancia})});const data=await r.json();if(!data.ok)throw new Error(data.error);toast('Notificações salvas!');}catch(e){toast(e.message,'err');}}
 async function testarNotificacao(){try{const r=await fetch(`${API}/config/notificacoes/testar`,{method:'POST'});const data=await r.json();if(!data.ok)throw new Error(data.error);toast('Notificação enviada!');}catch(e){toast(e.message,'err');}}
 

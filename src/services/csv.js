@@ -1,7 +1,9 @@
 const pool = require('../db');
 
 function renderTemplate(template, dados) {
-  return template.replace(/\{(\w+)\}/g, (_, key) => dados[key] || '');
+  // Bug 11: \w não inclui acentos em JS — usado \u00C0-\u017F para suportar
+  // colunas com nomes como "saudação", "número", "endereço"
+  return template.replace(/\{([\w\u00C0-\u017F]+)\}/g, (_, key) => dados[key] || '');
 }
 
 function parseCSV(conteudo) {

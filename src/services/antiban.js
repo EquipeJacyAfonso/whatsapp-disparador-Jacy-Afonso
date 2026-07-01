@@ -47,17 +47,18 @@ async function msAteJanelaAbrir() {
 
 // ─── Detecção de ban ──────────────────────────────────────────────────────────
 // Erros que indicam ban ou bloqueio do WhatsApp
+// Bug 2: ajustado para os erros reais que o Baileys emite — as strings HTTP
+// antigas ('401', '403', 'unauthorized') eram específicas da Evolution API
+// e nunca davam match nas exceções JS do Baileys.
 const ERROS_BAN = [
-  'forbidden',
-  'blocked',
+  'logged out',           // DisconnectReason.loggedOut — usuário deslogou ou foi banido
+  'forbidden',            // DisconnectReason.forbidden — conta banida
   'banned',
-  'unauthorized',
-  '401',
-  '403',
-  'invalid session',
-  'not connected',
-  'close session',
-  'logout',
+  'bad session',          // DisconnectReason.badSession — sessão corrompida/inválida
+  'connection closed',    // pode indicar ban se persistente
+  'multi-device mismatch',
+  'não está conectado',   // erro lançado pelo nosso _checarConexao()
+  'não possui whatsapp',
 ];
 
 function erroIndicaBan(mensagemErro) {

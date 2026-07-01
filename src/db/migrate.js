@@ -121,6 +121,18 @@ async function migrate() {
       );
     `);
 
+    // Sessões Baileys — substitui os arquivos que a Evolution API guardava
+    // em /evolution/instances. Cada chip tem uma linha com suas credenciais.
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS chip_sessions (
+        instancia     VARCHAR(255) PRIMARY KEY,
+        creds         JSONB,
+        keys          JSONB        DEFAULT '{}',
+        qrcode_base64 TEXT,
+        atualizado_em TIMESTAMP    DEFAULT NOW()
+      );
+    `);
+
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_disparos_campanha ON disparos(campanha_id);
       CREATE INDEX IF NOT EXISTS idx_disparos_status ON disparos(status);
