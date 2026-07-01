@@ -65,12 +65,12 @@ async function processarMensagem(instancia, msg, session) {
     }
 
     // 4. NOVA LÓGICA: Auto-resposta de aquecimento
-    // Se não for um Opt-Out, verifica se a mensagem veio de outro chip do sistema
-    const remetenteInterno = await pool.query('SELECT instancia FROM chips WHERE instancia != $1', [instancia]);
+    // Busca a coluna 'numero' (ou telefone) dos outros chips no banco de dados
+    const remetenteInterno = await pool.query('SELECT numero FROM chips WHERE instancia != $1 AND numero IS NOT NULL', [instancia]);
     const jidLimpo = msg.key.remoteJid.replace(/[^0-9]/g, ''); // Pega apenas os números de quem enviou
     
-    // Verifica se o número que enviou está na nossa base de chips
-    const eMensagemDeAquecimento = remetenteInterno.rows.some(r => r.instancia.includes(jidLimpo)); 
+    // Verifica se o número que enviou bate com o número de algum dos nossos chips
+    const eMensagemDeAquecimento = remetenteInterno.rows.some(r => jidLimpo.includes(r.numero)); 
     
     if (eMensagemDeAquecimento) {
        const respostas = [
@@ -83,7 +83,13 @@ async function processarMensagem(instancia, msg, session) {
        
        // Aguarda entre 5s a 15s para simular que o "humano" leu e respondeu
        setTimeout(async () => {
-         await session.enviarTexto(msg.key.remoteJid, resposta);
+         try {
+           // Proteção contra falha assíncrona (evita que o servidor caia)
+           await session.enviarTexto(msg.key.remoteJid, resposta);
+           console.log(`[AQUECIMENTO] ${instancia} respondeu a um chip interno.`);
+         } catch (err) {
+           console.error(`[AQUECIMENTO] Falha ao enviar auto-resposta em ${instancia}:`, err.message);
+         }
        }, Math.floor(Math.random() * 10000) + 5000);
     }
 
