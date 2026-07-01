@@ -199,6 +199,20 @@ disparoQueue.process(1, async (job) => {
   }
 });
 
+// Após enviar a mensagem e registrar o sucesso no `disparoQueue.process`:
+  const delayNormal = delayAleatorio(delayMin, delayMax);
+  let delayAplicado = delayNormal;
+
+  // Lógica de fadiga: 10% de chance de fazer uma "pausa para o café" de 2 a 5 minutos
+  if (Math.random() < 0.10) {
+      const pausaCafe = delayAleatorio(120000, 300000); // 2 a 5 minutos em ms
+      delayAplicado += pausaCafe;
+      console.log(`[ANTIBAN] ☕ Pausa longa de ${Math.round(pausaCafe/1000)}s no chip ${chip.instancia}`);
+  }
+
+  console.log(`[DISPARO] ✅ ${numero} — próxima em ${Math.round(delayAplicado/1000)}s`);
+  await new Promise(r => setTimeout(r, delayAplicado));
+
 disparoQueue.on('failed', async (job, err) => {
   const { disparoId, campanhaId } = job.data;
   if (job.attemptsMade >= job.opts.attempts) {

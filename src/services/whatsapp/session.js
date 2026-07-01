@@ -19,6 +19,19 @@ const QRCode = require('qrcode');
 const pool = require('../../db');
 const { usePostgresAuthState, salvarQRCode, limparQRCode } = require('./store');
 
+// Crie esta função de hash simples no topo de session.js
+function obterBrowserAleatorio(instancia) {
+    const browsers = [
+        ['Windows', 'Chrome', '120.0.0.0'],
+        ['Mac OS', 'Safari', '17.0'],
+        ['Windows', 'Edge', '119.0.0.0'],
+        ['Ubuntu', 'Chrome', '118.0.0.0']
+    ];
+    // Usa o tamanho do nome da instância para manter sempre o mesmo SO para a mesma instância
+    const index = instancia.length % browsers.length;
+    return browsers[index];
+}
+
 // ─── Códigos que indicam ban / deslogamento permanente ───────────────────────
 // Nesses casos não reconectamos — o usuário precisa escanear o QR novamente.
 const CODIGOS_PERMANENTES = new Set([
@@ -64,7 +77,7 @@ class ChipSession {
 
     this.socket = makeWASocket({
       version,
-      browser: ['Windows', 'Chrome', '120.0.0.0'], // <-- ADICIONE ESTA LINHA!
+      browser: obterBrowserAleatorio(this.instancia), // <-- ADICIONE ESTA LINHA!
       auth: state,
       printQRInTerminal: false,
       // Logger silencioso — nossos console.log já cobrem o necessário
@@ -191,8 +204,8 @@ class ChipSession {
   async enviarTexto(jid, texto) {
     this._checarConexao();
     const jidCompleto = this._toJid(jid);
-    // Simula "digitando..." por 500ms antes de enviar
-    await this._enviarPresenca(jidCompleto);
+    // Agora o sistema sabe o tamanho do texto para calcular o tempo
+    await this._enviarPresenca(jidCompleto, texto); // <--- ADICIONE ', texto' AQUI
     return this.socket.sendMessage(jidCompleto, { text: texto });
   }
 
@@ -211,7 +224,8 @@ class ChipSession {
       base64.replace(/^data:image\/\w+;base64,/, ''),
       'base64'
     );
-    await this._enviarPresenca(jidCompleto);
+    // Passamos o "caption" para ele simular que está a digitar a legenda
+    await this._enviarPresenca(jidCompleto, caption); // <--- ADICIONE ', caption' AQUI
     return this.socket.sendMessage(jidCompleto, {
       image:    buffer,
       mimetype: mimetype  || 'image/jpeg',
@@ -255,10 +269,21 @@ class ChipSession {
     return limpo + '@s.whatsapp.net';
   }
 
-  async _enviarPresenca(jid) {
+  // Modifique para receber o texto
+  async _enviarPresenca(jid, texto = '') {
     try {
       await this.socket.sendPresenceUpdate('composing', jid);
-      await new Promise(r => setTimeout(r, 500));
+      
+      // Calcula o tempo real de digitação (100ms por caractere)
+      let tempoDigitacao = texto ? texto.length * 100 : 1500;
+      
+      // Limita entre 1.5s e 8s para não travar a fila
+      tempoDigitacao = Math.max(1500, Math.min(tempoDigitacao, 8000));
+      
+      // Adiciona uma pequena variação aleatória de até 1s
+      tempoDigitacao += Math.random() * 1000;
+
+      await new Promise(r => setTimeout(r, tempoDigitacao));
       await this.socket.sendPresenceUpdate('paused', jid);
     } catch (_) { /* não crítico */ }
   }

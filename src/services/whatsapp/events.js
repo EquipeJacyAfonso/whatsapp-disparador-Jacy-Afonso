@@ -66,6 +66,33 @@ async function processarMensagem(instancia, msg, session) {
   } catch (e) {
     console.error('[EVENTS] Erro ao processar mensagem de ' + instancia + ': ' + e.message);
   }
+
+  // Código existente: Extrai texto da mensagem...
+    const textoLimpo = texto.trim().toUpperCase();
+
+    // 1. Lógica do Opt-Out existente...
+    if (PALAVRAS_OPTOUT.has(textoLimpo)) { /* ... */ return; }
+
+    // 2. NOVA LÓGICA: Auto-resposta de aquecimento
+    // Verifica se quem enviou a mensagem é outro chip nosso
+    const remetenteInterno = await pool.query('SELECT instancia FROM chips WHERE instancia != $1', [instancia]);
+    
+    // Simplificação lógica: se o sistema detectar que a mensagem foi recebida de um número amigo
+    const eMensagemDeAquecimento = remetenteInterno.rows.some(r => r.instancia); // Adapte para checar o número exato
+    if (eMensagemDeAquecimento) {
+       const respostas = [
+         '{Tudo ótimo|Tudo bem}, e por aí?', 
+         'Recebido com sucesso! ✅', 
+         '{Estou por aqui|Online agora}.'
+       ];
+       const { processarSpintax } = require('../antiban');
+       const resposta = processarSpintax(respostas[Math.floor(Math.random() * respostas.length)]);
+       
+       // Aguarda entre 5s a 15s para simular que o "humano" leu e respondeu
+       setTimeout(async () => {
+         await session.enviarTexto(msg.key.remoteJid, resposta);
+       }, Math.floor(Math.random() * 10000) + 5000);
+    }
 }
 
 // ─── Status de conexão ────────────────────────────────────────────────────────
