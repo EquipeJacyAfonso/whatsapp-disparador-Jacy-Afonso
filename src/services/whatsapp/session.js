@@ -64,6 +64,7 @@ class ChipSession {
 
     this.socket = makeWASocket({
       version,
+      browser: ['Windows', 'Chrome', '120.0.0.0'], // <-- ADICIONE ESTA LINHA!
       auth: state,
       printQRInTerminal: false,
       // Logger silencioso — nossos console.log já cobrem o necessário
