@@ -3,7 +3,7 @@
 services:
   app:
     build:
-      context: ./app
+      context: .
       dockerfile: Dockerfile
     container_name: disparador-app
     restart: always
