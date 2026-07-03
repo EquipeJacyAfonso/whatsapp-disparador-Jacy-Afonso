@@ -9,11 +9,19 @@
 //   - Enviar mensagens de texto, imagem e presença
 
 require('dotenv').config();
-const {
-  makeWASocket,
-  DisconnectReason,
-  fetchLatestBaileysVersion,
-} = require('@whiskeysockets/baileys');
+let makeWASocket;
+let DisconnectReason;
+let fetchLatestBaileysVersion;
+
+async function carregarBaileys() {
+    if (makeWASocket) return;
+
+    const baileys = await import("@whiskeysockets/baileys");
+
+    makeWASocket = baileys.makeWASocket || baileys.default;
+    DisconnectReason = baileys.DisconnectReason;
+    fetchLatestBaileysVersion = baileys.fetchLatestBaileysVersion;
+}
 const pino = require('pino');
 const QRCode = require('qrcode');
 const pool = require('../../db');
