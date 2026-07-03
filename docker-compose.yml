@@ -2,7 +2,9 @@
 # Apenas 3 serviços: app, postgres, redis
 services:
   app:
-    build: .
+    build:
+      context: ./app
+      dockerfile: Dockerfile
     container_name: disparador-app
     restart: always
     ports:
