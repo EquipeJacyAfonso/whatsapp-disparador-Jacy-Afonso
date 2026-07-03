@@ -158,9 +158,18 @@ disparoQueue.process(1, async (job) => {
     await pool.query('UPDATE campanhas SET enviados=enviados+1 WHERE id=$1', [campanhaId]);
     await verificarConclusaoCampanha(campanhaId);
 
-    const delay = delayAleatorio(delayMin, delayMax);
-    console.log('[DISPARO] ✅ ' + numero + ' — próxima em ' + Math.round(delay/1000) + 's');
-    await new Promise(r => setTimeout(r, delay));
+    // Lógica de fadiga: 10% de chance de fazer uma "pausa para o café" de 2 a 5 minutos
+    const delayNormal = delayAleatorio(delayMin, delayMax);
+    let delayAplicado = delayNormal;
+
+    if (Math.random() < 0.10) {
+        const pausaCafe = delayAleatorio(120000, 300000); // 2 a 5 minutos em ms
+        delayAplicado += pausaCafe;
+        console.log('[ANTIBAN] ☕ Pausa longa de ' + Math.round(pausaCafe/1000) + 's no chip ' + chip.instancia);
+    }
+
+    console.log('[DISPARO] ✅ ' + numero + ' — próxima em ' + Math.round(delayAplicado/1000) + 's');
+    await new Promise(r => setTimeout(r, delayAplicado));
     return { ok: true, chip: chip.instancia };
 
   } catch (err) {
@@ -199,6 +208,20 @@ disparoQueue.process(1, async (job) => {
   }
 });
 
+// Após enviar a mensagem e registrar o sucesso no `disparoQueue.process`:
+  const delayNormal = delayAleatorio(delayMin, delayMax);
+  let delayAplicado = delayNormal;
+
+  // Lógica de fadiga: 10% de chance de fazer uma "pausa para o café" de 2 a 5 minutos
+  if (Math.random() < 0.10) {
+      const pausaCafe = delayAleatorio(120000, 300000); // 2 a 5 minutos em ms
+      delayAplicado += pausaCafe;
+      console.log(`[ANTIBAN] ☕ Pausa longa de ${Math.round(pausaCafe/1000)}s no chip ${chip.instancia}`);
+  }
+
+  console.log(`[DISPARO] ✅ ${numero} — próxima em ${Math.round(delayAplicado/1000)}s`);
+  await new Promise(r => setTimeout(r, delayAplicado));
+
 disparoQueue.on('failed', async (job, err) => {
   const { disparoId, campanhaId } = job.data;
   if (job.attemptsMade >= job.opts.attempts) {
@@ -217,13 +240,8 @@ async function verificarConclusaoCampanha(campanhaId) {
     );
     if (parseInt(pendentes.rows[0].count) > 0) return;
 
-    // Bug 4b: delayed = jobs aguardando janela de horário abrir — também precisam
-    // ser contados para não marcar a campanha como concluída prematuramente.
-    const [waiting, delayed] = await Promise.all([
-      disparoQueue.getWaiting(),
-      disparoQueue.getDelayed(),
-    ]);
-    if ([...waiting, ...delayed].filter(j => j.data && j.data.campanhaId === campanhaId).length > 0) return;
+    const waiting = await disparoQueue.getWaiting();
+    if (waiting.filter(j => j.data && j.data.campanhaId === campanhaId).length > 0) return;
 
     const camp = await pool.query('SELECT status FROM campanhas WHERE id=$1', [campanhaId]);
     if (!camp.rows.length || camp.rows[0].status === 'concluido') return;
@@ -323,13 +341,8 @@ async function enfileirarCampanha(campanhaId) {
 
   // Bug 6: bloqueia re-enfileiramento se já houver jobs aguardando para esta campanha
   // (evita envio duplicado ao clicar Iniciar numa campanha que foi pausada)
-  // Bug 4a: inclui delayed — jobs fora da janela horária ficam em 'delayed',
-  // ignorá-los causava duplicação de envios ao clicar Iniciar novamente.
-  const [jobsW, jobsD] = await Promise.all([
-    disparoQueue.getWaiting(),
-    disparoQueue.getDelayed(),
-  ]);
-  const jobsDaCampanha = [...jobsW, ...jobsD].filter(j => j.data && j.data.campanhaId === campanhaId);
+  const jobsEsperando = await disparoQueue.getWaiting();
+  const jobsDaCampanha = jobsEsperando.filter(j => j.data && j.data.campanhaId === campanhaId);
   if (jobsDaCampanha.length > 0) {
     throw new Error('Campanha já tem ' + jobsDaCampanha.length + ' mensagens na fila. Use o botão Retomar em vez de Iniciar.');
   }
