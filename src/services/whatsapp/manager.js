@@ -118,7 +118,7 @@ async function verificarNumero(numero, instancia) {
 
   try {
     const [resultado] = await session.socket.onWhatsApp(numeroFormatado);
-    if (resultado?.exists) return numeroFormatado;
+    if (resultado?.exists) return resultado.jid;
     // Número não tem WhatsApp
     return null;
   } catch (e) {
