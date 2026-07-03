@@ -50,15 +50,16 @@ async function msAteJanelaAbrir() {
 // Bug 2: ajustado para os erros reais que o Baileys emite — as strings HTTP
 // antigas ('401', '403', 'unauthorized') eram específicas da Evolution API
 // e nunca davam match nas exceções JS do Baileys.
+// Apenas erros que indicam ban REAL ou logout intencional.
+// Erros de rede transitória ('connection closed', 'não está conectado')
+// foram removidos — causavam falso-positivo de ban em quedas de internet.
 const ERROS_BAN = [
-  'logged out',           // DisconnectReason.loggedOut — usuário deslogou ou foi banido
-  'forbidden',            // DisconnectReason.forbidden — conta banida
-  'banned',
-  'bad session',          // DisconnectReason.badSession — sessão corrompida/inválida
-  'connection closed',    // pode indicar ban se persistente
-  'multi-device mismatch',
-  'não está conectado',   // erro lançado pelo nosso _checarConexao()
-  'não possui whatsapp',
+  'logged out',            // DisconnectReason.loggedOut (401) — deslogou pelo celular
+  'forbidden',             // DisconnectReason.forbidden (403) — conta banida
+  'banned',                // resposta explícita de ban
+  'bad session',           // DisconnectReason.badSession (500) — sessão corrompida
+  'multi-device mismatch', // DisconnectReason.multideviceMismatch (411)
+  'não possui whatsapp',   // número inválido — permanente
 ];
 
 function erroIndicaBan(mensagemErro) {

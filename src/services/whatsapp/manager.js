@@ -57,10 +57,11 @@ async function _iniciarSessao(instancia) {
   if (sessoes.has(instancia)) return; // já ativa
   const session = new ChipSession(instancia, _callbacks());
   sessoes.set(instancia, session);
-  // conectar() é async mas não aguardamos — o status chega via evento
-  session.conectar().catch(e =>
-    console.error('[MGR] Erro ao conectar ' + instancia + ':', e.message)
-  );
+  // conectar() é async — não aguardamos mas logamos erros
+  session.conectar().catch(e => {
+    console.error('[MGR] Erro ao conectar ' + instancia + ':', e.message);
+    session._conectando = false; // garante desbloqueio mesmo em erro inesperado
+  });
 }
 
 // ─── Tabela de aquecimento ────────────────────────────────────────────────────
@@ -116,10 +117,10 @@ async function verificarNumero(numero, instancia) {
   }
 
   try {
-      const [resultado] = await session.socket.onWhatsApp(numeroFormatado);
-      if (resultado?.exists) return resultado.jid; // <-- USE O JID OFICIAL DO WHATSAPP!
-      // Número não tem WhatsApp
-      return null;
+    const [resultado] = await session.socket.onWhatsApp(numeroFormatado);
+    if (resultado?.exists) return numeroFormatado;
+    // Número não tem WhatsApp
+    return null;
   } catch (e) {
     console.warn('[MGR] onWhatsApp falhou para ' + numeroFormatado + ': ' + e.message + ' — usando fallback');
     return numeroFormatado;
@@ -191,16 +192,22 @@ async function statusChip(instancia) {
 }
 
 async function criarInstancia(instancia) {
-  // Se já existe sessão, só garante que está tentando conectar
   if (!sessoes.has(instancia)) {
     await _iniciarSessao(instancia);
   } else {
     const session = sessoes.get(instancia);
-    if (session.status === 'desconectado' || session.status === 'erro') {
+    // Bug 7: se _conectando ficou travado por exceção anterior, reseta
+    // antes de tentar novamente — sem isso criarInstancia retornava
+    // 'connecting' sem QR e sem nenhuma ação real.
+    if (session._conectando) {
+      console.warn('[MGR] ' + instancia + ' estava com _conectando travado — resetando');
+      session._conectando = false;
+    }
+    if (session.status !== 'open') {
       await session.conectar();
     }
   }
-  return { instanceName: instancia, status: 'connecting' };
+  return { instanceName: instancia, status: sessoes.get(instancia)?.status || 'connecting' };
 }
 
 async function qrcodeChip(instancia) {
@@ -309,12 +316,17 @@ async function registrarFalha(chipId) {
 }
 
 async function resetarContadoresDiarios() {
-  const chips = await pool.query('SELECT id, dias_ativo FROM chips');
+  // Bug 3: chips banidos não têm pausado_ate limpo — a pausa de 24h deles
+  // é gerenciada pelo events.js e não deve ser sobrescrita pelo reset diário.
+  const chips = await pool.query("SELECT id, dias_ativo, status FROM chips");
   for (const chip of chips.rows) {
     const novosDias  = chip.dias_ativo + 1;
     const novoLimite = limitePorDia(novosDias);
+    const liberarPausa = chip.status !== 'banido'; // só libera pausas temporárias
     await pool.query(
-      'UPDATE chips SET enviados_hoje = 0, dias_ativo = $1, limite_diario = $2, pausado_ate = NULL WHERE id = $3',
+      'UPDATE chips SET enviados_hoje = 0, dias_ativo = $1, limite_diario = $2' +
+      (liberarPausa ? ', pausado_ate = NULL' : '') +
+      ' WHERE id = $3',
       [novosDias, novoLimite, chip.id]
     );
   }

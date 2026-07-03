@@ -40,58 +40,28 @@ async function processarMensagem(instancia, msg, session) {
     if (!texto.trim()) return;
 
     const textoLimpo = texto.trim().toUpperCase();
-    
-    // 3. Lógica de Opt-out
-    if (PALAVRAS_OPTOUT.has(textoLimpo)) {
-      const jidRemetente = msg.key.remoteJid || '';
-      const numero = jidRemetente
-        .replace(/@s\.whatsapp\.net$/, '')
-        .replace(/@c\.us$/, '')
-        .replace(/[^0-9]/g, '');
+    if (!PALAVRAS_OPTOUT.has(textoLimpo)) return;
 
-      if (!numero || numero.length < 10) return;
+    // 3. Opt-out detectado — extrai e normaliza o número remetente
+    const jidRemetente = msg.key.remoteJid || '';
+    const numero = jidRemetente
+      .replace(/@s\.whatsapp\.net$/, '')
+      .replace(/@c\.us$/, '')
+      .replace(/[^0-9]/g, '');
 
-      await pool.query(
-        `INSERT INTO blacklist (numero, motivo)
-         VALUES ($1, $2)
-         ON CONFLICT (numero) DO NOTHING`,
-        [numero, 'Opt-out automático: "' + textoLimpo + '" via WhatsApp']
-      );
-      await pool.query('DELETE FROM contatos WHERE numero = $1', [numero]);
+    if (!numero || numero.length < 10) return;
 
-      await _log('info', '[OPT-OUT] ' + numero + ' bloqueado após "' + textoLimpo + '" via ' + instancia);
-      console.log('[EVENTS] 🚫 Opt-out: ' + numero + ' (' + textoLimpo + ')');
-      return; // Sai da função após o opt-out
-    }
+    // 4. Adiciona à blacklist e remove dos contatos
+    await pool.query(
+      `INSERT INTO blacklist (numero, motivo)
+       VALUES ($1, $2)
+       ON CONFLICT (numero) DO NOTHING`,
+      [numero, 'Opt-out automático: "' + textoLimpo + '" via WhatsApp']
+    );
+    await pool.query('DELETE FROM contatos WHERE numero = $1', [numero]);
 
-    // 4. NOVA LÓGICA: Auto-resposta de aquecimento
-    // Busca a coluna 'numero' (ou telefone) dos outros chips no banco de dados
-    const remetenteInterno = await pool.query('SELECT numero FROM chips WHERE instancia != $1 AND numero IS NOT NULL', [instancia]);
-    const jidLimpo = msg.key.remoteJid.replace(/[^0-9]/g, ''); // Pega apenas os números de quem enviou
-    
-    // Verifica se o número que enviou bate com o número de algum dos nossos chips
-    const eMensagemDeAquecimento = remetenteInterno.rows.some(r => jidLimpo.includes(r.numero)); 
-    
-    if (eMensagemDeAquecimento) {
-       const respostas = [
-         '{Tudo ótimo|Tudo bem}, e por aí?', 
-         'Recebido com sucesso! ✅', 
-         '{Estou por aqui|Online agora}.'
-       ];
-       const { processarSpintax } = require('../antiban');
-       const resposta = processarSpintax(respostas[Math.floor(Math.random() * respostas.length)]);
-       
-       // Aguarda entre 5s a 15s para simular que o "humano" leu e respondeu
-       setTimeout(async () => {
-         try {
-           // Proteção contra falha assíncrona (evita que o servidor caia)
-           await session.enviarTexto(msg.key.remoteJid, resposta);
-           console.log(`[AQUECIMENTO] ${instancia} respondeu a um chip interno.`);
-         } catch (err) {
-           console.error(`[AQUECIMENTO] Falha ao enviar auto-resposta em ${instancia}:`, err.message);
-         }
-       }, Math.floor(Math.random() * 10000) + 5000);
-    }
+    await _log('info', '[OPT-OUT] ' + numero + ' bloqueado após "' + textoLimpo + '" via ' + instancia);
+    console.log('[EVENTS] 🚫 Opt-out: ' + numero + ' (' + textoLimpo + ')');
 
   } catch (e) {
     console.error('[EVENTS] Erro ao processar mensagem de ' + instancia + ': ' + e.message);
@@ -150,9 +120,15 @@ async function processarStatus(instancia, status) {
     }
 
     if (status === 'banido') {
-      // Pausa a fila independente de outros chips (chip banido não deve enviar mais)
+      // Bug 5: só pausa a fila se não houver outros chips online — um chip banido
+      // não deve interromper campanhas que outros chips ainda conseguem processar.
+      const outros = await pool.query(
+        "SELECT COUNT(*) FROM chips WHERE status = 'open' AND instancia != $1",
+        [instancia]
+      );
+      const temOutrosOnline = parseInt(outros.rows[0].count) > 0;
       const filaAtiva = !(await disparoQueue.isPaused());
-      if (filaAtiva) {
+      if (!temOutrosOnline && filaAtiva) {
         await disparoQueue.pause();
       }
 

@@ -53,16 +53,22 @@ async function usePostgresAuthState(instancia) {
   //    app-state-sync-key, app-state-sync-version, sender-key-memory
   let keysStore = row?.keys ? deserializar(row.keys) : {};
 
-  // Bug 8: fila simples de escrita — o Baileys chama keys.set() em paralelo
-  // (uma vez por chave nova/processamento de mensagem). Sem isso, duas
-  // gravações simultâneas podiam se sobrepor e perder dados uma da outra.
+  // Bug 8 (original) + Bug 6: fila de escrita serializa gravações concorrentes
+  // e agora propaga erros corretamente — .then(ok, err) chamava a tarefa
+  // seguinte mesmo após falha. Usamos .then(ok).catch(log) para logar e
+  // manter a fila funcionando mesmo que uma gravação ocasional falhe.
   let _filaEscrita = Promise.resolve();
   function _enfileirar(tarefa) {
-    _filaEscrita = _filaEscrita.then(tarefa, tarefa);
+    _filaEscrita = _filaEscrita
+      .then(tarefa)
+      .catch(e => {
+        console.error('[STORE] Erro ao gravar sessão de ' + instancia + ': ' + e.message);
+        // Não propaga — mantém a fila girando para tentativas futuras
+      });
     return _filaEscrita;
   }
 
-  // 4. Persiste creds + keys juntos numa única query (evita race condition)
+  // 4. Persiste creds + keys juntos numa única query
   async function salvarTudo() {
     return _enfileirar(() => pool.query(`
       INSERT INTO chip_sessions (instancia, creds, keys, atualizado_em)

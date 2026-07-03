@@ -19,19 +19,6 @@ const QRCode = require('qrcode');
 const pool = require('../../db');
 const { usePostgresAuthState, salvarQRCode, limparQRCode } = require('./store');
 
-// Crie esta função de hash simples no topo de session.js
-function obterBrowserAleatorio(instancia) {
-    const browsers = [
-        ['Windows', 'Chrome', '120.0.0.0'],
-        ['Mac OS', 'Safari', '17.0'],
-        ['Windows', 'Edge', '119.0.0.0'],
-        ['Ubuntu', 'Chrome', '118.0.0.0']
-    ];
-    // Usa o tamanho do nome da instância para manter sempre o mesmo SO para a mesma instância
-    const index = instancia.length % browsers.length;
-    return browsers[index];
-}
-
 // ─── Códigos que indicam ban / deslogamento permanente ───────────────────────
 // Nesses casos não reconectamos — o usuário precisa escanear o QR novamente.
 const CODIGOS_PERMANENTES = new Set([
@@ -67,43 +54,42 @@ class ChipSession {
 
   async conectar() {
     if (this._encerrando) return;
-    // Bug 1: evita criar 2 sockets simultâneos (ex: criarInstancia chamado
-    // enquanto uma reconexão automática já está em andamento)
     if (this._conectando || this.status === 'open') return;
     this._conectando = true;
 
-    const { state, saveCreds } = await usePostgresAuthState(this.instancia);
-    const { version } = await fetchLatestBaileysVersion();
+    try {
+      const { state, saveCreds } = await usePostgresAuthState(this.instancia);
+      const { version } = await fetchLatestBaileysVersion();
 
-    this.socket = makeWASocket({
-      version,
-      browser: obterBrowserAleatorio(this.instancia), // <-- ADICIONE ESTA LINHA!
-      auth: state,
-      printQRInTerminal: false,
-      // Logger silencioso — nossos console.log já cobrem o necessário
-      logger: pino({ level: 'silent' }),
-      generateHighQualityLinkPreview: false,
-      connectTimeoutMs: 30_000,
-      keepAliveIntervalMs: 15_000,
-      retryRequestDelayMs: 250,
-      // Não busca histórico de mensagens — reduz tráfego e tempo de conexão
-      syncFullHistory: false,
-      markOnlineOnConnect: false,
-    });
+      this.socket = makeWASocket({
+        version,
+        auth: state,
+        printQRInTerminal: false,
+        logger: pino({ level: 'silent' }),
+        generateHighQualityLinkPreview: false,
+        connectTimeoutMs: 30_000,
+        keepAliveIntervalMs: 15_000,
+        retryRequestDelayMs: 250,
+        syncFullHistory: false,
+        markOnlineOnConnect: false,
+      });
 
-    // Persiste credenciais sempre que o Baileys as atualizar
-    this.socket.ev.on('creds.update', saveCreds);
-
-    // Eventos de conexão / QR
-    this.socket.ev.on('connection.update', (update) => this._onConnectionUpdate(update));
-
-    // Mensagens recebidas (opt-out, marcação de lida)
-    this.socket.ev.on('messages.upsert', ({ messages }) => {
-      for (const msg of messages) {
-        if (msg.key.fromMe) continue;
-        this.callbacks.onMessage?.(this.instancia, msg);
-      }
-    });
+      this.socket.ev.on('creds.update', saveCreds);
+      this.socket.ev.on('connection.update', (update) => this._onConnectionUpdate(update));
+      this.socket.ev.on('messages.upsert', ({ messages }) => {
+        for (const msg of messages) {
+          if (msg.key.fromMe) continue;
+          this.callbacks.onMessage?.(this.instancia, msg);
+        }
+      });
+    } catch (e) {
+      // Bug 1: garante que _conectando é sempre resetado mesmo se falhar
+      this._conectando = false;
+      console.error('[SESSION] Erro ao inicializar socket de ' + this.instancia + ': ' + e.message);
+      // Tenta reconectar com backoff
+      this._reconectar();
+      return;
+    }
 
     this._conectando = false;
   }
@@ -204,8 +190,8 @@ class ChipSession {
   async enviarTexto(jid, texto) {
     this._checarConexao();
     const jidCompleto = this._toJid(jid);
-    // Agora o sistema sabe o tamanho do texto para calcular o tempo
-    await this._enviarPresenca(jidCompleto, texto); // <--- ADICIONE ', texto' AQUI
+    // Simula "digitando..." por 500ms antes de enviar
+    await this._enviarPresenca(jidCompleto);
     return this.socket.sendMessage(jidCompleto, { text: texto });
   }
 
@@ -224,8 +210,7 @@ class ChipSession {
       base64.replace(/^data:image\/\w+;base64,/, ''),
       'base64'
     );
-    // Passamos o "caption" para ele simular que está a digitar a legenda
-    await this._enviarPresenca(jidCompleto, caption); // <--- ADICIONE ', caption' AQUI
+    await this._enviarPresenca(jidCompleto);
     return this.socket.sendMessage(jidCompleto, {
       image:    buffer,
       mimetype: mimetype  || 'image/jpeg',
@@ -269,21 +254,10 @@ class ChipSession {
     return limpo + '@s.whatsapp.net';
   }
 
-  // Modifique para receber o texto
-  async _enviarPresenca(jid, texto = '') {
+  async _enviarPresenca(jid) {
     try {
       await this.socket.sendPresenceUpdate('composing', jid);
-      
-      // Calcula o tempo real de digitação (100ms por caractere)
-      let tempoDigitacao = texto ? texto.length * 100 : 1500;
-      
-      // Limita entre 1.5s e 8s para não travar a fila
-      tempoDigitacao = Math.max(1500, Math.min(tempoDigitacao, 8000));
-      
-      // Adiciona uma pequena variação aleatória de até 1s
-      tempoDigitacao += Math.random() * 1000;
-
-      await new Promise(r => setTimeout(r, tempoDigitacao));
+      await new Promise(r => setTimeout(r, 500));
       await this.socket.sendPresenceUpdate('paused', jid);
     } catch (_) { /* não crítico */ }
   }

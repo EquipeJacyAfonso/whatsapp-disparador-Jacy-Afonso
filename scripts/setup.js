@@ -149,6 +149,7 @@ function escreverEnv(config) {
     '',
     '# Servidor',
     'PORT=' + config.porta,
+    'PUBLIC_URL=' + (config.publicUrl || ''),
     'NODE_ENV=production',
   ].join('\n');
 
@@ -307,6 +308,14 @@ async function main() {
 
     const porta = await perguntar(rl, 'Porta do painel', '3000');
 
+    // Hospedagem remota: URL pública para QR codes e callbacks funcionarem
+    // fora da máquina local
+    console.log('');
+    info('Se estiver hospedando num servidor remoto, informe o endereço público.');
+    info('Exemplo: http://123.45.67.89:3000 ou https://meusite.com.br');
+    info('Deixe em branco para uso local.');
+    const publicUrl = await perguntar(rl, 'URL pública do servidor (Enter para local)', '');
+
     // 3. Banco de dados
     let dbHost, dbPort, dbName, dbUser, dbPassword;
 
@@ -365,7 +374,7 @@ async function main() {
 
     rl.close();
 
-    const config = { porta, dbHost, dbPort, dbName, dbUser, dbPassword, redisHost, redisPort, adminEmail, adminSenha };
+    const config = { porta, publicUrl, dbHost, dbPort, dbName, dbUser, dbPassword, redisHost, redisPort, adminEmail, adminSenha };
 
     // 7. Instala
     titulo('Escrevendo configuração');

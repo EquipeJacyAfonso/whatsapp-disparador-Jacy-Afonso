@@ -16,6 +16,9 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       PORT: 3000
+      NODE_ENV: production
+      # Endereço público para servidor remoto (ex: https://meusite.com.br)
+      PUBLIC_URL: ${PUBLIC_URL:-}
     depends_on:
       postgres:
         condition: service_healthy
