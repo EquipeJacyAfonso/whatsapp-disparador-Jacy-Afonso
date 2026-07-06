@@ -1,5 +1,5 @@
 node_modules
 .env
-credentials/*.json
-*.log
+credentials/.json
+.log
 .git
