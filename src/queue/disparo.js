@@ -158,9 +158,20 @@ disparoQueue.process(1, async (job) => {
     await pool.query('UPDATE campanhas SET enviados=enviados+1 WHERE id=$1', [campanhaId]);
     await verificarConclusaoCampanha(campanhaId);
 
+    // Delay normal entre mensagens
     const delay = delayAleatorio(delayMin, delayMax);
     console.log('[DISPARO] ✅ ' + numero + ' — próxima em ' + Math.round(delay/1000) + 's');
     await new Promise(r => setTimeout(r, delay));
+
+    // Micro-pausa de "café" (10% de chance) — simula comportamento humano.
+    // Configurável via COFFEE_BREAK_CHANCE=0.05 no .env (0 = desativado).
+    const chance = parseFloat(process.env.COFFEE_BREAK_CHANCE ?? '0.10');
+    if (chance > 0 && Math.random() < chance) {
+      const pausaMs = (2 + Math.random() * 3) * 60 * 1000; // 2–5 minutos
+      console.log('[DISPARO] ☕ Micro-pausa de ' + Math.round(pausaMs / 60000) + 'min');
+      await new Promise(r => setTimeout(r, pausaMs));
+    }
+
     return { ok: true, chip: chip.instancia };
 
   } catch (err) {

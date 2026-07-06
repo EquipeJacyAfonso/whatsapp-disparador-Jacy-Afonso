@@ -30,6 +30,20 @@ const CODIGOS_PERMANENTES = new Set([
 const MAX_TENTATIVAS = 5;
 const DELAY_BASE_MS  = 2000; // backoff exponencial: 2s, 4s, 8s, 16s, 30s
 
+// Fingerprints variados — cada instância usa um browser diferente,
+// determinístico pelo nome (mesmo chip = mesmo browser sempre).
+// Funciona em local e servidor remoto — é configuração do socket Baileys.
+const BROWSERS = [
+  ['Windows', 'Chrome',  '120.0.0'],
+  ['Mac OS',  'Safari',  '17.0'],
+  ['Windows', 'Edge',    '119.0.0'],
+  ['Ubuntu',  'Chrome',  '118.0.0'],
+];
+function _browserPorInstancia(instancia) {
+  const idx = instancia.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % BROWSERS.length;
+  return BROWSERS[idx];
+}
+
 // ─── ChipSession ─────────────────────────────────────────────────────────────
 
 class ChipSession {
@@ -65,7 +79,8 @@ class ChipSession {
         version,
         auth: state,
         printQRInTerminal: false,
-        logger: pino({ level: 'silent' }),
+      browser: _browserPorInstancia(this.instancia),
+      logger: pino({ level: 'silent' }),
         generateHighQualityLinkPreview: false,
         connectTimeoutMs: 30_000,
         keepAliveIntervalMs: 15_000,
@@ -190,8 +205,7 @@ class ChipSession {
   async enviarTexto(jid, texto) {
     this._checarConexao();
     const jidCompleto = this._toJid(jid);
-    // Simula "digitando..." por 500ms antes de enviar
-    await this._enviarPresenca(jidCompleto);
+    await this._enviarPresenca(jidCompleto, texto);
     return this.socket.sendMessage(jidCompleto, { text: texto });
   }
 
@@ -210,7 +224,7 @@ class ChipSession {
       base64.replace(/^data:image\/\w+;base64,/, ''),
       'base64'
     );
-    await this._enviarPresenca(jidCompleto);
+    await this._enviarPresenca(jidCompleto, caption);
     return this.socket.sendMessage(jidCompleto, {
       image:    buffer,
       mimetype: mimetype  || 'image/jpeg',
@@ -254,10 +268,15 @@ class ChipSession {
     return limpo + '@s.whatsapp.net';
   }
 
-  async _enviarPresenca(jid) {
+  async _enviarPresenca(jid, texto) {
     try {
       await this.socket.sendPresenceUpdate('composing', jid);
-      await new Promise(r => setTimeout(r, 500));
+      // Tempo proporcional ao tamanho do texto: ~70ms/char, entre 800ms e 7s
+      // Simula comportamento real — mensagem curta digita rápido, longa demora
+      const chars  = typeof texto === 'string' ? texto.length : 40;
+      const base   = Math.min(Math.max(chars * 70, 800), 7000);
+      const ruido  = Math.floor(Math.random() * 800);
+      await new Promise(r => setTimeout(r, base + ruido));
       await this.socket.sendPresenceUpdate('paused', jid);
     } catch (_) { /* não crítico */ }
   }

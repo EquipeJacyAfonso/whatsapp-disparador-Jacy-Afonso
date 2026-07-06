@@ -118,11 +118,16 @@ async function verificarNumero(numero, instancia) {
 
   try {
     const [resultado] = await session.socket.onWhatsApp(numeroFormatado);
-    if (resultado?.exists) return numeroFormatado;
-    // Número não tem WhatsApp
+    if (resultado?.exists) {
+      // Usa o JID oficial do WhatsApp — ele resolve automaticamente se o
+      // número tem ou não o 9º dígito, independente do que formatarNumero
+      // calculou. limparJid remove o sufixo @s.whatsapp.net.
+      return limparJid(resultado.jid || numeroFormatado);
+    }
+    // Número não tem WhatsApp registrado
     return null;
   } catch (e) {
-    console.warn('[MGR] onWhatsApp falhou para ' + numeroFormatado + ': ' + e.message + ' — usando fallback');
+    console.warn('[MGR] onWhatsApp falhou para ' + numeroFormatado + ': ' + e.message + ' — usando fallback local');
     return numeroFormatado;
   }
 }
@@ -376,6 +381,18 @@ async function aquecerChipsInternamente() {
   }
 }
 
+// ─── Utilitário para aquecimento bidirecional ────────────────────────────────
+// Retorna um Set com os números de todos os chips atualmente conectados.
+// Usado pelo events.js para detectar auto-respostas de aquecimento interno.
+function obterNumerosChipsConectados() {
+  const numeros = new Set();
+  for (const [, session] of sessoes) {
+    const num = session.obterNumeroProprioConectado();
+    if (num) numeros.add(num);
+  }
+  return numeros;
+}
+
 // ─── Compatibilidade com código legado ───────────────────────────────────────
 // extrairErroAPI e erroEhPermanente eram específicos de HTTP/Evolution API.
 // Mantemos para não quebrar imports em disparo.js.
@@ -429,4 +446,5 @@ module.exports = {
   AQUECIMENTO,
   extrairErroAPI,
   erroEhPermanente,
+  obterNumerosChipsConectados,
 };

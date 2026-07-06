@@ -18,7 +18,10 @@ services:
       PORT: 3000
       NODE_ENV: production
       # Endereço público para servidor remoto (ex: https://meusite.com.br)
+      # URL pública para servidor remoto (ex: https://meusite.com.br)
       PUBLIC_URL: ${PUBLIC_URL:-}
+      # Probabilidade de micro-pausa entre mensagens (0.10 = 10%)
+      COFFEE_BREAK_CHANCE: ${COFFEE_BREAK_CHANCE:-0.10}
     depends_on:
       postgres:
         condition: service_healthy

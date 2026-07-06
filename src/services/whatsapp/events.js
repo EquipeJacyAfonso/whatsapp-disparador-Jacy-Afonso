@@ -30,7 +30,7 @@ async function processarMensagem(instancia, msg, session) {
       await session.marcarComoLida(msg.key);
     }
 
-    // 2. Extrai texto da mensagem (suporta texto simples e extended)
+    // 2. Extrai texto
     const texto =
       msg.message?.conversation ||
       msg.message?.extendedTextMessage?.text ||
@@ -38,6 +38,27 @@ async function processarMensagem(instancia, msg, session) {
       '';
 
     if (!texto.trim()) return;
+
+    // 3. Aquecimento bidirecional — detecta mensagem de outro chip do sistema
+    // e responde automaticamente para simular conversa real.
+    // Usa o Map de sessões (sem depender de coluna 'numero' no banco),
+    // funciona igual em local e servidor remoto.
+    const remetente = (msg.key.remoteJid || '')
+      .replace(/@s\.whatsapp\.net$/, '')
+      .replace(/@c\.us$/, '');
+    try {
+      const { obterNumerosChipsConectados, enviarMensagem } = require('../whatsapp/manager');
+      const chipsConectados = obterNumerosChipsConectados();
+      if (chipsConectados.has(remetente) && session) {
+        const respostas = ['Recebi! 👍', 'Ok!', '✅', 'Sim!', '👋'];
+        const resposta  = respostas[Math.floor(Math.random() * respostas.length)];
+        // Pequeno delay antes de responder (mais natural)
+        setTimeout(() => {
+          enviarMensagem(remetente, resposta, instancia).catch(() => {});
+        }, 1500 + Math.random() * 2000);
+        return; // não é opt-out — encerra aqui
+      }
+    } catch (_) { /* importação lazy — silencioso */ }
 
     const textoLimpo = texto.trim().toUpperCase();
     if (!PALAVRAS_OPTOUT.has(textoLimpo)) return;
