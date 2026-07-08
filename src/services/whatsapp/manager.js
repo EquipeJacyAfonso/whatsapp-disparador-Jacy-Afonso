@@ -55,7 +55,14 @@ async function inicializarSessoes() {
 
 async function _iniciarSessao(instancia) {
   if (sessoes.has(instancia)) return; // já ativa
-  const session = new ChipSession(instancia, _callbacks());
+  
+  // 1. Buscar o proxy do chip na base de dados
+  const result = await pool.query('SELECT proxy FROM chips WHERE instancia = $1', [instancia]);
+  const proxyUrl = result.rows[0]?.proxy || null;
+
+  // 2. Passar o proxy ao instanciar a ChipSession
+  const session = new ChipSession(instancia, _callbacks(), proxyUrl);
+  
   sessoes.set(instancia, session);
   // conectar() é async — não aguardamos mas logamos erros
   session.conectar().catch(e => {

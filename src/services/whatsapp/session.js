@@ -18,6 +18,7 @@ const pino = require('pino');
 const QRCode = require('qrcode');
 const pool = require('../../db');
 const { usePostgresAuthState, salvarQRCode, limparQRCode } = require('./store');
+const { HttpsProxyAgent } = require('https-proxy-agent');
 
 // ─── Códigos que indicam ban / deslogamento permanente ───────────────────────
 // Nesses casos não reconectamos — o usuário precisa escanear o QR novamente.
@@ -34,10 +35,10 @@ const DELAY_BASE_MS  = 2000; // backoff exponencial: 2s, 4s, 8s, 16s, 30s
 // determinístico pelo nome (mesmo chip = mesmo browser sempre).
 // Funciona em local e servidor remoto — é configuração do socket Baileys.
 const BROWSERS = [
-  ['Windows', 'Chrome',  '120.0.0'],
-  ['Mac OS',  'Safari',  '17.0'],
-  ['Windows', 'Edge',    '119.0.0'],
-  ['Ubuntu',  'Chrome',  '118.0.0'],
+  ['Windows', 'Chrome',  '125.0.0.0'],
+  ['Mac OS',  'Safari',  '17.4.1'],
+  ['Windows', 'Edge',    '124.0.0.0'],
+  ['Ubuntu',  'Chrome',  '124.0.0.0'],
 ];
 function _browserPorInstancia(instancia) {
   const idx = instancia.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % BROWSERS.length;
@@ -54,14 +55,15 @@ class ChipSession {
    * @param {Function} callbacks.onMessage  - (instancia, msg) → void
    * @param {Function} callbacks.onQR       - (instancia, base64) → void
    */
-  constructor(instancia, callbacks = {}) {
+  constructor(instancia, callbacks = {}, proxyUrl = null) { // <-- Adicionar proxyUrl
     this.instancia   = instancia;
     this.socket      = null;
     this.status      = 'desconectado';
     this.callbacks   = callbacks;
+    this.proxyUrl    = proxyUrl; // <-- Guardar na classe
     this._tentativas = 0;
-    this._encerrando = false; // true quando desconectar() foi chamado explicitamente
-    this._conectando = false; // true durante a fase de handshake do socket
+    this._encerrando = false; 
+    this._conectando = false; 
   }
 
   // ── Conexão ────────────────────────────────────────────────────────────────
@@ -75,12 +77,20 @@ class ChipSession {
       const { state, saveCreds } = await usePostgresAuthState(this.instancia);
       const { version } = await fetchLatestBaileysVersion();
 
+      // Configurar o Agent se existir um Proxy
+      let customAgent = undefined;
+      if (this.proxyUrl) {
+        customAgent = new HttpsProxyAgent(this.proxyUrl);
+        console.log(`[SESSION] 🌐 A usar proxy para ${this.instancia}`);
+      }
+
       this.socket = makeWASocket({
         version,
         auth: state,
         printQRInTerminal: false,
-      browser: _browserPorInstancia(this.instancia),
-      logger: pino({ level: 'silent' }),
+        browser: _browserPorInstancia(this.instancia),
+        logger: pino({ level: 'silent' }),
+        agent: customAgent, // <--- ADICIONAR ESTA LINHA AQUI
         generateHighQualityLinkPreview: false,
         connectTimeoutMs: 30_000,
         keepAliveIntervalMs: 15_000,

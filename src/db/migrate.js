@@ -20,6 +20,7 @@ async function migrate() {
         midia_base64 TEXT,
         midia_mimetype VARCHAR(50),
         midia_nome VARCHAR(255),
+        proxy VARCHAR(255),
         criado_em TIMESTAMP DEFAULT NOW(),
         iniciado_em TIMESTAMP,
         finalizado_em TIMESTAMP

@@ -28,7 +28,8 @@
     "jsonwebtoken": "^9.0.2",
     "@whiskeysockets/baileys": "^6.7.0",
     "qrcode": "^1.5.3",
-    "pino": "^8.0.0"
+    "pino": "^8.0.0",
+    "https-proxy-agent": "^7.0.2" 
   },
   "devDependencies": {
     "nodemon": "^3.0.3"
