@@ -7,25 +7,36 @@ async function migrate() {
     await client.query('BEGIN');
 
     await client.query(`
-      CREATE TABLE IF NOT EXISTS campanhas (
+      CREATE TABLE IF NOT EXISTS chips (
         id SERIAL PRIMARY KEY,
         nome VARCHAR(255) NOT NULL,
-        template TEXT NOT NULL,
-        status VARCHAR(50) DEFAULT 'rascunho',
-        total_contatos INTEGER DEFAULT 0,
-        enviados INTEGER DEFAULT 0,
-        falhas INTEGER DEFAULT 0,
-        delay_min INTEGER DEFAULT 20,
-        delay_max INTEGER DEFAULT 50,
-        midia_base64 TEXT,
-        midia_mimetype VARCHAR(50),
-        midia_nome VARCHAR(255),
-        proxy VARCHAR(255),
+        instancia VARCHAR(255) NOT NULL UNIQUE,
+        status VARCHAR(50) DEFAULT 'desconectado',
+        enviados_hoje INTEGER DEFAULT 0,
+        total_enviados INTEGER DEFAULT 0,
+        limite_diario INTEGER DEFAULT 20,
+        dias_ativo INTEGER DEFAULT 0,
+        pausado_ate TIMESTAMP,
+        ultima_campanha_em TIMESTAMP,
+        ultimo_uso TIMESTAMP,
+        ultimo_ping TIMESTAMP,
         criado_em TIMESTAMP DEFAULT NOW(),
-        iniciado_em TIMESTAMP,
-        finalizado_em TIMESTAMP
+        proxy VARCHAR(255)
       );
     `);
+
+    // 👇 ADICIONE ESTE BLOCO NOVO AQUI 👇
+    try {
+      await client.query('ALTER TABLE chips ADD COLUMN proxy VARCHAR(255);');
+      console.log('[DB] Coluna "proxy" adicionada com sucesso à tabela "chips".');
+    } catch (e) {
+      // O código de erro '42701' significa que a coluna já existe (duplicate_column).
+      // Se for esse o caso, ignoramos o erro silenciosamente.
+      if (e.code !== '42701') {
+        throw e;
+      }
+    }
+    // 👆 FIM DO BLOCO NOVO 👆
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS contatos (
