@@ -25,18 +25,9 @@ async function migrate() {
       );
     `);
 
-    // 👇 ADICIONE ESTE BLOCO NOVO AQUI 👇
-    try {
-      await client.query('ALTER TABLE chips ADD COLUMN proxy VARCHAR(255);');
-      console.log('[DB] Coluna "proxy" adicionada com sucesso à tabela "chips".');
-    } catch (e) {
-      // O código de erro '42701' significa que a coluna já existe (duplicate_column).
-      // Se for esse o caso, ignoramos o erro silenciosamente.
-      if (e.code !== '42701') {
-        throw e;
-      }
-    }
-    // 👆 FIM DO BLOCO NOVO 👆
+    // Linha segura para transações: adiciona a coluna sem gerar erro caso já exista
+    await client.query('ALTER TABLE chips ADD COLUMN IF NOT EXISTS proxy VARCHAR(255);');
+    console.log('[DB] Coluna "proxy" verificada/adicionada à tabela "chips".');
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS contatos (
@@ -54,24 +45,6 @@ async function migrate() {
         id SERIAL PRIMARY KEY,
         numero VARCHAR(20) UNIQUE NOT NULL,
         motivo VARCHAR(255),
-        criado_em TIMESTAMP DEFAULT NOW()
-      );
-    `);
-
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS chips (
-        id SERIAL PRIMARY KEY,
-        nome VARCHAR(255) NOT NULL,
-        instancia VARCHAR(255) NOT NULL UNIQUE,
-        status VARCHAR(50) DEFAULT 'desconectado',
-        enviados_hoje INTEGER DEFAULT 0,
-        total_enviados INTEGER DEFAULT 0,
-        limite_diario INTEGER DEFAULT 20,
-        dias_ativo INTEGER DEFAULT 0,
-        pausado_ate TIMESTAMP,
-        ultima_campanha_em TIMESTAMP,
-        ultimo_uso TIMESTAMP,
-        ultimo_ping TIMESTAMP,
         criado_em TIMESTAMP DEFAULT NOW()
       );
     `);
