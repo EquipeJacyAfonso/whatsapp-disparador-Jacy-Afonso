@@ -260,20 +260,14 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
       <div><label>Nome</label><input type="text" id="chip-nome" placeholder="Chip 1"></div>
       <div><label>Nome da instância</label><input type="text" id="chip-inst" placeholder="instancia01"></div>
     </div>
+    <label>Proxy residencial/móvel (obrigatório)</label>
+    <input type="text" id="chip-proxy" placeholder="http://usuario:senha@host:porta">
+    <div class="hint warn">⚠ Cada chip precisa de um proxy dedicado (residencial ou móvel). Proxies de datacenter compartilhados ou reutilizados entre chips aumentam muito o risco de ban.</div>
     <div class="bg">
       <button class="bp" onclick="addChip()">+ Adicionar</button>
       <button class="bs" onclick="sincronizar()">↻ Sincronizar</button>
       <button class="bd sm" style="margin-left:auto" onclick="limparFila()">🗑 Limpar fila</button>
-      <button class="bs sm" onclick="editarProxy(${c.id})">🌐 Proxy</button>
     </div>
-    <div class="row">
-    <div><label>Nome</label><input type="text" id="chip-nome" placeholder="Chip 1"></div>
-    <div><label>Nome da instância</label><input type="text" id="chip-inst" placeholder="instancia01"></div>
-    </div>
-    <label>Proxy residencial/móvel (obrigatório)</label>
-    <input type="text" id="chip-proxy" placeholder="http://usuario:senha@host:porta">
-    <div class="hint warn">⚠ Cada chip precisa de um proxy dedicado (residencial ou móvel). Proxies de datacenter compartilhados aumentam muito o risco de ban.</div>
-    <div class="cstat-v" style="color:${c.status==='open'?'var(--green)':c.status==='sem_proxy'?'var(--red)':c.status==='desconectado'?'var(--red)':'var(--yellow)'}">${c.status==='sem_proxy'?'⛔ sem proxy':c.status}</div>
   </div>
   <div class="card">
     <h3>Tabela de aquecimento</h3>
@@ -504,6 +498,17 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
     <div class="mf"><button class="bs" onclick="fecharM('m-limite')">Cancelar</button><button class="bp" onclick="salvarLimite()">Salvar</button></div>
   </div>
 </div>
+<div class="mb" id="m-proxy">
+  <div class="modal" style="width:460px">
+    <h3>Editar proxy do chip</h3>
+    <input type="hidden" id="e-proxy-id">
+    <label>Proxy residencial/móvel</label>
+    <input type="text" id="e-proxy-val" placeholder="http://usuario:senha@host:porta">
+    <div class="hint warn">⚠ Use um proxy dedicado a este chip. Não reutilize o mesmo proxy em outro chip.</div>
+    <div id="e-proxy-err" style="color:var(--red);font-family:var(--mono);font-size:11px;margin-bottom:10px;display:none"></div>
+    <div class="mf"><button class="bs" onclick="fecharM('m-proxy')">Cancelar</button><button class="bp" onclick="salvarProxy()">Salvar</button></div>
+  </div>
+</div>
 <div class="mb" id="m-qr">
   <div class="modal" style="text-align:center">
     <h3 id="qr-titulo">QR Code</h3>
@@ -637,7 +642,8 @@ async function loadDash(){
     const chips=chR.data||[];
     const con=chips.filter(c=>c.status==='open').length;
     const banidos=chips.filter(c=>c.status==='banido').length;
-    document.getElementById('chips-badge').textContent=`${con}/${chips.length} chips`+(banidos>0?` · ⚠ ${banidos} banido(s)`:'');
+    const semProxy=chips.filter(c=>c.status==='sem_proxy').length;
+    document.getElementById('chips-badge').textContent=`${con}/${chips.length} chips`+(banidos>0?` · ⚠ ${banidos} banido(s)`:'')+(semProxy>0?` · ⛔ ${semProxy} sem proxy`:'');
     document.getElementById('dash-chips').innerHTML=chips.length?chips.map(c=>{
       const pct=c.limite_diario>0?Math.round(c.enviados_hoje/c.limite_diario*100):0;
       const cor=pct>=90?'r':pct>=70?'y':'';
@@ -645,7 +651,7 @@ async function loadDash(){
         <div class="dot ${c.status}" style="flex-shrink:0"></div>
         <div style="flex:1">
           <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-            <span style="font-family:var(--mono);font-size:11px">${c.nome}</span>
+            <span style="font-family:var(--mono);font-size:11px">${c.nome}${c.status==='sem_proxy'?' <span style="color:var(--red);font-size:9px">⛔ sem proxy</span>':''}</span>
             <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${c.enviados_hoje}/${c.limite_diario}</span>
           </div>
           <div class="bar"><div class="bar-f ${cor}" style="width:${Math.min(pct,100)}%"></div></div>
@@ -841,17 +847,6 @@ async function criarCampanha(){
   }catch(e){toast(e.message,'err');}
 }
 
-// função:
-async function editarProxy(id){
-  const proxy=prompt('Proxy residencial/móvel (http://usuario:senha@host:porta):');
-  if(!proxy)return;
-  try{
-    const r=await fetch(`${API}/chips/${id}/proxy`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({proxy})});
-    const data=await r.json();if(!data.ok)throw new Error(data.error);
-    toast('Proxy atualizado!');loadChips();
-  }catch(e){toast(e.message,'err');}
-}
-
 function abrirTpl(id,tpl){document.getElementById('e-camp-id').value=id;document.getElementById('e-tpl').value=tpl;abrirM('m-tpl');}
 async function salvarTpl(){
   const id=document.getElementById('e-camp-id').value;
@@ -934,16 +929,18 @@ async function loadChips(){
     const pct=c.limite_diario>0?Math.round(c.enviados_hoje/c.limite_diario*100):0;
     const cor=pct>=90?'r':pct>=70?'y':'';
     const psd=c.pausado_ate&&new Date(c.pausado_ate)>new Date();
+    const semProxy=c.status==='sem_proxy'||!c.proxy;
     return `<div class="chip-card ${psd?'psd':''}">
       <div class="chip-top">
         <div class="chip-info">
           <div class="dot ${c.status}"></div>
           <div>
-            <div style="font-family:var(--mono);font-size:12px;font-weight:500">${c.nome}${psd?` <span style="color:var(--yellow);font-size:10px">pausado</span>`:''}</div>
-            <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">${c.instancia} · dia ${c.dias_ativo+1}</div>
+            <div style="font-family:var(--mono);font-size:12px;font-weight:500">${c.nome}${psd?` <span style="color:var(--yellow);font-size:10px">pausado</span>`:''}${semProxy?` <span style="color:var(--red);font-size:10px">⛔ sem proxy</span>`:''}</div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">${c.instancia} · dia ${c.dias_ativo+1}${c.proxy?' · 🌐 proxy configurado':''}</div>
           </div>
         </div>
         <div class="bg">
+          <button class="bs sm" onclick="editarProxy(${c.id},'${esc(c.proxy||'')}')">🌐 Proxy</button>
           <button class="bs sm" onclick="criarInst('${c.instancia}')">+ Criar</button>
           <button class="bs sm" onclick="verQR('${c.instancia}','${c.nome}')">📷 QR</button>
           <button class="bs sm" onclick="pingChip('${c.instancia}')">↻</button>
@@ -952,6 +949,7 @@ async function loadChips(){
           <button class="bd sm" onclick="delChip(${c.id})">✕</button>
         </div>
       </div>
+      ${semProxy?`<div class="hint err" style="margin-bottom:9px">⛔ Este chip não tem proxy configurado e não vai conectar. Clique em <strong>🌐 Proxy</strong> para configurar.</div>`:''}
       <div style="margin-bottom:4px">
         <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:3px">
           <span>Enviados hoje</span><span>${c.enviados_hoje}/${c.limite_diario} (${pct}%)</span>
@@ -961,7 +959,7 @@ async function loadChips(){
       <div class="chip-stats">
         <div class="cstat"><div class="cstat-l">Total</div><div class="cstat-v">${c.total_enviados||0}</div></div>
         <div class="cstat"><div class="cstat-l">Dia aquec.</div><div class="cstat-v">${c.dias_ativo+1}</div></div>
-        <div class="cstat"><div class="cstat-l">Status</div><div class="cstat-v" style="color:${c.status==='open'?'var(--green)':c.status==='desconectado'?'var(--red)':'var(--yellow)'}">${c.status}</div></div>
+        <div class="cstat"><div class="cstat-l">Status</div><div class="cstat-v" style="color:${c.status==='open'?'var(--green)':c.status==='sem_proxy'?'var(--red)':c.status==='desconectado'?'var(--red)':'var(--yellow)'}">${c.status==='sem_proxy'?'sem_proxy':c.status}</div></div>
         <div class="cstat"><div class="cstat-l">Último uso</div><div class="cstat-v" style="font-size:10px">${c.ultimo_uso?new Date(c.ultimo_uso).toLocaleTimeString('pt-BR'):'—'}</div></div>
       </div>
     </div>`;
@@ -972,14 +970,12 @@ async function addChip(){
   const instancia=document.getElementById('chip-inst').value.trim().replace(/\s/g,'');
   const proxy=document.getElementById('chip-proxy').value.trim();
   if(!nome||!instancia){toast('Preencha nome e instância','err');return;}
-  if(!proxy){toast('Proxy é obrigatório','err');return;}
+  if(!proxy){toast('Proxy é obrigatório para cada chip','err');return;}
   try{
     const r=await fetch(`${API}/chips`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,instancia,proxy})});
     const data=await r.json();if(!data.ok)throw new Error(data.error);
     toast(`Chip "${nome}" adicionado!`);
-    document.getElementById('chip-nome').value='';
-    document.getElementById('chip-inst').value='';
-    document.getElementById('chip-proxy').value='';
+    document.getElementById('chip-nome').value='';document.getElementById('chip-inst').value='';document.getElementById('chip-proxy').value='';
     loadChips();
   }catch(e){toast(e.message,'err');}
 }
@@ -990,6 +986,28 @@ async function criarInst(inst){try{await fetch(`${API}/chips/${inst}/criar`,{met
 async function psdChip(id){const h=prompt('Pausar por quantas horas?','1');if(!h)return;try{const r=await fetch(`${API}/chips/${id}/pausar`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({horas:parseFloat(h)})});const data=await r.json();if(!data.ok)throw new Error(data.error);toast(`Pausado por ${h}h`);loadChips();}catch(e){toast(e.message,'err');}}
 function abrirLim(id,lim){document.getElementById('e-lim-id').value=id;document.getElementById('e-lim-val').value=lim;abrirM('m-limite');}
 async function salvarLimite(){const id=document.getElementById('e-lim-id').value;const limite=parseInt(document.getElementById('e-lim-val').value);if(!limite||limite<1){toast('Inválido','err');return;}try{const r=await fetch(`${API}/chips/${id}/limite`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({limite})});const data=await r.json();if(!data.ok)throw new Error(data.error);toast(`Limite: ${limite}/dia`);fecharM('m-limite');loadChips();}catch(e){toast(e.message,'err');}}
+
+// ─── Proxy ────────────────────────────────────────────────────────────────────
+function editarProxy(id,proxyAtual){
+  document.getElementById('e-proxy-id').value=id;
+  document.getElementById('e-proxy-val').value=proxyAtual||'';
+  document.getElementById('e-proxy-err').style.display='none';
+  abrirM('m-proxy');
+}
+async function salvarProxy(){
+  const id=document.getElementById('e-proxy-id').value;
+  const proxy=document.getElementById('e-proxy-val').value.trim();
+  const errEl=document.getElementById('e-proxy-err');
+  errEl.style.display='none';
+  if(!proxy){errEl.textContent='Proxy é obrigatório';errEl.style.display='block';return;}
+  try{
+    const r=await fetch(`${API}/chips/${id}/proxy`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({proxy})});
+    const data=await r.json();if(!data.ok)throw new Error(data.error);
+    toast('Proxy atualizado! Reconecte o chip para aplicar.');
+    fecharM('m-proxy');loadChips();
+  }catch(e){errEl.textContent=e.message;errEl.style.display='block';}
+}
+
 async function verQR(inst,nome){qrInst=inst;document.getElementById('qr-titulo').textContent=`QR Code — ${nome}`;document.getElementById('qr-content').innerHTML='<div class="empty">Carregando...</div>';abrirM('m-qr');await recarregarQR();}
 async function recarregarQR(){if(!qrInst)return;try{const r=await fetch(`${API}/chips/${qrInst}/qrcode`);const data=await r.json();const qr=data.data?.qrcode?.base64||data.data?.base64;document.getElementById('qr-content').innerHTML=qr?`<img class="qr-img" src="${qr}"><p style="color:var(--muted);font-family:var(--mono);font-size:11px;margin-top:7px">Escaneie com o WhatsApp</p>`:`<div class="log-box">${JSON.stringify(data.data,null,2)}</div>`;}catch(e){document.getElementById('qr-content').innerHTML=`<div style="color:var(--red);font-family:var(--mono)">${e.message}</div>`;}}
 async function limparFila(){if(!confirm('Limpar fila?'))return;await fetch(`${API}/fila/limpar`,{method:'POST'});toast('Fila limpa');}
@@ -1071,6 +1089,7 @@ async function carregarStatusAntiban(){
     const hora=new Date().getHours();
     const naJanela=c.horario_ativo==='true'?(hora>=parseInt(c.horario_inicio||8)&&hora<parseInt(c.horario_fim||20)):true;
     const banidos=chips.filter(ch=>ch.status==='banido');
+    const semProxy=chips.filter(ch=>ch.status==='sem_proxy');
     const ativos=chips.filter(ch=>ch.status==='open');
     el.innerHTML=`<div class="row3">
       <div class="cstat"><div class="cstat-l">Janela</div><div class="cstat-v" style="color:${c.horario_ativo==='true'?(naJanela?'var(--green)':'var(--yellow)'):'var(--muted)'}">${c.horario_ativo==='true'?(naJanela?`✅ Aberta`:`⏰ Fechada`):'Desativada'}</div></div>
@@ -1078,6 +1097,7 @@ async function carregarStatusAntiban(){
       <div class="cstat"><div class="cstat-l">Chips banidos</div><div class="cstat-v r">${banidos.length}</div></div>
     </div>`;
     if(banidos.length)el.innerHTML+=`<div class="hint err" style="margin-top:10px">⚠ Chips banidos: ${banidos.map(ch=>ch.nome).join(', ')}</div>`;
+    if(semProxy.length)el.innerHTML+=`<div class="hint err" style="margin-top:10px">⛔ Chips sem proxy (não conectam): ${semProxy.map(ch=>ch.nome).join(', ')}</div>`;
   }catch(e){el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;}
 }
 function testarSpintax(){
