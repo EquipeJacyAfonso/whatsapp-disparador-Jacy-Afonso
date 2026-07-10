@@ -49,6 +49,28 @@ async function migrate() {
       );
     `);
 
+        // ⬇⬇⬇ ADICIONE ESTE BLOCO — estava faltando
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS campanhas (
+        id SERIAL PRIMARY KEY,
+        nome VARCHAR(255) NOT NULL,
+        template TEXT NOT NULL,
+        status VARCHAR(50) DEFAULT 'rascunho',
+        total_contatos INTEGER DEFAULT 0,
+        enviados INTEGER DEFAULT 0,
+        falhas INTEGER DEFAULT 0,
+        delay_min INTEGER DEFAULT 20,
+        delay_max INTEGER DEFAULT 50,
+        midia_base64 TEXT,
+        midia_mimetype VARCHAR(50),
+        midia_nome VARCHAR(255),
+        criado_em TIMESTAMP DEFAULT NOW(),
+        iniciado_em TIMESTAMP,
+        finalizado_em TIMESTAMP
+      );
+    `);
+    // ⬆⬆⬆ FIM DO BLOCO NOVO
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS chip_historico (
         id SERIAL PRIMARY KEY,
