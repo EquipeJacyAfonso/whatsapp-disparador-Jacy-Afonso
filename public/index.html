@@ -58,6 +58,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex-shrink:0}
 .dot.open{background:var(--green);box-shadow:0 0 6px var(--green)}.dot.connecting{background:var(--yellow)}
 .dot.erro,.dot.desconectado{background:var(--red)}
+.dot.sem_proxy{background:var(--red);box-shadow:0 0 6px var(--red)}
 .chip-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:9px}
 .cstat{background:var(--surface2);border-radius:5px;padding:7px 10px}
 .cstat-l{font-size:9px;color:var(--muted);font-family:var(--mono);margin-bottom:2px}
@@ -263,7 +264,16 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
       <button class="bp" onclick="addChip()">+ Adicionar</button>
       <button class="bs" onclick="sincronizar()">↻ Sincronizar</button>
       <button class="bd sm" style="margin-left:auto" onclick="limparFila()">🗑 Limpar fila</button>
+      <button class="bs sm" onclick="editarProxy(${c.id})">🌐 Proxy</button>
     </div>
+    <div class="row">
+    <div><label>Nome</label><input type="text" id="chip-nome" placeholder="Chip 1"></div>
+    <div><label>Nome da instância</label><input type="text" id="chip-inst" placeholder="instancia01"></div>
+    </div>
+    <label>Proxy residencial/móvel (obrigatório)</label>
+    <input type="text" id="chip-proxy" placeholder="http://usuario:senha@host:porta">
+    <div class="hint warn">⚠ Cada chip precisa de um proxy dedicado (residencial ou móvel). Proxies de datacenter compartilhados aumentam muito o risco de ban.</div>
+    <div class="cstat-v" style="color:${c.status==='open'?'var(--green)':c.status==='sem_proxy'?'var(--red)':c.status==='desconectado'?'var(--red)':'var(--yellow)'}">${c.status==='sem_proxy'?'⛔ sem proxy':c.status}</div>
   </div>
   <div class="card">
     <h3>Tabela de aquecimento</h3>
@@ -831,6 +841,17 @@ async function criarCampanha(){
   }catch(e){toast(e.message,'err');}
 }
 
+// função:
+async function editarProxy(id){
+  const proxy=prompt('Proxy residencial/móvel (http://usuario:senha@host:porta):');
+  if(!proxy)return;
+  try{
+    const r=await fetch(`${API}/chips/${id}/proxy`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({proxy})});
+    const data=await r.json();if(!data.ok)throw new Error(data.error);
+    toast('Proxy atualizado!');loadChips();
+  }catch(e){toast(e.message,'err');}
+}
+
 function abrirTpl(id,tpl){document.getElementById('e-camp-id').value=id;document.getElementById('e-tpl').value=tpl;abrirM('m-tpl');}
 async function salvarTpl(){
   const id=document.getElementById('e-camp-id').value;
@@ -949,12 +970,16 @@ async function loadChips(){
 async function addChip(){
   const nome=document.getElementById('chip-nome').value.trim();
   const instancia=document.getElementById('chip-inst').value.trim().replace(/\s/g,'');
+  const proxy=document.getElementById('chip-proxy').value.trim();
   if(!nome||!instancia){toast('Preencha nome e instância','err');return;}
+  if(!proxy){toast('Proxy é obrigatório','err');return;}
   try{
-    const r=await fetch(`${API}/chips`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,instancia})});
+    const r=await fetch(`${API}/chips`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,instancia,proxy})});
     const data=await r.json();if(!data.ok)throw new Error(data.error);
     toast(`Chip "${nome}" adicionado!`);
-    document.getElementById('chip-nome').value='';document.getElementById('chip-inst').value='';
+    document.getElementById('chip-nome').value='';
+    document.getElementById('chip-inst').value='';
+    document.getElementById('chip-proxy').value='';
     loadChips();
   }catch(e){toast(e.message,'err');}
 }
