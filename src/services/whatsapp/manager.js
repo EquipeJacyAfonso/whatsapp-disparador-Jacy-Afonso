@@ -55,19 +55,28 @@ async function inicializarSessoes() {
 
 async function _iniciarSessao(instancia) {
   if (sessoes.has(instancia)) return; // já ativa
-  
-  // 1. Buscar o proxy do chip na base de dados
+
   const result = await pool.query('SELECT proxy FROM chips WHERE instancia = $1', [instancia]);
   const proxyUrl = result.rows[0]?.proxy || null;
 
-  // 2. Passar o proxy ao instanciar a ChipSession
+  if (!proxyUrl) {
+    console.error('[MGR] ⛔ ' + instancia + ' sem proxy configurado — conexão bloqueada.');
+    await pool.query(
+      "UPDATE chips SET status = 'sem_proxy' WHERE instancia = $1",
+      [instancia]
+    );
+    await pool.query(
+      "INSERT INTO logs (nivel, mensagem) VALUES ('erro', $1)",
+      ['Chip ' + instancia + ' não conectado: proxy obrigatório não configurado.']
+    );
+    return; // não cria ChipSession sem proxy
+  }
+
   const session = new ChipSession(instancia, _callbacks(), proxyUrl);
-  
   sessoes.set(instancia, session);
-  // conectar() é async — não aguardamos mas logamos erros
   session.conectar().catch(e => {
     console.error('[MGR] Erro ao conectar ' + instancia + ':', e.message);
-    session._conectando = false; // garante desbloqueio mesmo em erro inesperado
+    session._conectando = false;
   });
 }
 
@@ -77,6 +86,22 @@ const AQUECIMENTO = [20, 30, 40, 50, 60, 80, 100, 120, 150];
 
 function limitePorDia(diasAtivo) {
   return AQUECIMENTO[Math.min(diasAtivo, AQUECIMENTO.length - 1)];
+}
+
+// ─── Validação de proxy (obrigatório por chip) ────────────────────────────────
+// Exige proxy residencial/móvel no formato http(s)://usuario:senha@host:porta
+// ou http(s)://host:porta.
+const PROXY_REGEX = /^https?:\/\/(?:[^:@\/]+:[^:@\/]+@)?[a-zA-Z0-9.\-]+:\d{2,5}$/;
+
+function validarProxy(proxyUrl) {
+  if (!proxyUrl || typeof proxyUrl !== 'string' || !proxyUrl.trim()) {
+    throw new Error('Proxy obrigatório. Cada chip precisa de um proxy residencial/móvel próprio (formato: http://usuario:senha@host:porta).');
+  }
+  const limpo = proxyUrl.trim();
+  if (!PROXY_REGEX.test(limpo)) {
+    throw new Error('Formato de proxy inválido. Use: http://usuario:senha@host:porta ou http://host:porta');
+  }
+  return limpo;
 }
 
 // ─── Formatação de números ────────────────────────────────────────────────────
@@ -141,12 +166,23 @@ async function verificarNumero(numero, instancia) {
 
 // ─── Gestão de chips ─────────────────────────────────────────────────────────
 
-async function adicionarChip(nome, instancia, limiteDiario) {
+async function adicionarChip(nome, instancia, proxy, limiteDiario) {
+  const proxyValidado = validarProxy(proxy); // lança erro se ausente/inválido
   const limite = limiteDiario || AQUECIMENTO[0];
   const result = await pool.query(
-    "INSERT INTO chips (nome, instancia, status, limite_diario, dias_ativo) VALUES ($1, $2, 'desconectado', $3, 0) RETURNING *",
-    [nome, instancia, limite]
+    "INSERT INTO chips (nome, instancia, status, limite_diario, dias_ativo, proxy) VALUES ($1, $2, 'desconectado', $3, 0, $4) RETURNING *",
+    [nome, instancia, limite, proxyValidado]
   );
+  return result.rows[0];
+}
+
+async function atualizarProxy(id, proxy) {
+  const proxyValidado = validarProxy(proxy);
+  const result = await pool.query(
+    'UPDATE chips SET proxy = $1 WHERE id = $2 RETURNING *',
+    [proxyValidado, id]
+  );
+  if (!result.rows.length) throw new Error('Chip não encontrado');
   return result.rows[0];
 }
 
@@ -204,13 +240,14 @@ async function statusChip(instancia) {
 }
 
 async function criarInstancia(instancia) {
+  const result = await pool.query('SELECT proxy FROM chips WHERE instancia = $1', [instancia]);
+  if (!result.rows[0]?.proxy) {
+    throw new Error('Configure um proxy residencial/móvel para este chip antes de conectar.');
+  }
   if (!sessoes.has(instancia)) {
     await _iniciarSessao(instancia);
   } else {
     const session = sessoes.get(instancia);
-    // Bug 7: se _conectando ficou travado por exceção anterior, reseta
-    // antes de tentar novamente — sem isso criarInstancia retornava
-    // 'connecting' sem QR e sem nenhuma ação real.
     if (session._conectando) {
       console.warn('[MGR] ' + instancia + ' estava com _conectando travado — resetando');
       session._conectando = false;

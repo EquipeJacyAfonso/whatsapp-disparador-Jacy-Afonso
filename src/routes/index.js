@@ -137,6 +137,26 @@ router.patch('/chips/:id/limite', requireAuth, async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
+router.post('/chips', requireAuth, async (req, res) => {
+  try {
+    const { nome, instancia, proxy } = req.body;
+    if (!nome || !instancia) return res.status(400).json({ ok: false, error: 'nome e instancia obrigatórios' });
+    if (!proxy) return res.status(400).json({ ok: false, error: 'Proxy obrigatório. Configure um proxy residencial/móvel dedicado para este chip.' });
+    const chip = await adicionarChip(nome, instancia, proxy);
+    res.json({ ok: true, data: chip });
+  } catch (err) { res.status(400).json({ ok: false, error: err.message }); }
+});
+
+// Novo endpoint — editar proxy de chip existente
+router.patch('/chips/:id/proxy', requireAuth, async (req, res) => {
+  try {
+    const { proxy } = req.body;
+    const { atualizarProxy } = require('../services/whatsapp/manager');
+    const chip = await atualizarProxy(req.params.id, proxy);
+    res.json({ ok: true, data: chip });
+  } catch (err) { res.status(400).json({ ok: false, error: err.message }); }
+});
+
 router.post('/chips/sincronizar', requireAuth, async (req, res) => {
   try {
     const chips = await listarChips();
