@@ -49,7 +49,10 @@ async function migrate() {
       );
     `);
 
-        // ⬇⬇⬇ ADICIONE ESTE BLOCO — estava faltando
+    // ─── Campanhas ──────────────────────────────────────────────────────────
+    // Esta tabela estava faltando na migração original — disparos e
+    // chip_historico dependem dela via FK, o que causava
+    // "relation campanhas does not exist" em bancos novos.
     await client.query(`
       CREATE TABLE IF NOT EXISTS campanhas (
         id SERIAL PRIMARY KEY,
@@ -69,7 +72,15 @@ async function migrate() {
         finalizado_em TIMESTAMP
       );
     `);
-    // ⬆⬆⬆ FIM DO BLOCO NOVO
+
+    // Colunas seguras para bancos que já tinham "campanhas" criada por fora
+    // (ex: manualmente ou por versão antiga do sistema) sem essas colunas.
+    await client.query('ALTER TABLE campanhas ADD COLUMN IF NOT EXISTS delay_min INTEGER DEFAULT 20;');
+    await client.query('ALTER TABLE campanhas ADD COLUMN IF NOT EXISTS delay_max INTEGER DEFAULT 50;');
+    await client.query('ALTER TABLE campanhas ADD COLUMN IF NOT EXISTS midia_base64 TEXT;');
+    await client.query('ALTER TABLE campanhas ADD COLUMN IF NOT EXISTS midia_mimetype VARCHAR(50);');
+    await client.query('ALTER TABLE campanhas ADD COLUMN IF NOT EXISTS midia_nome VARCHAR(255);');
+    console.log('[DB] Tabela "campanhas" verificada/criada.');
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS chip_historico (
