@@ -6,6 +6,9 @@
 //   - Manter um Map de instancia → ChipSession
 //   - Inicializar sessões de todos os chips na subida do servidor
 //   - Expor as mesmas funções que evolution.js exportava
+//   - Exigir proxy residencial/móvel próprio por chip (obrigatório)
+//   - Confirmar entrega real via ACK do WhatsApp
+//   - Enviar saudação de aquecimento antes da mensagem de campanha
 
 require('dotenv').config();
 const pool   = require('../../db');
@@ -36,6 +39,22 @@ function _callbacks() {
   };
 }
 
+// ─── Validação de proxy (obrigatório por chip) ────────────────────────────────
+// Exige proxy residencial/móvel no formato http(s)://usuario:senha@host:porta
+// ou http(s)://host:porta.
+const PROXY_REGEX = /^https?:\/\/(?:[^:@\/]+:[^:@\/]+@)?[a-zA-Z0-9.\-]+:\d{2,5}$/;
+
+function validarProxy(proxyUrl) {
+  if (!proxyUrl || typeof proxyUrl !== 'string' || !proxyUrl.trim()) {
+    throw new Error('Proxy obrigatório. Cada chip precisa de um proxy residencial/móvel próprio (formato: http://usuario:senha@host:porta).');
+  }
+  const limpo = proxyUrl.trim();
+  if (!PROXY_REGEX.test(limpo)) {
+    throw new Error('Formato de proxy inválido. Use: http://usuario:senha@host:porta ou http://host:porta');
+  }
+  return limpo;
+}
+
 // ─── Inicialização ────────────────────────────────────────────────────────────
 
 /**
@@ -56,15 +75,14 @@ async function inicializarSessoes() {
 async function _iniciarSessao(instancia) {
   if (sessoes.has(instancia)) return; // já ativa
 
+  // Proxy é obrigatório — sem ele, o chip não conecta (evita ban por IP
+  // de datacenter compartilhado entre múltiplos chips).
   const result = await pool.query('SELECT proxy FROM chips WHERE instancia = $1', [instancia]);
   const proxyUrl = result.rows[0]?.proxy || null;
 
   if (!proxyUrl) {
     console.error('[MGR] ⛔ ' + instancia + ' sem proxy configurado — conexão bloqueada.');
-    await pool.query(
-      "UPDATE chips SET status = 'sem_proxy' WHERE instancia = $1",
-      [instancia]
-    );
+    await pool.query("UPDATE chips SET status = 'sem_proxy' WHERE instancia = $1", [instancia]);
     await pool.query(
       "INSERT INTO logs (nivel, mensagem) VALUES ('erro', $1)",
       ['Chip ' + instancia + ' não conectado: proxy obrigatório não configurado.']
@@ -74,9 +92,10 @@ async function _iniciarSessao(instancia) {
 
   const session = new ChipSession(instancia, _callbacks(), proxyUrl);
   sessoes.set(instancia, session);
+  // conectar() é async — não aguardamos mas logamos erros
   session.conectar().catch(e => {
     console.error('[MGR] Erro ao conectar ' + instancia + ':', e.message);
-    session._conectando = false;
+    session._conectando = false; // garante desbloqueio mesmo em erro inesperado
   });
 }
 
@@ -86,22 +105,6 @@ const AQUECIMENTO = [20, 30, 40, 50, 60, 80, 100, 120, 150];
 
 function limitePorDia(diasAtivo) {
   return AQUECIMENTO[Math.min(diasAtivo, AQUECIMENTO.length - 1)];
-}
-
-// ─── Validação de proxy (obrigatório por chip) ────────────────────────────────
-// Exige proxy residencial/móvel no formato http(s)://usuario:senha@host:porta
-// ou http(s)://host:porta.
-const PROXY_REGEX = /^https?:\/\/(?:[^:@\/]+:[^:@\/]+@)?[a-zA-Z0-9.\-]+:\d{2,5}$/;
-
-function validarProxy(proxyUrl) {
-  if (!proxyUrl || typeof proxyUrl !== 'string' || !proxyUrl.trim()) {
-    throw new Error('Proxy obrigatório. Cada chip precisa de um proxy residencial/móvel próprio (formato: http://usuario:senha@host:porta).');
-  }
-  const limpo = proxyUrl.trim();
-  if (!PROXY_REGEX.test(limpo)) {
-    throw new Error('Formato de proxy inválido. Use: http://usuario:senha@host:porta ou http://host:porta');
-  }
-  return limpo;
 }
 
 // ─── Formatação de números ────────────────────────────────────────────────────
@@ -240,14 +243,19 @@ async function statusChip(instancia) {
 }
 
 async function criarInstancia(instancia) {
+  // Proxy é obrigatório — bloqueia a tentativa de conexão sem ele
   const result = await pool.query('SELECT proxy FROM chips WHERE instancia = $1', [instancia]);
   if (!result.rows[0]?.proxy) {
     throw new Error('Configure um proxy residencial/móvel para este chip antes de conectar.');
   }
+
   if (!sessoes.has(instancia)) {
     await _iniciarSessao(instancia);
   } else {
     const session = sessoes.get(instancia);
+    // Bug 7: se _conectando ficou travado por exceção anterior, reseta
+    // antes de tentar novamente — sem isso criarInstancia retornava
+    // 'connecting' sem QR e sem nenhuma ação real.
     if (session._conectando) {
       console.warn('[MGR] ' + instancia + ' estava com _conectando travado — resetando');
       session._conectando = false;
@@ -271,7 +279,7 @@ async function qrcodeChip(instancia) {
   return { qrcode: { base64 } };
 }
 
-// ─── Envio ────────────────────────────────────────────────────────────────────
+// ─── Envio (com confirmação real de entrega via ACK) ──────────────────────────
 
 async function enviarMensagem(numero, mensagem, instancia) {
   const session = sessoes.get(instancia);
@@ -285,14 +293,10 @@ async function enviarMensagem(numero, mensagem, instancia) {
   }
 
   console.log('[MGR] → Enviando texto para ' + numeroFormatado + ' via ' + instancia);
-  const resultado = await session.enviarTexto(numeroFormatado, mensagem);
+  const resultado = await session.enviarTextoConfirmado(numeroFormatado, mensagem);
 
-  if (!resultado) {
-    throw new Error('Envio sem confirmação da API Baileys para ' + numeroFormatado);
-  }
-
-  console.log('[MGR] ✅ ' + numeroFormatado);
-  return resultado;
+  console.log('[MGR] ' + (resultado.ack ? '✅' : '⚠ sem confirmação de entrega') + ' ' + numeroFormatado + ' (ack=' + resultado.ack + ')');
+  return resultado; // { key, ack }
 }
 
 async function enviarImagem(numero, mensagem, instancia, midiaBase64, mimetype, midiaNome) {
@@ -307,22 +311,51 @@ async function enviarImagem(numero, mensagem, instancia, midiaBase64, mimetype, 
   }
 
   console.log('[MGR] → Enviando imagem para ' + numeroFormatado + ' via ' + instancia);
-  const resultado = await session.enviarImagem(
+  const resultado = await session.enviarImagemConfirmada(
     numeroFormatado, midiaBase64, mimetype, mensagem, midiaNome
   );
 
-  if (!resultado) {
-    throw new Error('Envio de imagem sem confirmação para ' + numeroFormatado);
-  }
-
-  console.log('[MGR] ✅ ' + numeroFormatado + ' (imagem)');
-  return resultado;
+  console.log('[MGR] ' + (resultado.ack ? '✅' : '⚠ sem confirmação de entrega') + ' ' + numeroFormatado + ' (imagem, ack=' + resultado.ack + ')');
+  return resultado; // { key, ack }
 }
 
 async function marcarComoLida(instancia, messageKey) {
   const session = sessoes.get(instancia);
   if (!session) return;
   await session.marcarComoLida(messageKey);
+}
+
+// ─── Saudação de aquecimento antes da mensagem de campanha ────────────────────
+// Simula abertura natural de conversa (em vez de despejar o texto de venda
+// direto) — reduz a assinatura de comportamento automatizado.
+const SAUDACOES = [
+  'Oi! 👋', 'Olá!', 'Opa, tudo bem?', 'Oii', 'E aí!', 'Bom dia!', 'Boa tarde!',
+  'Oi, tudo certo?', 'Olá, tudo bem por aí?',
+];
+
+function saudacaoAleatoria() {
+  return SAUDACOES[Math.floor(Math.random() * SAUDACOES.length)];
+}
+
+/**
+ * Envia uma saudação curta antes da mensagem real da campanha, com pequena
+ * pausa humana entre as duas. Best-effort: se falhar, não interrompe o envio
+ * da mensagem principal (a saudação é só um reforço de naturalidade).
+ */
+async function enviarSaudacaoAquecimento(numero, instancia) {
+  try {
+    const session = sessoes.get(instancia);
+    if (!session || session.status !== 'open') return;
+    const numeroFormatado = await verificarNumero(numero, instancia);
+    if (!numeroFormatado) return;
+    const texto = saudacaoAleatoria();
+    await session.enviarTexto(numeroFormatado, texto); // sem exigir ACK — é só aquecimento
+    const pausa = 1500 + Math.random() * 2500; // 1.5s–4s
+    await new Promise(r => setTimeout(r, pausa));
+  } catch (e) {
+    console.warn('[MGR] Saudação de aquecimento falhou para ' + numero + ': ' + e.message);
+    // não propaga — envio principal segue mesmo se a saudação falhar
+  }
 }
 
 // ─── Rotação de chips ─────────────────────────────────────────────────────────
@@ -419,10 +452,25 @@ async function aquecerChipsInternamente() {
       });
     } while (texto !== anterior);
 
-    await enviarMensagem(numeroDest, texto, rem.instancia);
+    const rem2 = rem; // apenas para clareza — envia via chip remetente
+    await enviarMensagemSimples(numeroDest, texto, rem2.instancia);
   } catch (e) {
     console.warn('[MGR] Aquecimento interno: ' + e.message);
   }
+}
+
+// Envio simples sem exigir ACK — usado internamente pelo aquecimento
+// (não precisa bloquear por confirmação, é só tráfego entre os próprios chips)
+async function enviarMensagemSimples(numero, mensagem, instancia) {
+  const session = sessoes.get(instancia);
+  if (!session || session.status !== 'open') {
+    throw new Error('Chip ' + instancia + ' não está conectado (status: ' + (session?.status || 'não encontrado') + ')');
+  }
+  const numeroFormatado = await verificarNumero(numero, instancia);
+  if (!numeroFormatado) {
+    throw new Error('Número ' + numero + ' não possui WhatsApp registrado');
+  }
+  return session.enviarTexto(numeroFormatado, mensagem);
 }
 
 // ─── Utilitário para aquecimento bidirecional ────────────────────────────────
@@ -452,7 +500,7 @@ function erroEhPermanente(err) {
   return msg.includes('não possui whatsapp') || msg.includes('jid inválido');
 }
 
-// ─── Exports (mesma interface que evolution.js) ───────────────────────────────
+// ─── Exports (mesma interface que evolution.js, + novidades) ─────────────────
 
 module.exports = {
   // Inicialização (chamada pelo server.js no startup)
@@ -463,12 +511,14 @@ module.exports = {
   enviarImagem,
   marcarComoLida,
   verificarNumero,
+  enviarSaudacaoAquecimento,
 
   // Chips
   adicionarChip,
   listarChips,
   removerChip,
   atualizarLimiteDiario,
+  atualizarProxy,
   pausarChip,
   statusChip,
   criarInstancia,
@@ -491,4 +541,5 @@ module.exports = {
   extrairErroAPI,
   erroEhPermanente,
   obterNumerosChipsConectados,
+  validarProxy,
 };

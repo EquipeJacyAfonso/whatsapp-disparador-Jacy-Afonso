@@ -1,7 +1,7 @@
 require('dotenv').config();
 const Bull = require('bull');
 const pool = require('../db');
-const { enviarMensagem, enviarImagem, proximoChip, registrarUso, registrarFalha, statusChip } = require('../services/whatsapp/manager');
+const { enviarMensagem, enviarImagem, proximoChip, registrarUso, registrarFalha, statusChip, enviarSaudacaoAquecimento } = require('../services/whatsapp/manager');
 const { renderTemplate } = require('../services/csv');
 const { processarSpintax, verificarCondicoes, processarErroBan, chipEmDescanso, msAteJanelaAbrir, registrarFimCampanhaChip } = require('../services/antiban');
 const config = require('../services/config');
@@ -38,7 +38,7 @@ disparoQueue.on('completed', (job, r) => {
   if (r && r.ok === false) {
     console.log('[FILA] ⚠ #' + job.id + ' finalizado sem sucesso (' + (r.motivo || '?') + ')');
   } else {
-    console.log('[FILA] ✅ #' + job.id + ' via ' + (r && r.chip || '?'));
+    console.log('[FILA] ✅ #' + job.id + ' via ' + (r && r.chip || '?') + ' (ack=' + (r && r.ack) + ')');
   }
 });
 disparoQueue.on('failed', (job, err) => console.error('[FILA] ❌ #' + job.id + ': ' + err.message));
@@ -140,27 +140,42 @@ disparoQueue.process(1, async (job) => {
   // 4. Spintax (processado uma única vez aqui)
   const mensagemFinal = processarSpintax(mensagem);
 
-  // 5. Envia — texto ou imagem dependendo da campanha
+  // 5. Envia — saudação de aquecimento + texto/imagem, com confirmação real (ACK)
   try {
+    // Saudação curta antes da mensagem real — simula abertura natural de
+    // conversa. Best-effort: se falhar, não interrompe o envio principal.
+    await enviarSaudacaoAquecimento(numero, chip.instancia);
+
+    let resultadoEnvio;
     if (midiaBase64) {
       // Campanha com imagem: texto vai como legenda
-      await enviarImagem(numero, mensagemFinal, chip.instancia, midiaBase64, midiaMimetype, midiaNome);
+      resultadoEnvio = await enviarImagem(numero, mensagemFinal, chip.instancia, midiaBase64, midiaMimetype, midiaNome);
     } else {
       // Campanha só com texto
-      await enviarMensagem(numero, mensagemFinal, chip.instancia);
+      resultadoEnvio = await enviarMensagem(numero, mensagemFinal, chip.instancia);
     }
 
     await registrarUso(chip.id);
+
+    // ack: 2/3/4 = confirmado pelo WhatsApp (servidor/entregue/lido)
+    // null = sem confirmação a tempo — NÃO é necessariamente falha, o
+    // WhatsApp pode só estar demorando a notificar. Fica registrado para
+    // auditoria em vez de assumir sucesso silenciosamente.
+    const ackStatus = resultadoEnvio.ack;
     await pool.query(
-      "UPDATE disparos SET status='enviado', enviado_em=NOW(), tentativas=tentativas+1, chip_id=$1 WHERE id=$2",
-      [chip.id, disparoId]
+      "UPDATE disparos SET status='enviado', enviado_em=NOW(), tentativas=tentativas+1, chip_id=$1, ack_status=$2, confirmado_em=$3 WHERE id=$4",
+      [chip.id, ackStatus, ackStatus ? new Date() : null, disparoId]
     );
     await pool.query('UPDATE campanhas SET enviados=enviados+1 WHERE id=$1', [campanhaId]);
     await verificarConclusaoCampanha(campanhaId);
 
+    if (!ackStatus) {
+      await addLog('aviso', 'Envio sem confirmação de entrega (ack) — ' + numero + ' via ' + chip.instancia);
+    }
+
     // Delay normal entre mensagens
     const delay = delayAleatorio(delayMin, delayMax);
-    console.log('[DISPARO] ✅ ' + numero + ' — próxima em ' + Math.round(delay/1000) + 's');
+    console.log('[DISPARO] ✅ ' + numero + ' (ack=' + ackStatus + ') — próxima em ' + Math.round(delay/1000) + 's');
     await new Promise(r => setTimeout(r, delay));
 
     // Micro-pausa de "café" (10% de chance) — simula comportamento humano.
@@ -172,7 +187,7 @@ disparoQueue.process(1, async (job) => {
       await new Promise(r => setTimeout(r, pausaMs));
     }
 
-    return { ok: true, chip: chip.instancia };
+    return { ok: true, chip: chip.instancia, ack: ackStatus };
 
   } catch (err) {
     const banDetectado = await processarErroBan(chip.id, chip.instancia, err.message);

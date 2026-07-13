@@ -936,7 +936,7 @@ async function loadChips(){
           <div class="dot ${c.status}"></div>
           <div>
             <div style="font-family:var(--mono);font-size:12px;font-weight:500">${c.nome}${psd?` <span style="color:var(--yellow);font-size:10px">pausado</span>`:''}${semProxy?` <span style="color:var(--red);font-size:10px">⛔ sem proxy</span>`:''}</div>
-            <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">${c.instancia} · dia ${c.dias_ativo+1}${c.proxy?' · 🌐 proxy configurado':''}</div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">${c.instancia}${c.numero_conectado?' · 📱 '+c.numero_conectado:''} · dia ${c.dias_ativo+1}${c.proxy?' · 🌐 proxy configurado':''}</div>
           </div>
         </div>
         <div class="bg">
@@ -1039,7 +1039,7 @@ async function carregarRelatorio(){
   if(!id){el.innerHTML='';return;}
   try{
     const r=await fetch(`${API}/campanhas/${id}/relatorio`);const data=await r.json();if(!data.ok)throw new Error(data.error);
-    const {campanha,stats,porChip}=data.data;
+    const {campanha,stats,confirmacao,porChip}=data.data;
     const pct=campanha.total_contatos>0?Math.round(campanha.enviados/campanha.total_contatos*100):0;
     el.innerHTML=`<div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
@@ -1054,6 +1054,10 @@ async function carregarRelatorio(){
         <div class="stat"><div class="stat-l">Enviados</div><div class="stat-v g">${campanha.enviados}</div></div>
         <div class="stat"><div class="stat-l">Falhas</div><div class="stat-v r">${campanha.falhas}</div></div>
         <div class="stat"><div class="stat-l">Taxa</div><div class="stat-v y">${pct}%</div></div>
+      </div>
+      <div class="grid4">
+        <div class="stat"><div class="stat-l">Confirmados (ack)</div><div class="stat-v g">${confirmacao?.confirmados||0}</div></div>
+        <div class="stat"><div class="stat-l">Sem confirmação</div><div class="stat-v y">${confirmacao?.sem_confirmacao||0}</div></div>
       </div>
       <div class="bar" style="height:8px"><div class="bar-f" style="width:${pct}%"></div></div>
       ${porChip&&porChip.length?`<div style="margin-top:14px"><h3>Por chip</h3><table><thead><tr><th>Chip</th><th>Enviados</th></tr></thead><tbody>${porChip.map(c=>`<tr><td>${c.nome}</td><td><strong class="g">${c.enviados}</strong></td></tr>`).join('')}</tbody></table></div>`:''}

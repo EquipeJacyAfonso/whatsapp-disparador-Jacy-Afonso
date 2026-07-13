@@ -7,7 +7,7 @@ const { importarDoSheets } = require('../services/sheets');
 const { get: cfgGet, getAll: cfgGetAll, set: cfgSet, setMany: cfgSetMany, invalidarCache } = require('../services/config');
 const {
   listarChips, adicionarChip, removerChip, statusChip, qrcodeChip,
-  criarInstancia, pausarChip, atualizarLimiteDiario
+  criarInstancia, pausarChip, atualizarLimiteDiario, atualizarProxy
 } = require('../services/whatsapp/manager');
 const { enfileirarCampanha, pausarCampanha, retomar, limparFila, statusFila } = require('../queue/disparo');
 const { requireAuth } = require('../services/auth');
@@ -94,11 +94,12 @@ router.get('/chips', requireAuth, async (req, res) => {
 
 router.post('/chips', requireAuth, async (req, res) => {
   try {
-    const { nome, instancia } = req.body;
+    const { nome, instancia, proxy } = req.body;
     if (!nome || !instancia) return res.status(400).json({ ok: false, error: 'nome e instancia obrigatórios' });
-    const chip = await adicionarChip(nome, instancia);
+    if (!proxy) return res.status(400).json({ ok: false, error: 'Proxy obrigatório. Configure um proxy residencial/móvel dedicado para este chip.' });
+    const chip = await adicionarChip(nome, instancia, proxy);
     res.json({ ok: true, data: chip });
-  } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
+  } catch (err) { res.status(400).json({ ok: false, error: err.message }); }
 });
 
 router.delete('/chips/:id', requireAuth, async (req, res) => {
@@ -137,21 +138,11 @@ router.patch('/chips/:id/limite', requireAuth, async (req, res) => {
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
-router.post('/chips', requireAuth, async (req, res) => {
-  try {
-    const { nome, instancia, proxy } = req.body;
-    if (!nome || !instancia) return res.status(400).json({ ok: false, error: 'nome e instancia obrigatórios' });
-    if (!proxy) return res.status(400).json({ ok: false, error: 'Proxy obrigatório. Configure um proxy residencial/móvel dedicado para este chip.' });
-    const chip = await adicionarChip(nome, instancia, proxy);
-    res.json({ ok: true, data: chip });
-  } catch (err) { res.status(400).json({ ok: false, error: err.message }); }
-});
-
-// Novo endpoint — editar proxy de chip existente
+// Editar proxy de um chip existente — obrigatório na criação, mas pode ser
+// atualizado depois (ex: proxy expirou, trocar de provedor, etc).
 router.patch('/chips/:id/proxy', requireAuth, async (req, res) => {
   try {
     const { proxy } = req.body;
-    const { atualizarProxy } = require('../services/whatsapp/manager');
     const chip = await atualizarProxy(req.params.id, proxy);
     res.json({ ok: true, data: chip });
   } catch (err) { res.status(400).json({ ok: false, error: err.message }); }
@@ -260,6 +251,18 @@ router.get('/campanhas/:id/relatorio', requireAuth, async (req, res) => {
     const campanha = await pool.query('SELECT id, nome, status, total_contatos, enviados, falhas, delay_min, delay_max, criado_em, iniciado_em, finalizado_em, midia_mimetype, midia_nome FROM campanhas WHERE id=$1', [req.params.id]);
     if (!campanha.rows.length) return res.status(404).json({ ok: false, error: 'Não encontrada' });
     const stats = await pool.query('SELECT status, COUNT(*) as count FROM disparos WHERE campanha_id=$1 GROUP BY status', [req.params.id]);
+
+    // Confirmação real de entrega (ACK do WhatsApp) vs "aceito, mas sem
+    // confirmação a tempo" — ajuda a diferenciar "diz que enviou" de
+    // "confirmadamente chegou".
+    const confirmacao = await pool.query(
+      `SELECT
+         COUNT(*) FILTER (WHERE status='enviado' AND ack_status IS NOT NULL) AS confirmados,
+         COUNT(*) FILTER (WHERE status='enviado' AND ack_status IS NULL) AS sem_confirmacao
+       FROM disparos WHERE campanha_id=$1`,
+      [req.params.id]
+    );
+
     const porChip = await pool.query(
       'SELECT ch.nome, COUNT(*) as enviados FROM disparos d JOIN chips ch ON ch.id = d.chip_id WHERE d.campanha_id=$1 AND d.status=\'enviado\' GROUP BY ch.nome ORDER BY enviados DESC',
       [req.params.id]
@@ -268,7 +271,7 @@ router.get('/campanhas/:id/relatorio', requireAuth, async (req, res) => {
       "SELECT date_trunc('hour', enviado_em) as hora, COUNT(*) as total FROM disparos WHERE campanha_id=$1 AND status='enviado' GROUP BY hora ORDER BY hora",
       [req.params.id]
     );
-    res.json({ ok: true, data: { campanha: campanha.rows[0], stats: stats.rows, porChip: porChip.rows, porHora: porHora.rows } });
+    res.json({ ok: true, data: { campanha: campanha.rows[0], stats: stats.rows, confirmacao: confirmacao.rows[0], porChip: porChip.rows, porHora: porHora.rows } });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
 
@@ -391,8 +394,6 @@ router.post('/fila/limpar', requireAuth, async (req, res) => {
 
 // ─── Webhook Evolution API ────────────────────────────────────────────────────
 
-;
-
 router.post('/webhook/registrar', requireAuth, async (req, res) => {
   try {
     const axios = require('axios');
@@ -428,10 +429,10 @@ router.get('/campanhas/:id/exportar', requireAuth, async (req, res) => {
     const campanha = await pool.query('SELECT nome FROM campanhas WHERE id=$1', [req.params.id]);
     if (!campanha.rows.length) return res.status(404).json({ ok: false, error: 'Não encontrada' });
     const disparos = await pool.query(
-      'SELECT c.numero, c.nome, d.status, d.mensagem, d.tentativas, d.erro, d.enviado_em, ch.nome AS chip_nome FROM disparos d JOIN contatos c ON c.id = d.contato_id LEFT JOIN chips ch ON ch.id = d.chip_id WHERE d.campanha_id = $1 ORDER BY d.id',
+      'SELECT c.numero, c.nome, d.status, d.mensagem, d.tentativas, d.erro, d.enviado_em, d.ack_status, ch.nome AS chip_nome FROM disparos d JOIN contatos c ON c.id = d.contato_id LEFT JOIN chips ch ON ch.id = d.chip_id WHERE d.campanha_id = $1 ORDER BY d.id',
       [req.params.id]
     );
-    const cab = ['numero','nome','status','chip','tentativas','enviado_em','erro','mensagem'];
+    const cab = ['numero','nome','status','chip','tentativas','enviado_em','confirmado(ack)','erro','mensagem'];
     const linhas = disparos.rows.map(r => [
       r.numero,
       (r.nome || '').replace(/,/g, ';'),
@@ -439,6 +440,7 @@ router.get('/campanhas/:id/exportar', requireAuth, async (req, res) => {
       r.chip_nome || '',
       r.tentativas,
       r.enviado_em ? new Date(r.enviado_em).toLocaleString('pt-BR') : '',
+      r.ack_status ? 'sim (' + r.ack_status + ')' : 'não',
       (r.erro || '').replace(/,/g, ';').replace(/\n/g, ' '),
       (r.mensagem || '').replace(/,/g, ';').replace(/\n/g, ' ').substring(0, 100),
     ].join(','));
