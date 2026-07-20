@@ -848,6 +848,7 @@ async function loadCamps(){
       <td style="color:var(--muted)">${c.delay_min||20}s–${c.delay_max||50}s</td>
       <td><div class="bg">
         <button class="bs sm" onclick="moverPasta(${c.id},'${esc(c.pasta||'')}')">📁</button>
+        ${c.enviados>0&&c.enviados<c.total_contatos?`<button class="bs sm" onclick="duplicarPendentes(${c.id},'${esc(c.nome)}')" title="Criar campanha só com quem ainda não recebeu">🔁 Restantes</button>`:''}
         ${ed?`<button class="bs sm" onclick="abrirTpl(${c.id},'${esc(c.template||'')}')">✏ Texto</button>`:''}
         ${ed?`<button class="bs sm" onclick="abrirModalImagem(${c.id},'${c.midia_nome||''}')">🖼 Imagem</button>`:''}
         ${ed?`<button class="bs sm" onclick="abrirDelay(${c.id},${c.delay_min||20},${c.delay_max||50})">⏱</button>`:''}
@@ -942,10 +943,29 @@ async function salvarDelay(){
 }
 async function iniciar(id){
   try{
+    // Mostra preview de quantos já foram enviados vs pendentes antes de confirmar
+    const rP=await fetch(`${API}/campanhas/${id}/pendentes`);
+    const dP=await rP.json();
+    if(dP.ok){
+      const {pendentes,ja_enviados,total}=dP.data;
+      if(parseInt(ja_enviados)>0){
+        const ok=confirm(`Esta campanha já tem ${ja_enviados} de ${total} enviados.\n\nSó os ${pendentes} contatos pendentes serão enviados agora — quem já recebeu NÃO será reenviado.\n\nContinuar?`);
+        if(!ok)return;
+      }
+    }
     const r=await fetch(`${API}/campanhas/${id}/iniciar`,{method:'POST'});
     const data=await r.json();if(!data.ok)throw new Error(data.error);
     toast(data.message);log(data.message,'ok');loadCamps();
   }catch(e){toast(e.message,'err');log(e.message,'err');}
+}
+async function duplicarPendentes(id,nome){
+  if(!confirm(`Criar uma nova campanha "${nome} (restantes)" apenas com os contatos que ainda não receberam?`))return;
+  try{
+    const r=await fetch(`${API}/campanhas/${id}/duplicar-pendentes`,{method:'POST'});
+    const data=await r.json();if(!data.ok)throw new Error(data.error);
+    toast(`Campanha "${data.data.nome}" criada com ${data.data.total_contatos} contatos pendentes!`);
+    loadCamps();loadPastas();
+  }catch(e){toast(e.message,'err');}
 }
 async function pausar(id){await fetch(`${API}/campanhas/${id}/pausar`,{method:'POST'});toast('Pausado');loadCamps();}
 async function retomar(){
