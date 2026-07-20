@@ -69,6 +69,10 @@ class ChipSession {
     // Map<messageId, { resolve, timeout }> — usado para aguardar o ACK real
     // do WhatsApp (SERVER_ACK/DELIVERY_ACK/READ) antes de considerar "enviado".
     this._confirmacoesPendentes = new Map();
+    // Cache das últimas mensagens recebidas (não enviadas por nós) — usado
+    // para simular "leitura de conversas antigas" antes de disparar.
+    // Não depende de chat store completo (syncFullHistory fica desativado).
+    this._mensagensRecebidas = [];
   }
 
   // ── Conexão ────────────────────────────────────────────────────────────────
@@ -109,6 +113,10 @@ class ChipSession {
       this.socket.ev.on('messages.upsert', ({ messages }) => {
         for (const msg of messages) {
           if (msg.key.fromMe) continue;
+          // Guarda no cache de "mensagens recebidas" (máx. 30) para a
+          // simulação de leitura de conversas antigas antes de disparar.
+          this._mensagensRecebidas.push(msg.key);
+          if (this._mensagensRecebidas.length > 30) this._mensagensRecebidas.shift();
           this.callbacks.onMessage?.(this.instancia, msg);
         }
       });
@@ -339,6 +347,41 @@ class ChipSession {
     try {
       await this.socket.readMessages([messageKey]);
     } catch (_) { /* silencioso — não crítico */ }
+  }
+
+  // ── Simulação de comportamento humano ───────────────────────────────────────
+
+  /**
+   * Simula "abrir o WhatsApp e ficar online" antes de agir — um humano não
+   * fica invisível e some, ele aparece online por alguns segundos primeiro.
+   * best-effort: falha não deve interromper o fluxo de envio.
+   */
+  async simularPresencaOnline(minMs = 2000, maxMs = 6000) {
+    if (!this.socket || this.status !== 'open') return;
+    try {
+      await this.socket.sendPresenceUpdate('available');
+      const espera = minMs + Math.random() * (maxMs - minMs);
+      await new Promise(r => setTimeout(r, espera));
+    } catch (_) { /* não crítico */ }
+  }
+
+  /**
+   * Simula "abrir conversas antigas e ler mensagens" — re-marca como lidas
+   * algumas mensagens recentes já recebidas (idempotente, sem efeito colateral
+   * real), gerando pequenos recibos de leitura espaçados no tempo antes do
+   * disparo real. best-effort.
+   */
+  async simularLeituraAntiga(qtd = 2) {
+    if (!this.socket || this.status !== 'open') return;
+    if (!this._mensagensRecebidas.length) return;
+    try {
+      const embaralhado = [...this._mensagensRecebidas].sort(() => Math.random() - 0.5);
+      const selecionados = embaralhado.slice(0, qtd);
+      for (const key of selecionados) {
+        await this.socket.readMessages([key]);
+        await new Promise(r => setTimeout(r, 400 + Math.random() * 900));
+      }
+    } catch (_) { /* não crítico */ }
   }
 
   /**

@@ -325,36 +325,83 @@ async function marcarComoLida(instancia, messageKey) {
   await session.marcarComoLida(messageKey);
 }
 
-// ─── Saudação de aquecimento antes da mensagem de campanha ────────────────────
-// Simula abertura natural de conversa (em vez de despejar o texto de venda
-// direto) — reduz a assinatura de comportamento automatizado.
-const SAUDACOES = [
-  'Oi! 👋', 'Olá!', 'Opa, tudo bem?', 'Oii', 'E aí!', 'Bom dia!', 'Boa tarde!',
-  'Oi, tudo certo?', 'Olá, tudo bem por aí?',
+// ─── Simulação de comportamento humano antes da campanha ─────────────────────
+// Três camadas, cada uma configurável via tabela `configuracoes` (aba Anti-ban):
+//   1. Presença online — aparece "online" alguns segundos antes de agir
+//   2. Leitura de conversas antigas — re-marca mensagens recentes como lidas
+//   3. Conversa de aquecimento — troca 2-3 mensagens curtas antes do texto real
+// Tudo com chance configurável (sim_conversa_chance) para não inflar demais
+// o volume de mensagens por contato.
+const config = require('../config');
+
+const CONVERSAS_AQUECIMENTO = [
+  ['Oi! 👋', 'Tudo bem?'],
+  ['Olá!', 'Como vai?'],
+  ['Opa!', 'Tudo certo por aí?'],
+  ['Bom dia!', 'Espero que esteja tudo bem'],
+  ['Oii', 'Passando pra falar contigo'],
+  ['Oi, tudo bem?', 'Posso te falar uma coisa?'],
+  ['Olá, tudo certo?', 'Vi seu contato aqui'],
 ];
 
-function saudacaoAleatoria() {
-  return SAUDACOES[Math.floor(Math.random() * SAUDACOES.length)];
+function conversaAleatoria() {
+  return CONVERSAS_AQUECIMENTO[Math.floor(Math.random() * CONVERSAS_AQUECIMENTO.length)];
 }
 
 /**
- * Envia uma saudação curta antes da mensagem real da campanha, com pequena
- * pausa humana entre as duas. Best-effort: se falhar, não interrompe o envio
- * da mensagem principal (a saudação é só um reforço de naturalidade).
+ * Roda a simulação completa de comportamento humano antes da mensagem real
+ * de campanha: presença online → leitura de conversas antigas → 2-3 mensagens
+ * de aquecimento com pausas humanas entre elas.
+ * Tudo best-effort — qualquer falha aqui não deve impedir o envio principal.
  */
 async function enviarSaudacaoAquecimento(numero, instancia) {
   try {
     const session = sessoes.get(instancia);
     if (!session || session.status !== 'open') return;
+
+    const [presencaAtiva, leituraAtiva, conversaAtiva, chanceStr] = await Promise.all([
+      config.get('sim_presenca_ativo', 'true'),
+      config.get('sim_leitura_ativo', 'true'),
+      config.get('sim_conversa_ativo', 'true'),
+      config.get('sim_conversa_chance', '0.6'),
+    ]);
+    const chance = parseFloat(chanceStr);
+
+    // Chance controla se a simulação completa roda neste contato — evita
+    // dobrar/triplicar o volume de mensagens em toda campanha.
+    if (isNaN(chance) || Math.random() > chance) return;
+
+    // 1. Presença online — "abre o WhatsApp" antes de fazer qualquer coisa
+    if (presencaAtiva === 'true') {
+      await session.simularPresencaOnline();
+    }
+
+    // 2. Leitura de conversas antigas
+    if (leituraAtiva === 'true') {
+      await session.simularLeituraAntiga(1 + Math.floor(Math.random() * 2)); // 1-2 mensagens
+    }
+
     const numeroFormatado = await verificarNumero(numero, instancia);
     if (!numeroFormatado) return;
-    const texto = saudacaoAleatoria();
-    await session.enviarTexto(numeroFormatado, texto); // sem exigir ACK — é só aquecimento
-    const pausa = 1500 + Math.random() * 2500; // 1.5s–4s
-    await new Promise(r => setTimeout(r, pausa));
+
+    // 3. Conversa de aquecimento — 2 ou 3 mensagens curtas com pausas
+    if (conversaAtiva === 'true') {
+      const frases = conversaAleatoria();
+      for (const frase of frases) {
+        await session.enviarTexto(numeroFormatado, frase); // sem exigir ACK — é aquecimento
+        const pausa = 1500 + Math.random() * 2500; // 1.5s–4s entre mensagens
+        await new Promise(r => setTimeout(r, pausa));
+      }
+    } else {
+      // Fallback: se a conversa multi-mensagem estiver desativada mas a
+      // simulação em geral estiver ligada, manda ao menos uma saudação.
+      const [saudacao] = conversaAleatoria();
+      await session.enviarTexto(numeroFormatado, saudacao);
+      await new Promise(r => setTimeout(r, 1500 + Math.random() * 2500));
+    }
   } catch (e) {
-    console.warn('[MGR] Saudação de aquecimento falhou para ' + numero + ': ' + e.message);
-    // não propaga — envio principal segue mesmo se a saudação falhar
+    console.warn('[MGR] Simulação de aquecimento falhou para ' + numero + ': ' + e.message);
+    // não propaga — envio principal segue mesmo se a simulação falhar
   }
 }
 

@@ -349,6 +349,26 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
     <button class="bp" onclick="salvarAntiban('intervalo')">💾 Salvar</button>
   </div>
   <div class="card">
+    <h3>🎭 Simulação de comportamento humano</h3>
+    <div class="hint">Roda antes de cada mensagem de campanha: presença online, leitura de conversas antigas e 2-3 mensagens de aquecimento. Ajuda a reduzir a assinatura de bot, mas aumenta o volume de tráfego — use a chance abaixo para controlar.</div>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px">
+      <input type="checkbox" id="sim-presenca" style="width:auto;margin:0">
+      <span style="font-family:var(--mono);font-size:12px">Simular presença online antes de enviar</span>
+    </label>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px">
+      <input type="checkbox" id="sim-leitura" style="width:auto;margin:0">
+      <span style="font-family:var(--mono);font-size:12px">Simular leitura de conversas antigas</span>
+    </label>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:14px">
+      <input type="checkbox" id="sim-conversa" style="width:auto;margin:0">
+      <span style="font-family:var(--mono);font-size:12px">Simular conversa de aquecimento (2-3 mensagens)</span>
+    </label>
+    <label>Chance de rodar a simulação completa por contato (0 a 1)</label>
+    <input type="number" id="sim-chance" min="0" max="1" step="0.1" value="0.6">
+    <div class="hint warn">⚠ Chance 1.0 = roda em 100% dos contatos (mais tráfego). Valores entre 0.4–0.7 costumam ser um bom equilíbrio.</div>
+    <button class="bp" onclick="salvarSimulacao()">💾 Salvar simulação</button>
+  </div>
+  <div class="card">
     <h3>Status atual</h3>
     <div id="ab-status"><div class="empty">Carregando...</div></div>
     <button class="bs" style="margin-top:12px" onclick="carregarStatusAntiban()">↻ Atualizar</button>
@@ -1074,6 +1094,10 @@ async function loadAntiban(){
   document.getElementById('ab-hfim').value=c.horario_fim||20;
   document.getElementById('ab-threshold').value=c.falhas_ban_threshold||3;
   document.getElementById('ab-intervalo').value=c.intervalo_campanhas_min||0;
+  document.getElementById('sim-presenca').checked=c.sim_presenca_ativo!=='false';
+  document.getElementById('sim-leitura').checked=c.sim_leitura_ativo!=='false';
+  document.getElementById('sim-conversa').checked=c.sim_conversa_ativo!=='false';
+  document.getElementById('sim-chance').value=c.sim_conversa_chance||0.6;
   toggleHorario();
   await carregarStatusAntiban();
 }
@@ -1084,6 +1108,17 @@ async function salvarAntiban(tipo){
   else if(tipo==='threshold'){payload={falhas_ban_threshold:String(parseInt(document.getElementById('ab-threshold').value))};}
   else if(tipo==='intervalo'){payload={intervalo_campanhas_min:String(parseInt(document.getElementById('ab-intervalo').value))};}
   try{const r=await fetch(`${API}/config`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await r.json();if(!data.ok)throw new Error(data.error);toast('Anti-ban atualizado!');}catch(e){toast(e.message,'err');}
+}
+async function salvarSimulacao(){
+  const chance=parseFloat(document.getElementById('sim-chance').value);
+  if(isNaN(chance)||chance<0||chance>1){toast('Chance deve ser entre 0 e 1','err');return;}
+  const payload={
+    sim_presenca_ativo:String(document.getElementById('sim-presenca').checked),
+    sim_leitura_ativo:String(document.getElementById('sim-leitura').checked),
+    sim_conversa_ativo:String(document.getElementById('sim-conversa').checked),
+    sim_conversa_chance:String(chance),
+  };
+  try{const r=await fetch(`${API}/config`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await r.json();if(!data.ok)throw new Error(data.error);toast('Simulação atualizada!');}catch(e){toast(e.message,'err');}
 }
 async function carregarStatusAntiban(){
   const el=document.getElementById('ab-status');
