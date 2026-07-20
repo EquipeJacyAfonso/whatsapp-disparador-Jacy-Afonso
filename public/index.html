@@ -207,6 +207,9 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
     <h3>Nova campanha</h3>
     <label>Nome</label>
     <input type="text" id="camp-nome" placeholder="Promoção Junho">
+    <label>Pasta (opcional — para organizar)</label>
+    <input type="text" id="camp-pasta" placeholder="Ex: Black Friday, Recorrentes, Testes..." list="lista-pastas-existentes">
+    <datalist id="lista-pastas-existentes"></datalist>
     <label>Template da mensagem</label>
     <div class="hint">Use <strong>{nome}</strong>, <strong>{numero}</strong> e colunas do CSV. Spintax: <strong>{Olá|Oi|Bom dia}</strong></div>
     <textarea id="camp-tpl" placeholder="Olá {nome}, temos uma oferta! 🎁"></textarea>
@@ -233,7 +236,14 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
     <button class="bp" onclick="criarCampanha()">+ Criar campanha</button>
   </div>
   <div class="card">
-    <h3>Todas as campanhas</h3>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <h3 style="margin:0">Todas as campanhas</h3>
+      <div class="bg">
+        <select id="filtro-pasta" onchange="filtrarPorPasta()" style="margin:0;width:auto;min-width:180px">
+          <option value="">📁 Todas as pastas</option>
+        </select>
+      </div>
+    </div>
     <div id="lista-camps"><div class="empty">Nenhuma campanha</div></div>
   </div>
 </div>
@@ -589,7 +599,7 @@ function showPage(n,btn){
   document.getElementById('page-'+n).classList.add('active');
   if(btn)btn.classList.add('active');
   if(n==='dashboard')loadDash();
-  if(n==='campanhas')loadCamps();
+  if(n==='campanhas'){loadPastas();loadCamps();}
   if(n==='contatos')loadContatos();
   if(n==='chips'){loadChips();renderAQ();}
   if(n==='blacklist')loadBL();
@@ -794,17 +804,42 @@ async function removerImagemCampanha(){
 // ─── Campanhas ────────────────────────────────────────────────────────────────
 const sBadge=s=>{const m={rascunho:'gray',em_andamento:'y',pausado:'b',concluido:'g'};return `<span class="badge bg-${m[s]||'gray'}">${s.replace('_',' ')}</span>`;};
 
+let pastaAtual='';
+
+async function loadPastas(){
+  try{
+    const r=await fetch(`${API}/campanhas/pastas`);const data=await r.json();
+    const pastas=data.data||[];
+    const sel=document.getElementById('filtro-pasta');
+    const valorAtual=sel.value;
+    sel.innerHTML='<option value="">📁 Todas as pastas</option>'+
+      '<option value="__sem_pasta__">— Sem pasta —</option>'+
+      pastas.map(p=>`<option value="${esc(p.pasta)}">${p.pasta} (${p.total})</option>`).join('');
+    sel.value=valorAtual;
+    // datalist para autocompletar ao criar campanha
+    const dl=document.getElementById('lista-pastas-existentes');
+    if(dl) dl.innerHTML=pastas.map(p=>`<option value="${esc(p.pasta)}">`).join('');
+  }catch(e){}
+}
+function filtrarPorPasta(){
+  pastaAtual=document.getElementById('filtro-pasta').value;
+  loadCamps();
+}
 async function loadCamps(){
-  const r=await fetch(`${API}/campanhas`);const data=await r.json();
+  let url=`${API}/campanhas`;
+  if(pastaAtual==='__sem_pasta__') url+='?pasta=';
+  else if(pastaAtual) url+='?pasta='+encodeURIComponent(pastaAtual);
+  const r=await fetch(url);const data=await r.json();
   const el=document.getElementById('lista-camps');
   const camps=data.data||[];
   if(!camps.length){el.innerHTML='<div class="empty">Nenhuma campanha</div>';return;}
-  el.innerHTML=`<table><thead><tr><th>Nome</th><th>Status</th><th>Progresso</th><th>Mídia</th><th>Delay</th><th>Ações</th></tr></thead><tbody>
+  el.innerHTML=`<table><thead><tr><th>Pasta</th><th>Nome</th><th>Status</th><th>Progresso</th><th>Mídia</th><th>Delay</th><th>Ações</th></tr></thead><tbody>
   ${camps.map(c=>{
     const pct=c.total_contatos>0?Math.round(c.enviados/c.total_contatos*100):0;
     const ed=c.status==='rascunho'||c.status==='pausado';
     const temImg=!!c.midia_mimetype;
     return `<tr>
+      <td>${c.pasta?`<span class="badge bg-b">📁 ${c.pasta}</span>`:'<span style="color:var(--muted);font-size:10px">—</span>'}</td>
       <td>${c.nome}</td>
       <td>${sBadge(c.status)}</td>
       <td style="min-width:130px">${c.enviados}/${c.total_contatos}
@@ -812,6 +847,7 @@ async function loadCamps(){
       <td>${temImg?`<span class="badge bg-b" title="${c.midia_nome||''}">🖼 PNG/JPEG</span>`:'<span style="color:var(--muted)">—</span>'}</td>
       <td style="color:var(--muted)">${c.delay_min||20}s–${c.delay_max||50}s</td>
       <td><div class="bg">
+        <button class="bs sm" onclick="moverPasta(${c.id},'${esc(c.pasta||'')}')">📁</button>
         ${ed?`<button class="bs sm" onclick="abrirTpl(${c.id},'${esc(c.template||'')}')">✏ Texto</button>`:''}
         ${ed?`<button class="bs sm" onclick="abrirModalImagem(${c.id},'${c.midia_nome||''}')">🖼 Imagem</button>`:''}
         ${ed?`<button class="bs sm" onclick="abrirDelay(${c.id},${c.delay_min||20},${c.delay_max||50})">⏱</button>`:''}
@@ -823,6 +859,16 @@ async function loadCamps(){
         <button class="bd sm" onclick="delCamp(${c.id})">✕</button>
       </div></td></tr>`;
   }).join('')}</tbody></table>`;
+}
+async function moverPasta(id,pastaAtualCamp){
+  const nova=prompt('Nome da pasta (deixe vazio para remover da pasta):',pastaAtualCamp||'');
+  if(nova===null)return;
+  try{
+    const r=await fetch(`${API}/campanhas/${id}/pasta`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({pasta:nova.trim()})});
+    const data=await r.json();if(!data.ok)throw new Error(data.error);
+    toast(nova.trim()?`Movida para "${nova.trim()}"`:'Removida da pasta');
+    loadCamps();loadPastas();
+  }catch(e){toast(e.message,'err');}
 }
 
 function esc(s){
@@ -837,6 +883,7 @@ function esc(s){
 
 async function criarCampanha(){
   const nome=document.getElementById('camp-nome').value.trim();
+  const pasta=document.getElementById('camp-pasta').value.trim();
   const template=document.getElementById('camp-tpl').value.trim();
   const delay_min=parseInt(document.getElementById('camp-dmin').value)||20;
   const delay_max=parseInt(document.getElementById('camp-dmax').value)||50;
@@ -844,7 +891,7 @@ async function criarCampanha(){
   if(delay_min<5){toast('Delay mínimo 5s','err');return;}
   if(delay_max<=delay_min){toast('Delay máximo deve ser maior','err');return;}
   try{
-    const r=await fetch(`${API}/campanhas`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,template,delay_min,delay_max})});
+    const r=await fetch(`${API}/campanhas`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,template,delay_min,delay_max,pasta})});
     const data=await r.json();if(!data.ok)throw new Error(data.error);
     const id=data.data.id;
 
@@ -862,8 +909,10 @@ async function criarCampanha(){
 
     log(`Campanha "${nome}" — ${data.data.total_contatos} contatos`,'ok');
     document.getElementById('camp-nome').value='';
+    document.getElementById('camp-pasta').value='';
     document.getElementById('camp-tpl').value='';
     loadCamps();
+    loadPastas();
   }catch(e){toast(e.message,'err');}
 }
 
