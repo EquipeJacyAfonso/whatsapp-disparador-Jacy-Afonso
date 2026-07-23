@@ -144,6 +144,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   <button class="tab" onclick="showPage('antiban',this)">🛡 Anti-ban</button>
   <button class="tab" onclick="showPage('logs',this)">📋 Logs</button>
   <button class="tab" onclick="showPage('config',this)">⚙ Config</button>
+  <button class="tab" onclick="showPage('oficial',this)">☎ API Oficial</button>
 </nav>
 
 <!-- DASHBOARD -->
@@ -403,6 +404,84 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
+<!-- API OFICIAL -->
+<div class="page" id="page-oficial">
+  <h2>☎ WhatsApp Business Cloud API (Oficial)</h2>
+  <div class="hint">Via oficial da Meta — sem risco de ban por automação, mas exige templates pré-aprovados para iniciar conversas. Funciona em paralelo aos chips Baileys.</div>
+
+  <div class="card">
+    <h3>Adicionar conta oficial</h3>
+    <div class="row">
+      <div><label>Nome (apelido)</label><input type="text" id="oc-nome" placeholder="Conta Principal"></div>
+      <div><label>Limite diário</label><input type="number" id="oc-limite" value="1000" min="1"></div>
+    </div>
+    <label>Phone Number ID</label>
+    <input type="text" id="oc-phone-id" placeholder="1234567890123456">
+    <label>WABA ID (WhatsApp Business Account ID)</label>
+    <input type="text" id="oc-waba-id" placeholder="1234567890123456">
+    <label>Access Token (System User — permanente)</label>
+    <input type="password" id="oc-token" placeholder="EAAxxxxxxxxxxxxxxxx">
+    <div class="hint warn">⚠ Use um token de <strong>System User</strong> (permanente), não o token temporário de 24h do Graph API Explorer. Gerado em Meta Business Suite → Configurações do Sistema.</div>
+    <button class="bp" onclick="addContaOficial()">+ Adicionar conta</button>
+  </div>
+
+  <div class="card">
+    <h3>Contas cadastradas</h3>
+    <div id="lista-contas-oficiais"><div class="empty">Nenhuma conta oficial</div></div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="margin:0">Templates</h3>
+      <select id="filtro-conta-tpl" onchange="loadTemplates()" style="margin:0;width:auto;min-width:180px">
+        <option value="">Todas as contas</option>
+      </select>
+    </div>
+    <div class="tabs-mini">
+      <button class="tab-mini active" onclick="showSection('sec-tpl-novo',this)">➕ Criar novo</button>
+      <button class="tab-mini" onclick="showSection('sec-tpl-sync',this)">🔄 Sincronizar existentes</button>
+    </div>
+    <div class="section active" id="sec-tpl-novo">
+      <label>Conta</label>
+      <select id="tpl-conta"></select>
+      <div class="row">
+        <div><label>Nome do template (minúsculas/números/underscore)</label><input type="text" id="tpl-nome" placeholder="promo_junho_2026"></div>
+        <div><label>Categoria</label>
+          <select id="tpl-categoria">
+            <option value="MARKETING">Marketing</option>
+            <option value="UTILITY">Utility</option>
+            <option value="AUTHENTICATION">Authentication</option>
+          </select>
+        </div>
+      </div>
+      <label>Idioma</label>
+      <input type="text" id="tpl-idioma" value="pt_BR">
+      <label>Cabeçalho (opcional)</label>
+      <input type="text" id="tpl-cabecalho" placeholder="Oferta especial">
+      <label>Corpo da mensagem</label>
+      <div class="hint">Use <strong>{{1}}</strong>, <strong>{{2}}</strong>... para variáveis. Defina os nomes dos campos abaixo, na mesma ordem.</div>
+      <textarea id="tpl-corpo" placeholder="Olá {{1}}, temos uma oferta especial pra você! Use o cupom {{2}}."></textarea>
+      <label>Nomes dos campos das variáveis (na ordem, separados por vírgula)</label>
+      <input type="text" id="tpl-variaveis" placeholder="nome,cupom">
+      <label>Rodapé (opcional)</label>
+      <input type="text" id="tpl-rodape" placeholder="Responda SAIR para descadastrar">
+      <button class="bp" onclick="criarTemplateOficial()">📤 Enviar para aprovação da Meta</button>
+    </div>
+    <div class="section" id="sec-tpl-sync">
+      <label>Conta</label>
+      <select id="sync-conta"></select>
+      <div class="hint">Importa templates já criados direto no Meta Business Manager, fora deste painel.</div>
+      <button class="bp" onclick="sincronizarTemplatesOficial()">🔄 Sincronizar agora</button>
+      <div id="sync-tpl-result" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Templates cadastrados</h3>
+    <div id="lista-templates"><div class="empty">Nenhum template</div></div>
+  </div>
+</div>
+
 <!-- CONFIG -->
 <div class="page" id="page-config">
   <h2>⚙ Configurações</h2>
@@ -605,6 +684,7 @@ function showPage(n,btn){
   if(n==='blacklist')loadBL();
   if(n==='relatorios')loadRelCamps();
   if(n==='config')loadConfig();
+  if(n==='oficial'){loadContasOficiais();loadTemplates();}
   if(n==='antiban')loadAntiban();
   if(n==='logs')loadLogs();
 }
@@ -1291,6 +1371,126 @@ async function testarBanco(){const el=document.getElementById('diag-result');try
 
 async function salvarNotifConfig(){const numero=(document.getElementById('cfg-admin-num')?.value||'').trim().replace(/\D/g,'');const instancia=(document.getElementById('cfg-admin-inst')?.value||'').trim();try{const r=await fetch(`${API}/config`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin_numero:numero,admin_chip_instancia:instancia})});const data=await r.json();if(!data.ok)throw new Error(data.error);toast('Notificações salvas!');}catch(e){toast(e.message,'err');}}
 async function testarNotificacao(){try{const r=await fetch(`${API}/config/notificacoes/testar`,{method:'POST'});const data=await r.json();if(!data.ok)throw new Error(data.error);toast('Notificação enviada!');}catch(e){toast(e.message,'err');}}
+
+// ─── API Oficial (WhatsApp Business Cloud API) ────────────────────────────────
+const APIO='/api/oficial';
+
+async function loadContasOficiais(){
+  try{
+    const r=await fetch(`${APIO}/contas`);const data=await r.json();
+    const contas=data.data||[];
+    const el=document.getElementById('lista-contas-oficiais');
+    if(!contas.length){el.innerHTML='<div class="empty">Nenhuma conta oficial</div>';}
+    else{
+      el.innerHTML=contas.map(c=>{
+        const pct=c.limite_diario>0?Math.round(c.enviados_hoje/c.limite_diario*100):0;
+        const corQual=c.qualidade==='GREEN'?'var(--green)':c.qualidade==='YELLOW'?'var(--yellow)':c.qualidade==='RED'?'var(--red)':'var(--muted)';
+        return `<div class="chip-card">
+          <div class="chip-top">
+            <div class="chip-info">
+              <div class="dot ${c.status==='ativo'?'open':'desconectado'}"></div>
+              <div>
+                <div style="font-family:var(--mono);font-size:12px;font-weight:500">${c.nome}</div>
+                <div style="font-family:var(--mono);font-size:10px;color:var(--muted)">${c.numero_display||c.phone_number_id}${c.qualidade?` · <span style="color:${corQual}">qualidade ${c.qualidade}</span>`:''}</div>
+              </div>
+            </div>
+            <div class="bg">
+              <button class="bs sm" onclick="atualizarQualidadeConta(${c.id})">↻ Qualidade</button>
+              <button class="bd sm" onclick="delContaOficial(${c.id})">✕</button>
+            </div>
+          </div>
+          <div style="margin-bottom:4px">
+            <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:3px">
+              <span>Enviados hoje</span><span>${c.enviados_hoje}/${c.limite_diario} (${pct}%)</span>
+            </div>
+            <div class="bar"><div class="bar-f" style="width:${Math.min(pct,100)}%"></div></div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+    // popula selects de conta (criar template, sincronizar, filtro)
+    const opts='<option value="">— Selecione —</option>'+contas.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+    const optsFiltro='<option value="">Todas as contas</option>'+contas.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+    if(document.getElementById('tpl-conta'))document.getElementById('tpl-conta').innerHTML=opts;
+    if(document.getElementById('sync-conta'))document.getElementById('sync-conta').innerHTML=opts;
+    if(document.getElementById('filtro-conta-tpl'))document.getElementById('filtro-conta-tpl').innerHTML=optsFiltro;
+  }catch(e){toast(e.message,'err');}
+}
+async function addContaOficial(){
+  const nome=document.getElementById('oc-nome').value.trim();
+  const phoneNumberId=document.getElementById('oc-phone-id').value.trim();
+  const wabaId=document.getElementById('oc-waba-id').value.trim();
+  const accessToken=document.getElementById('oc-token').value.trim();
+  const limiteDiario=parseInt(document.getElementById('oc-limite').value)||1000;
+  if(!nome||!phoneNumberId||!wabaId||!accessToken){toast('Preencha todos os campos','err');return;}
+  try{
+    const r=await fetch(`${APIO}/contas`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,phoneNumberId,wabaId,accessToken,limiteDiario})});
+    const data=await r.json();if(!data.ok)throw new Error(data.error);
+    toast(`Conta "${nome}" adicionada! Número: ${data.data.numero_display||'—'}`);
+    document.getElementById('oc-nome').value='';document.getElementById('oc-phone-id').value='';
+    document.getElementById('oc-waba-id').value='';document.getElementById('oc-token').value='';
+    loadContasOficiais();
+  }catch(e){toast(e.message,'err');}
+}
+async function delContaOficial(id){if(!confirm('Remover esta conta oficial? Templates vinculados também serão removidos.'))return;try{await fetch(`${APIO}/contas/${id}`,{method:'DELETE'});toast('Removida');loadContasOficiais();loadTemplates();}catch(e){toast(e.message,'err');}}
+async function atualizarQualidadeConta(id){try{const r=await fetch(`${APIO}/contas/${id}/qualidade`,{method:'POST'});const data=await r.json();if(!data.ok)throw new Error(data.error);toast(`Qualidade: ${data.data.qualidade||'—'} · Status: ${data.data.status}`);loadContasOficiais();}catch(e){toast(e.message,'err');}}
+
+async function criarTemplateOficial(){
+  const contaId=document.getElementById('tpl-conta').value;
+  const nome=document.getElementById('tpl-nome').value.trim();
+  const categoria=document.getElementById('tpl-categoria').value;
+  const idioma=document.getElementById('tpl-idioma').value.trim()||'pt_BR';
+  const cabecalhoTexto=document.getElementById('tpl-cabecalho').value.trim();
+  const corpo=document.getElementById('tpl-corpo').value.trim();
+  const variaveis=document.getElementById('tpl-variaveis').value.trim().split(',').map(v=>v.trim()).filter(Boolean);
+  const rodape=document.getElementById('tpl-rodape').value.trim();
+  if(!contaId){toast('Selecione uma conta','err');return;}
+  if(!nome||!corpo){toast('Preencha nome e corpo do template','err');return;}
+  try{
+    const r=await fetch(`${APIO}/templates`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contaId:parseInt(contaId),nome,categoria,idioma,corpo,variaveis,cabecalhoTexto,rodape})});
+    const data=await r.json();if(!data.ok)throw new Error(data.error);
+    toast(`Template "${nome}" enviado para aprovação! Status: ${data.data.status}`);
+    document.getElementById('tpl-nome').value='';document.getElementById('tpl-corpo').value='';
+    document.getElementById('tpl-variaveis').value='';document.getElementById('tpl-cabecalho').value='';document.getElementById('tpl-rodape').value='';
+    loadTemplates();
+  }catch(e){toast(e.message,'err');}
+}
+async function sincronizarTemplatesOficial(){
+  const contaId=document.getElementById('sync-conta').value;
+  if(!contaId){toast('Selecione uma conta','err');return;}
+  const el=document.getElementById('sync-tpl-result');
+  el.innerHTML='<span style="color:var(--muted);font-family:var(--mono);font-size:12px">⏳ Sincronizando...</span>';
+  try{
+    const r=await fetch(`${APIO}/templates/sincronizar/${contaId}`,{method:'POST'});
+    const data=await r.json();if(!data.ok)throw new Error(data.error);
+    const d=data.data;
+    el.innerHTML=`<div class="hint" style="border-color:var(--green)">✅ ${d.novos} novos · ${d.atualizados} atualizados de ${d.total} templates na Meta</div>`;
+    toast('Templates sincronizados!');
+    loadTemplates();
+  }catch(e){el.innerHTML=`<div class="hint err">❌ ${e.message}</div>`;toast(e.message,'err');}
+}
+async function loadTemplates(){
+  const contaId=document.getElementById('filtro-conta-tpl')?.value||'';
+  try{
+    const url=contaId?`${APIO}/templates?contaId=${contaId}`:`${APIO}/templates`;
+    const r=await fetch(url);const data=await r.json();
+    const tpls=data.data||[];
+    const el=document.getElementById('lista-templates');
+    if(!tpls.length){el.innerHTML='<div class="empty">Nenhum template</div>';return;}
+    const corStatus={APPROVED:'bg-g',PENDING:'bg-y',REJECTED:'bg-r'};
+    el.innerHTML=`<table><thead><tr><th>Nome</th><th>Conta</th><th>Categoria</th><th>Status</th><th>Corpo</th><th></th></tr></thead><tbody>
+    ${tpls.map(t=>`<tr>
+      <td>${t.nome}</td>
+      <td style="color:var(--muted)">${t.conta_nome}</td>
+      <td><span class="badge bg-b">${t.categoria}</span></td>
+      <td><span class="badge ${corStatus[t.status]||'bg-gray'}">${t.status}</span>${t.motivo_rejeicao?` <span title="${esc(t.motivo_rejeicao)}" style="cursor:help">ℹ</span>`:''}</td>
+      <td style="max-width:260px;font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.corpo}</td>
+      <td><button class="bd sm" onclick="delTemplateOficial(${t.id})">✕</button></td>
+    </tr>`).join('')}</tbody></table>`;
+  }catch(e){toast(e.message,'err');}
+}
+async function delTemplateOficial(id){if(!confirm('Remover este template? Isso também tenta remover na Meta.'))return;try{await fetch(`${APIO}/templates/${id}`,{method:'DELETE'});toast('Removido');loadTemplates();}catch(e){toast(e.message,'err');}}
+
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 let authToken = localStorage.getItem('auth_token') || '';
