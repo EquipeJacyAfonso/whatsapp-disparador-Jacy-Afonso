@@ -1,6 +1,6 @@
 {
   "name": "whatsapp-disparador",
-  "version": "8.0.0",
+  "version": "8.1.0",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
@@ -11,10 +11,12 @@
     "migrate-midia": "node src/db/migrate-midia.js",
     "migrate-auth": "node src/db/migrate-auth.js",
     "criar-admin": "node src/db/criar-admin.js",
-    "migrate-sessions": "node src/db/migrate-sessions.js"
+    "migrate-sessions": "node src/db/migrate-sessions.js",
+    "migrate-cripto-token": "node src/db/migrate-cripto-token.js"
   },
   "dependencies": {
     "express": "^4.18.2",
+    "express-rate-limit": "^7.4.0",
     "pg": "^8.11.3",
     "bull": "^4.12.2",
     "ioredis": "^5.3.2",
@@ -29,7 +31,7 @@
     "@whiskeysockets/baileys": "^6.7.0",
     "qrcode": "^1.5.3",
     "pino": "^8.0.0",
-    "https-proxy-agent": "^7.0.2" 
+    "https-proxy-agent": "^7.0.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.3"

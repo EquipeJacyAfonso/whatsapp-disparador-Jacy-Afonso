@@ -5,6 +5,7 @@
 // abaixo para dentro do src/routes/index.js existente.
 
 const express = require('express');
+const crypto = require('crypto');
 const router = express.Router();
 const pool = require('../db');
 const { requireAuth } = require('../services/auth');
@@ -73,12 +74,26 @@ router.delete('/templates/:id', requireAuth, async (req, res) => {
 // Precisa ficar FORA do requireAuth — a Meta chama esse endpoint diretamente.
 // O verify token abaixo é o mesmo configurado no App do Meta for Developers.
 
+/**
+ * Compara duas strings em tempo constante, evitando timing attacks contra
+ * o verify_token do webhook (um atacante não consegue inferir o token
+ * caractere-a-caractere medindo o tempo de resposta de "===").
+ */
+function comparacaoSegura(a, b) {
+  const bufA = Buffer.from(String(a ?? ''));
+  const bufB = Buffer.from(String(b ?? ''));
+  // Buffers de tamanhos diferentes fariam timingSafeEqual lançar exceção —
+  // trata isso como "não bate" sem vazar informação de tamanho por exceção.
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
 router.get('/webhook', (req, res) => {
   const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN || '';
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
-  if (mode === 'subscribe' && token === VERIFY_TOKEN && VERIFY_TOKEN) {
+  if (mode === 'subscribe' && VERIFY_TOKEN && comparacaoSegura(token, VERIFY_TOKEN)) {
     return res.status(200).send(challenge);
   }
   res.sendStatus(403);

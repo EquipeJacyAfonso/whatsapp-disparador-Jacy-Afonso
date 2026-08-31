@@ -39,6 +39,12 @@ function gerarSenha(tamanho = 20) {
     .substring(0, tamanho);
 }
 
+// Chave de criptografia de 32 bytes (64 caracteres hex) — usada para
+// criptografar access_token da WhatsApp Business Cloud API no banco.
+function gerarChaveCriptografia() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
 function exec(cmd, opts = {}) {
   return execSync(cmd, { cwd: ROOT, stdio: opts.silencioso ? 'pipe' : 'inherit', ...opts });
 }
@@ -147,6 +153,10 @@ function escreverEnv(config) {
     'DELAY_MIN_SEGUNDOS=20',
     'DELAY_MAX_SEGUNDOS=50',
     '',
+    '# Criptografia de tokens da WhatsApp Business Cloud API',
+    '# Gerada automaticamente — não compartilhe nem reutilize entre ambientes.',
+    'ENCRYPTION_KEY=' + config.encryptionKey,
+    '',
     '# Servidor',
     'PORT=' + config.porta,
     'PUBLIC_URL=' + (config.publicUrl || ''),
@@ -162,16 +172,22 @@ function escreverEnv(config) {
 async function instalarDocker(config) {
   titulo('Configurando docker-compose.yml');
 
-  // Lê o docker-compose e substitui as senhas padrão pelas geradas
+  // O setup.js escreve DB_PASSWORD e ENCRYPTION_KEY no .env (escreverEnv()),
+  // e o docker-compose.yml lê essas variáveis via ${DB_PASSWORD:?...} e
+  // ${ENCRYPTION_KEY:?...} — não é necessário editar o docker-compose.yml
+  // em si; `docker compose up` já lê o .env automaticamente na mesma pasta.
+  // Mantido aqui apenas por retrocompatibilidade com versões antigas do
+  // docker-compose.yml que ainda usassem senha fixa hardcoded.
   const dcPath = path.join(ROOT, 'docker-compose.yml');
   let dc = fs.readFileSync(dcPath, 'utf8');
 
-  dc = dc
-    .replace(/\$\{DB_PASSWORD:-[^}]+\}/g, config.dbPassword)
-    .replace(/disparador123/g, config.dbPassword);
-
-  fs.writeFileSync(dcPath, dc);
-  ok('docker-compose.yml atualizado com suas senhas');
+  if (dc.includes('disparador123')) {
+    dc = dc.replace(/disparador123/g, config.dbPassword);
+    fs.writeFileSync(dcPath, dc);
+    ok('docker-compose.yml atualizado (removida senha hardcoded antiga)');
+  } else {
+    ok('docker-compose.yml já usa variáveis do .env — nada a alterar');
+  }
 
   titulo('Subindo containers');
   info('Isso pode levar 1-2 minutos na primeira vez...');
@@ -279,6 +295,7 @@ function mostrarResumo(config, modo) {
     'Email:   ' + config.adminEmail,
     'Senha:   ' + config.adminSenha,
     'DB Pass: ' + config.dbPassword,
+    'ENCRYPTION_KEY: ' + config.encryptionKey,
   ].join('\n');
   fs.writeFileSync(path.join(ROOT, '.credenciais.txt'), credenciais + '\n');
   info('Credenciais salvas em .credenciais.txt (não commite este arquivo!)');
@@ -346,7 +363,11 @@ async function main() {
       redisPort = await perguntar(rl, 'Porta do Redis', '6379');
     }
 
-    // 5. Admin
+    // 5. Chave de criptografia (tokens da Cloud API)
+    const encryptionKey = gerarChaveCriptografia();
+    info('Chave de criptografia gerada automaticamente (ENCRYPTION_KEY).');
+
+    // 6. Admin
     titulo('Usuário administrador');
     const adminEmail = await perguntar(rl, 'Email do admin', 'admin@disparador.local');
     const adminSenha = await perguntar(rl, 'Senha do admin (mín. 6 caracteres)', gerarSenha(12));
@@ -357,7 +378,7 @@ async function main() {
       process.exit(1);
     }
 
-    // 6. Confirmação
+    // 7. Confirmação
     console.log('');
     console.log(COR.negrito('  Resumo da instalação:'));
     console.log('  Modo:    ' + COR.amarelo(modo === 'docker' ? 'Docker Compose' : 'Manual pm2'));
@@ -374,9 +395,12 @@ async function main() {
 
     rl.close();
 
-    const config = { porta, publicUrl, dbHost, dbPort, dbName, dbUser, dbPassword, redisHost, redisPort, adminEmail, adminSenha };
+    const config = {
+      porta, publicUrl, dbHost, dbPort, dbName, dbUser, dbPassword,
+      redisHost, redisPort, encryptionKey, adminEmail, adminSenha,
+    };
 
-    // 7. Instala
+    // 8. Instala
     titulo('Escrevendo configuração');
     escreverEnv(config);
 

@@ -1,5 +1,10 @@
 # WhatsApp Disparador — v8 (Baileys direto, sem Evolution API)
 # Apenas 3 serviços: app, postgres, redis
+#
+# IMPORTANTE: DB_PASSWORD e ENCRYPTION_KEY são OBRIGATÓRIAS.
+# Copie .env.example para .env e preencha antes de rodar `docker compose up`.
+# Se não estiverem definidas, o Compose falha imediatamente com uma
+# mensagem de erro clara, em vez de subir silenciosamente com senha padrão.
 services:
   app:
     build: .
@@ -12,7 +17,7 @@ services:
       DB_PORT: 5432
       DB_NAME: disparador
       DB_USER: disparador
-      DB_PASSWORD: ${DB_PASSWORD:-disparador123}
+      DB_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no seu .env antes de subir o projeto (veja .env.example)}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       PORT: 3000
@@ -22,6 +27,9 @@ services:
       PUBLIC_URL: ${PUBLIC_URL:-}
       # Probabilidade de micro-pausa entre mensagens (0.10 = 10%)
       COFFEE_BREAK_CHANCE: ${COFFEE_BREAK_CHANCE:-0.10}
+      # Chave de criptografia dos tokens da Cloud API (32 bytes em hex).
+      # Gerar com: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Defina ENCRYPTION_KEY no seu .env antes de subir o projeto (veja .env.example)}
     depends_on:
       postgres:
         condition: service_healthy
@@ -39,7 +47,7 @@ services:
     environment:
       POSTGRES_DB: disparador
       POSTGRES_USER: disparador
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-disparador123}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no seu .env antes de subir o projeto (veja .env.example)}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

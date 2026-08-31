@@ -10,10 +10,15 @@
 //   - Envio inicial de conversa exige template pré-aprovado pela Meta
 //   - Templates têm categoria (MARKETING, UTILITY, AUTHENTICATION), idioma e variáveis
 //   - Status de entrega chega via webhook (não via socket) — precisa endpoint público
+//
+// Segurança: access_token é armazenado CRIPTOGRAFADO (AES-256-GCM, ver
+// src/utils/crypto.js) — nunca gravamos nem lemos o token em texto plano
+// do banco. A chave de criptografia vive fora do banco (ENCRYPTION_KEY no .env).
 
 require('dotenv').config();
 const axios = require('axios');
 const pool = require('../db');
+const { encrypt, decrypt } = require('../utils/crypto');
 
 const GRAPH_VERSION = 'v20.0';
 const GRAPH_BASE = 'https://graph.facebook.com/' + GRAPH_VERSION;
@@ -34,7 +39,8 @@ async function adicionarContaOficial({ nome, phoneNumberId, wabaId, accessToken,
   }
 
   // Valida credenciais consultando o número na Graph API antes de salvar —
-  // evita cadastrar token/ID inválido silenciosamente.
+  // evita cadastrar token/ID inválido silenciosamente. Usa o token em claro
+  // (ainda só em memória, nunca tocou o banco).
   let numeroDisplay = null;
   try {
     const client = _client(accessToken);
@@ -47,16 +53,19 @@ async function adicionarContaOficial({ nome, phoneNumberId, wabaId, accessToken,
     throw new Error('Falha ao validar conta na Meta: ' + msg);
   }
 
+  // Só a partir daqui o token é criptografado antes de ir para o banco.
+  const tokenCriptografado = encrypt(accessToken);
+
   const result = await pool.query(
     `INSERT INTO contas_oficiais (nome, phone_number_id, waba_id, access_token, numero_display, limite_diario)
      VALUES ($1,$2,$3,$4,$5,$6) RETURNING id, nome, phone_number_id, waba_id, numero_display, status, limite_diario, criado_em`,
-    [nome, phoneNumberId, wabaId, accessToken, numeroDisplay, limiteDiario || 1000]
+    [nome, phoneNumberId, wabaId, tokenCriptografado, numeroDisplay, limiteDiario || 1000]
   );
   return result.rows[0];
 }
 
 async function listarContasOficiais() {
-  // access_token nunca sai para o frontend
+  // access_token (mesmo criptografado) nunca sai para o frontend
   const result = await pool.query(
     `SELECT id, nome, phone_number_id, waba_id, numero_display, status, limite_diario,
             enviados_hoje, total_enviados, qualidade, ultimo_ping, criado_em
@@ -69,10 +78,17 @@ async function removerContaOficial(id) {
   await pool.query('DELETE FROM contas_oficiais WHERE id=$1', [id]);
 }
 
+/**
+ * Busca uma conta oficial e devolve com o access_token JÁ DESCRIPTOGRAFADO.
+ * Única porta de entrada para o token em claro dentro deste módulo —
+ * todas as funções abaixo passam por aqui, então a descriptografia fica
+ * centralizada e não precisa ser repetida em cada função.
+ */
 async function _obterConta(id) {
   const result = await pool.query('SELECT * FROM contas_oficiais WHERE id=$1', [id]);
   if (!result.rows.length) throw new Error('Conta oficial não encontrada');
-  return result.rows[0];
+  const conta = result.rows[0];
+  return { ...conta, access_token: decrypt(conta.access_token) };
 }
 
 /**
@@ -244,7 +260,8 @@ async function removerTemplate(id) {
 
   // Tenta remover na Meta também (best-effort — se falhar, remove local mesmo assim)
   try {
-    const client = _client(t.access_token);
+    const tokenClaro = decrypt(t.access_token);
+    const client = _client(tokenClaro);
     await client.delete('/' + t.waba_id + '/message_templates', { params: { name: t.nome } });
   } catch (e) {
     console.warn('[OFICIAL] Falha ao remover template na Meta (removendo local mesmo assim): ' + e.message);
@@ -332,7 +349,13 @@ async function proximaContaOficial() {
   if (!contas.rows.length) {
     throw new Error('Nenhuma conta oficial disponível (todas atingiram o limite diário ou estão inativas).');
   }
-  return contas.rows[0];
+  // Descriptografa o token antes de devolver — quem chama (disparo-oficial.js)
+  // vai usar essa conta para enviar via enviarTemplate(), que passa de novo
+  // por _obterConta(id) e descriptografa a partir do banco — então aqui
+  // devolvemos os dados sem o token em claro, mantendo o mesmo contrato
+  // de antes (o token nunca precisou sair desta função).
+  const conta = contas.rows[0];
+  return conta;
 }
 
 // ─── Webhook — atualização de status de entrega ───────────────────────────────

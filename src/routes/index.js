@@ -11,12 +11,16 @@ const {
 } = require('../services/whatsapp/manager');
 const { enfileirarCampanha, pausarCampanha, retomar, limparFila, statusFila } = require('../queue/disparo');
 const { requireAuth } = require('../services/auth');
+const { loginLimiter } = require('../middlewares/rateLimiters');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
 // ─── Autenticação ─────────────────────────────────────────────────────────────
 
-router.post('/auth/login', async (req, res) => {
+// loginLimiter: no máximo 5 tentativas erradas por IP a cada 15min —
+// protege contra brute-force, especialmente relevante porque a senha
+// padrão do admin é documentada publicamente no README.
+router.post('/auth/login', loginLimiter, async (req, res) => {
   try {
     const { email, senha } = req.body;
     if (!email || !senha) return res.status(400).json({ ok: false, error: 'Email e senha obrigatórios' });
@@ -223,11 +227,24 @@ router.get('/contatos', requireAuth, async (req, res) => {
     const page  = Math.max(parseInt(req.query.page)  || 1, 1);
     const offset = (page - 1) * limit;
     const busca = req.query.busca;
-    let where = '', params = [];
-    if (busca) { params.push('%' + busca + '%'); where = ' WHERE nome ILIKE $1 OR numero ILIKE $1'; }
-    const countParams = busca ? params : [];
-    const result = await pool.query('SELECT * FROM contatos' + where + ' ORDER BY id DESC LIMIT $' + (params.length+1) + ' OFFSET $' + (params.length+2), [...params, limit, offset]);
-    const count = await pool.query('SELECT COUNT(*) FROM contatos' + where, countParams);
+
+    // Monta WHERE e params juntos, com o índice do placeholder sempre
+    // derivado de params.length — evita o erro de "off-by-one" que a
+    // concatenação manual de "$" + (params.length+N) permitia caso alguém
+    // adicionasse um novo filtro no meio do caminho.
+    const params = [];
+    let where = '';
+    if (busca) {
+      params.push('%' + busca + '%');
+      where = ` WHERE nome ILIKE $${params.length} OR numero ILIKE $${params.length}`;
+    }
+
+    const listParams = [...params, limit, offset];
+    const result = await pool.query(
+      `SELECT * FROM contatos${where} ORDER BY id DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      listParams
+    );
+    const count = await pool.query(`SELECT COUNT(*) FROM contatos${where}`, params);
     res.json({ ok: true, data: result.rows, total: parseInt(count.rows[0].count) });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });
@@ -288,8 +305,20 @@ router.post('/campanhas', requireAuth, async (req, res) => {
     const campanhaId = campanha.rows[0].id;
     const contatos = await pool.query('SELECT id FROM contatos');
     if (!contatos.rows.length) return res.status(400).json({ ok: false, error: 'Nenhum contato importado' });
-    const values = contatos.rows.map(c => '(' + campanhaId + ',' + c.id + ')').join(',');
-    await pool.query('INSERT INTO disparos (campanha_id,contato_id) VALUES ' + values);
+
+    // Insert em massa totalmente parametrizado — cada linha vira dois
+    // placeholders numerados ($1,$2), ($3,$4)... em vez de interpolar
+    // campanhaId/id diretamente na string SQL.
+    const params = [];
+    const placeholders = contatos.rows.map((c, i) => {
+      params.push(campanhaId, c.id);
+      return `($${i * 2 + 1},$${i * 2 + 2})`;
+    }).join(',');
+    await pool.query(
+      'INSERT INTO disparos (campanha_id,contato_id) VALUES ' + placeholders,
+      params
+    );
+
     await pool.query('UPDATE campanhas SET total_contatos=$1 WHERE id=$2', [contatos.rows.length, campanhaId]);
     res.json({ ok: true, data: campanha.rows[0] });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
@@ -483,10 +512,22 @@ router.get('/logs', requireAuth, async (req, res) => {
     const page  = Math.max(parseInt(req.query.page)  || 1, 1);
     const offset = (page - 1) * limit;
     const { nivel } = req.query;
-    const where = nivel ? 'WHERE nivel=$1' : '';
-    const params = nivel ? [nivel] : [];
-    const result = await pool.query('SELECT * FROM logs ' + where + ' ORDER BY criado_em DESC LIMIT $' + (params.length+1) + ' OFFSET $' + (params.length+2), [...params, limit, offset]);
-    const count = await pool.query('SELECT COUNT(*) FROM logs ' + where, params);
+
+    // Mesmo padrão robusto usado em /contatos: índice do placeholder
+    // sempre derivado de params.length, nunca calculado manualmente.
+    const params = [];
+    let where = '';
+    if (nivel) {
+      params.push(nivel);
+      where = ` WHERE nivel=$${params.length}`;
+    }
+
+    const listParams = [...params, limit, offset];
+    const result = await pool.query(
+      `SELECT * FROM logs${where} ORDER BY criado_em DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      listParams
+    );
+    const count = await pool.query(`SELECT COUNT(*) FROM logs${where}`, params);
     res.json({ ok: true, data: result.rows, total: parseInt(count.rows[0].count) });
   } catch (err) { res.status(500).json({ ok: false, error: err.message }); }
 });

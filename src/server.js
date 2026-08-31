@@ -15,6 +15,14 @@ const { verificarStartup } = require('./services/health');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Necessário para o rate limiter (express-rate-limit) identificar o IP real
+// do cliente quando o app roda atrás de um proxy reverso (nginx, Docker com
+// proxy na frente, etc). Sem isso, todas as requisições podem ser contadas
+// sob o IP do proxy, causando bloqueio incorreto de todos os usuários.
+// Se o app for exposto DIRETAMENTE à internet (sem proxy), remova esta linha
+// para não confiar em X-Forwarded-For arbitrário enviado pelo cliente.
+app.set('trust proxy', 1);
+
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, '../public')));
