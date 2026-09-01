@@ -168,12 +168,35 @@ cron.schedule('0 3 * * 0', async () => {
 });
 
 // ─── Aquecimento Interno de Chips ────────────────────────────────────────────
-const INTERVALO_AQUECIMENTO = 45 * 60 * 1000;
-setInterval(() => {
-  aquecerChipsInternamente();
-}, INTERVALO_AQUECIMENTO);
+// CORREÇÃO: antes rodava em setInterval(45min) fixo, 24h por dia — o que
+// permitia gerar tráfego automático de madrugada (fora da janela de horário
+// configurada em Anti-ban) e criava uma cadência perfeitamente regular
+// (45min, 90min, 135min...), uma assinatura de automação mais fácil de
+// detectar do que os envios de campanha (que já usam delay aleatório).
+//
+// Agora: intervalo com jitter (35–55min, sorteado a cada ciclo) e a
+// checagem da janela de horário é feita dentro de aquecerChipsInternamente()
+// (manager.js) — fora da janela, o ciclo é pulado e apenas reagendado.
+const AQUECIMENTO_MIN_MS = 35 * 60 * 1000;
+const AQUECIMENTO_MAX_MS = 55 * 60 * 1000;
+
+function agendarAquecimentoInterno() {
+  const delay = AQUECIMENTO_MIN_MS + Math.random() * (AQUECIMENTO_MAX_MS - AQUECIMENTO_MIN_MS);
+  setTimeout(async () => {
+    try {
+      await aquecerChipsInternamente();
+    } catch (e) {
+      console.error('[AQUECIMENTO] Erro:', e.message);
+    } finally {
+      // Reagenda com um novo jitter, independentemente de sucesso/erro —
+      // mantém o ciclo vivo sem se tornar previsível.
+      agendarAquecimentoInterno();
+    }
+  }, delay);
+}
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 app.listen(PORT, startup);
 
-console.log(`🔥 Aquecimento automático de chips ativado (intervalo: 45min)`);
+agendarAquecimentoInterno();
+console.log('🔥 Aquecimento automático de chips ativado (35–55min, dentro da janela de horário)');

@@ -12,7 +12,8 @@
     "migrate-auth": "node src/db/migrate-auth.js",
     "criar-admin": "node src/db/criar-admin.js",
     "migrate-sessions": "node src/db/migrate-sessions.js",
-    "migrate-cripto-token": "node src/db/migrate-cripto-token.js"
+    "migrate-cripto-token": "node src/db/migrate-cripto-token.js",
+    "migrate-limite-manual": "node src/db/migrate-limite-manual.js"
   },
   "dependencies": {
     "express": "^4.18.2",

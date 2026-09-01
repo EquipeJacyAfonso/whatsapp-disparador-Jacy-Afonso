@@ -8,6 +8,9 @@
 //   - Emitir eventos de status para o manager (open, close, banido)
 //   - Enviar mensagens de texto, imagem e presença
 //   - Capturar e persistir o número do próprio chip conectado
+//   - Detectar troca de número (SIM diferente no mesmo slot de chip) e
+//     reiniciar o aquecimento do zero — evita que um número novo herde
+//     o limite_diario inflado do número anterior (ex: após um ban)
 //   - Rastrear confirmação REAL de entrega via ACK do WhatsApp (messages.update)
 
 require('dotenv').config();
@@ -20,6 +23,7 @@ const pino = require('pino');
 const QRCode = require('qrcode');
 const pool = require('../../db');
 const { usePostgresAuthState, salvarQRCode, limparQRCode } = require('./store');
+const { AQUECIMENTO } = require('./constants');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 
 // ─── Códigos que indicam ban / deslogamento permanente ───────────────────────
@@ -176,11 +180,15 @@ class ChipSession {
       await limparQRCode(this.instancia);
       await this._setStatus('open');
 
-      // Captura e persiste o número conectado — mostrado no painel
+      // Captura o número conectado e detecta troca de SIM (número diferente
+      // do que estava salvo antes neste mesmo slot de chip). Isso é comum
+      // depois de um ban: o operador troca o chip físico mas reaproveita a
+      // mesma linha/instância no painel — sem essa checagem, o número novo
+      // herdaria silenciosamente o limite_diario/dias_ativo do número banido.
       const numero = this.obterNumeroProprioConectado();
       if (numero) {
         try {
-          await pool.query('UPDATE chips SET numero_conectado = $1 WHERE instancia = $2', [numero, this.instancia]);
+          await this._sincronizarNumeroConectado(numero);
         } catch (e) {
           console.error('[SESSION] Erro ao salvar número conectado de ' + this.instancia + ': ' + e.message);
         }
@@ -217,6 +225,58 @@ class ChipSession {
       console.warn('[SESSION] ⚠ ' + this.instancia + ' desconectado (' + razao + ')');
       this._reconectar();
     }
+  }
+
+  /**
+   * Compara o número recém-conectado com o que estava salvo no banco para
+   * este chip. Se for diferente de um número anterior já existente, trata
+   * como um SIM novo no mesmo slot: zera dias_ativo, volta limite_diario
+   * para o primeiro degrau da tabela de aquecimento, remove a flag de
+   * limite manual (o limite antigo não faz mais sentido para o número novo)
+   * e zera os contadores de uso. Se for o primeiro número deste chip
+   * (numero_conectado ainda NULL) ou o mesmo de antes, só atualiza o campo.
+   */
+  async _sincronizarNumeroConectado(numeroNovo) {
+    const atual = await pool.query(
+      'SELECT numero_conectado FROM chips WHERE instancia = $1',
+      [this.instancia]
+    );
+    const numeroAnterior = atual.rows[0]?.numero_conectado || null;
+
+    if (numeroAnterior && numeroAnterior !== numeroNovo) {
+      const limiteInicial = AQUECIMENTO[0];
+      await pool.query(
+        `UPDATE chips
+           SET numero_conectado = $1,
+               dias_ativo        = 0,
+               limite_diario     = $2,
+               limite_manual     = false,
+               enviados_hoje     = 0,
+               total_enviados    = 0
+         WHERE instancia = $3`,
+        [numeroNovo, limiteInicial, this.instancia]
+      );
+      console.warn(
+        '[SESSION] 🔄 ' + this.instancia + ': número trocado (' + numeroAnterior +
+        ' → ' + numeroNovo + '). Aquecimento reiniciado do zero (limite: ' + limiteInicial + '/dia).'
+      );
+      try {
+        await pool.query(
+          "INSERT INTO logs (nivel, mensagem, dados) VALUES ('alerta', $1, $2)",
+          [
+            'Chip ' + this.instancia + ' trocou de número — aquecimento reiniciado.',
+            JSON.stringify({ instancia: this.instancia, numeroAnterior, numeroNovo }),
+          ]
+        );
+      } catch (_) { /* log é best-effort */ }
+      return;
+    }
+
+    // Primeira conexão deste chip, ou mesmo número de antes — só atualiza.
+    await pool.query(
+      'UPDATE chips SET numero_conectado = $1 WHERE instancia = $2',
+      [numeroNovo, this.instancia]
+    );
   }
 
   _reconectar() {
